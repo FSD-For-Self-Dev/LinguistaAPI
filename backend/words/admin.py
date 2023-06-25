@@ -1,3 +1,8 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Word, Collection, Exercise
+
+
+admin.site.register(Word)
+admin.site.register(Collection)
+admin.site.register(Exercise)
