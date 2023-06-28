@@ -2,7 +2,7 @@ from django.conf.global_settings import LANGUAGES
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from core.models import DateAddedModel
+from core.models import CreatedModifiedModel
 
 User = get_user_model()
 
@@ -20,7 +20,7 @@ class Tag(models.Model):
         return self.name
 
 
-class Collection(DateAddedModel):
+class Collection(CreatedModifiedModel):
     """Коллекция"""
     title = models.CharField(
         max_length=256,
@@ -37,7 +37,7 @@ class Collection(DateAddedModel):
         return self.title
 
 
-class Word(DateAddedModel):
+class Word(CreatedModifiedModel):
     """Слово"""
     PROBLEM = 'P'
     USEFUL = 'U'
@@ -68,6 +68,12 @@ class Word(DateAddedModel):
         help_text='Добавьте примечание',
         blank=True
     )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='words',
+        verbose_name='Автор'
+    )
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги',
@@ -93,7 +99,7 @@ class Word(DateAddedModel):
         return self.text
 
 
-class Translation(DateAddedModel):
+class Translation(CreatedModifiedModel):
     """Перевод"""
     word = models.ForeignKey(
         Word,
@@ -123,7 +129,7 @@ class Translation(DateAddedModel):
         return f'Перевод слова/фразы {self.word}: {self.translation}'
 
 
-class UsageExample(DateAddedModel):
+class UsageExample(CreatedModifiedModel):
     """Пример использования"""
     word = models.ForeignKey(
         Word,
@@ -147,7 +153,7 @@ class UsageExample(DateAddedModel):
         return f'Пример использования слова/фразы {self.word}: {self.example}'
 
 
-class WordCollection(DateAddedModel):
+class WordCollection(CreatedModifiedModel):
     """Слова в коллекции"""
     word = models.ForeignKey(
         Word,

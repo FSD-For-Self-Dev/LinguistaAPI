@@ -1,13 +1,24 @@
 from django.db import models
+from django.utils import timezone
 
 
-class DateAddedModel(models.Model):
-    """Абстрактная модель. Добавляет дату создания."""
-    date_added = models.DateTimeField(
+class CreatedModifiedModel(models.Model):
+    """Абстрактная модель. Добавляет дату создания и редактирования."""
+    created = models.DateTimeField(
         'Дата создания',
-        auto_now_add=True,
+        editable=False,
         db_index=True
+    )
+    modified = models.DateTimeField(
+        'Дата редактирования'
     )
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        ''' On save, update timestamps '''
+        if not self.id:
+            self.created = timezone.now()
+        self.modified = timezone.now()
+        return super(CreatedModifiedModel, self).save(*args, **kwargs)
