@@ -81,11 +81,13 @@ class Word(CreatedModifiedModel):
     )
     status = models.CharField(
         max_length=1,
-        choices=STATUS
+        choices=STATUS,
+        blank=True
     )
     type = models.CharField(
         max_length=1,
-        choices=TYPE
+        choices=TYPE,
+        blank=True
     )
     collections = models.ManyToManyField(
         Collection,

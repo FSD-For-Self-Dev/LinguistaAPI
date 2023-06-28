@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     'rest_framework',
     # 'dj_rql',
     # 'djoser',
-    # 'drf_yasg',
+    'drf_yasg',
     'corsheaders',
     'words.apps.WordsConfig',
     'users.apps.UsersConfig',

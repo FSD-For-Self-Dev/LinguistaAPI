@@ -6,7 +6,7 @@ from .views import WordViewSet
 
 router = routers.DefaultRouter()
 
-router.register('recipes', WordViewSet, basename='words')
+router.register('words', WordViewSet, basename='words')
 # router.register('tags', TagViewSet, basename='tags')
 # router.register('users', CustomUserViewSet, basename='users')
 
