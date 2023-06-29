@@ -38,22 +38,16 @@ class Collection(CreatedModifiedModel):
 
 
 class Word(CreatedModifiedModel):
-    """Слово"""
-    PROBLEM = 'P'
-    USEFUL = 'U'
-    MASTERED = 'M'
+    """Слово/фраза"""
     STATUS = [
-        (PROBLEM, 'Проблемное'),
-        (USEFUL, 'Важное'),
-        (MASTERED, 'Усвоенное'),
+        ('PROBLEM', 'Проблемное'),
+        ('USEFUL', 'Важное'),
+        ('MASTERED', 'Усвоенное'),
     ]
-    WORD = 'W'
-    PHRASE = 'P'
-    QUOTE = 'Q'
     TYPE = [
-        (WORD, 'Слово'),
-        (PHRASE, 'Фраза'),
-        (QUOTE, 'Цитата'),
+        ('WORD', 'Слово'),
+        ('PHRASE', 'Фраза'),
+        ('QUOTE', 'Цитата'),
     ]
 
     language = models.CharField(max_length=7, choices=LANGUAGES)

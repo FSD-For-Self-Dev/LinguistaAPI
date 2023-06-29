@@ -1,6 +1,7 @@
 from django.urls import include, path
 
 from rest_framework import routers
+from rest_framework.authtoken import views
 
 from .views import WordViewSet
 
@@ -13,4 +14,5 @@ router.register('words', WordViewSet, basename='words')
 urlpatterns = [
     # path('auth/', include('djoser.urls.authtoken')),
     path('', include(router.urls)),
+    path('api-token-auth/', views.obtain_auth_token),
 ]
