@@ -28,6 +28,10 @@ class Tag(models.Model):
     def __str__(self) -> str:
         return self.name
 
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
+
 
 class Collection(CreatedModifiedModel):
     """Коллекция"""
@@ -51,6 +55,10 @@ class Collection(CreatedModifiedModel):
 
     def __str__(self) -> str:
         return self.title
+
+    class Meta:
+        verbose_name = 'Коллекция'
+        verbose_name_plural = 'Коллекции'
 
 
 class Word(CreatedModifiedModel):
@@ -136,8 +144,10 @@ class Word(CreatedModifiedModel):
         return self.text
     
     class Meta:
-        get_latest_by = ["created", "modified"]
         ordering = ['-created']
+        get_latest_by = ["created", "modified"]
+        verbose_name = 'Слово или фраза'
+        verbose_name_plural = 'Слова и фразы'
 
 
 class Translation(CreatedModifiedModel):
@@ -169,6 +179,10 @@ class Translation(CreatedModifiedModel):
 
     def __str__(self) -> str:
         return f'Перевод слова/фразы {self.word}: {self.translation}'
+    
+    class Meta:
+        verbose_name = 'Перевод'
+        verbose_name_plural = 'Переводы'
 
 
 class UsageExample(CreatedModifiedModel):
@@ -194,6 +208,10 @@ class UsageExample(CreatedModifiedModel):
 
     def __str__(self) -> str:
         return f'Пример использования слова/фразы {self.word}: {self.example}'
+
+    class Meta:
+        verbose_name = 'Пример использования'
+        verbose_name_plural = 'Примеры использования'
 
 
 # class Synonym(models.Model):
@@ -249,6 +267,10 @@ class WordCollection(CreatedModifiedModel):
     def __str__(self) -> str:
         return f'Слово {self.word} есть в коллекции {self.collection}'
 
+    class Meta:
+        verbose_name = 'Слово в коллекции'
+        verbose_name_plural = 'Слова в коллекции'
+
 
 class Exercise(models.Model):
     """Упражнение"""
@@ -265,3 +287,7 @@ class Exercise(models.Model):
 
     def __str__(self) -> str:
         return f'{self.name}: {self.description}'
+    
+    class Meta:
+        verbose_name = 'Упражнение'
+        verbose_name_plural = 'Упражнения'
