@@ -106,7 +106,7 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
 
-    'DEFAULT_PAGINATION_CLASS': 'api.pagination.LimitPagination',
+    'DEFAULT_PAGINATION_CLASS': 'core.pagination.LimitPagination',
 
     'DATETIME_FORMAT': "%Y-%m-%d %H:%M",
 }
