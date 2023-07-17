@@ -15,6 +15,12 @@ class Tag(models.Model):
         verbose_name='Тег',
         help_text='Добавьте тег'
     )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='tags',
+        verbose_name='Автор'
+    )
 
     def __str__(self) -> str:
         return self.name
@@ -32,6 +38,12 @@ class Collection(CreatedModifiedModel):
         help_text='Опишите коллекцию',
         blank=True
     )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='collections',
+        verbose_name='Автор'
+    )
 
     def __str__(self) -> str:
         return self.title
@@ -45,14 +57,29 @@ class Word(CreatedModifiedModel):
         ('MASTERED', 'Усвоенное'),
     ]
     TYPE = [
-        ('WORD', 'Слово'),
+        ('NOUN', 'Существительное'),
+        ('VERB', 'Глагол'),
+        ('ADJECT', 'Прилагательное'),
+        ('ADVERB', 'Наречие'),
+        ('PRONOUN', 'Местоимение'),
+        ('PRETEXT', 'Предлог'),
+        ('UNION', 'Союз'),
+        ('PARTICLE', 'Частица'),
+        ('PARTICIPLE', 'Причастие'),
+        ('GERUND', 'Деепричастие'),
+        ('ARTICLE', 'Артикль'),
+        ('PREDICATIVE', 'Предикатив'),
+        ('NUMERAL', 'Числительное'),
+        ('INTERJ', 'Междометие'),
         ('PHRASE', 'Фраза'),
+        ('IDIOM', 'Идиома'),
         ('QUOTE', 'Цитата'),
     ]
 
     language = models.CharField(max_length=7, choices=LANGUAGES)
     text = models.CharField(
         max_length=512,
+        unique=True,
         verbose_name='Слово/фраза',
         help_text='Введите слово/фразу'
     )
@@ -71,15 +98,16 @@ class Word(CreatedModifiedModel):
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги',
-        help_text='Добавьте теги к слову'
+        help_text='Добавьте теги к слову',
+        blank=True
     )
     status = models.CharField(
-        max_length=1,
+        max_length=8,
         choices=STATUS,
         blank=True
     )
     type = models.CharField(
-        max_length=1,
+        max_length=11,
         choices=TYPE,
         blank=True
     )
@@ -90,9 +118,21 @@ class Word(CreatedModifiedModel):
         verbose_name='Коллекции',
         help_text='Добавьте слово в коллекцию'
     )
+    # synonyms = models.ManyToManyField(
+    #     'self',
+    #     through='Synonym',
+    #     symmetrical = True,
+    #     verbose_name='Синонимы',
+    #     help_text='Укажите синонимы слова',
+    #     blank=True
+    # )
 
     def __str__(self) -> str:
         return self.text
+    
+    class Meta:
+        get_latest_by = ["created", "modified"]
+        ordering = ['-created']
 
 
 class Translation(CreatedModifiedModel):
@@ -147,6 +187,36 @@ class UsageExample(CreatedModifiedModel):
 
     def __str__(self) -> str:
         return f'Пример использования слова/фразы {self.word}: {self.example}'
+
+
+# class Synonym(models.Model):
+#     word = models.ForeignKey(
+#         Word,
+#         related_name='synonyms_info',
+#         on_delete=models.CASCADE
+#     )
+#     synonym = models.ForeignKey(
+#         Word,
+#         related_name='+',
+#         on_delete=models.CASCADE
+#     )
+#     note = models.CharField(
+#         max_length=512,
+#         verbose_name='Примечание',
+#         help_text='Добавьте примечание, например, объяснение разницы',
+#         blank=True
+#     )
+
+    # class Meta:
+    #     constraints = [
+    #         models.UniqueConstraint(
+    #             fields=['word1', 'word2'],
+    #             name='unique_word_synonym'
+    #         )
+    #     ]
+
+    # def __str__(self) -> str:
+    #     return f'{self.synonym} является синонимом {self.word}'
 
 
 class WordCollection(CreatedModifiedModel):

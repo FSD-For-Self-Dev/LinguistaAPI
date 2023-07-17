@@ -17,3 +17,6 @@ python-dotenv==0.21.0
 sorl-thumbnail==12.9.0
 sqlparse==0.3.1
 webcolors==1.12
+pytest==6.2.4
+pytest-django==4.4.0
+pytest-pythonpath==0.7.3

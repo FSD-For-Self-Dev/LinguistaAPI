@@ -1,39 +1,52 @@
 import random
 
 from django.contrib.auth import get_user_model
+from django.db.models import Count
 
 # from djoser.views import UserViewSet
-from rest_framework import status, viewsets  # filters
+from rest_framework import status, viewsets, filters
 from rest_framework.decorators import action
 # from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
 
 from words.models import Word
 
 from .serializers import WordSerializer, TranslationSerializer
+from .pagination import LimitPagination
+from .filters import WordFilter
 
 User = get_user_model()
 
 
 class WordViewSet(viewsets.ModelViewSet):
-    queryset = Word.objects.all()
+    # queryset = Word.objects.all()
     serializer_class = WordSerializer
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     permission_classes = [
-        # IsAuthorOrReadOnly,
-        AllowAny,
+        IsAuthenticated,
+        # AllowAny,
     ]
-    # pagination_class = CursorSetPagination
-    # filter_backends = (RQLFilterBackend, filters.OrderingFilter)
-    # rql_filter_class = RecipeFilters
-    # ordering_fields = ['created']
-    # ordering = ('-created',)
-    # filter_backends = [
-    #     filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
-    # ]
-    # filterset_class = RecipeFilter
+    pagination_class = LimitPagination
+    filter_backends = [
+        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
+    ]
+    filterset_class = WordFilter
+    search_fields = (
+        'text', 'note', 'tags__name', 'translations__translation',
+        'examples__example'
+    )
+    ordering_fields = (
+        'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
+    )
+    ordering = ('-created',)
+
+    def get_queryset(self):
+        return self.request.user.words.all().annotate(
+            trnsl_count=Count('translations'), exmpl_count=Count('examples')
+        )
 
     @action(methods=['get'], detail=False)
     def random(self, request, *args, **kwargs):

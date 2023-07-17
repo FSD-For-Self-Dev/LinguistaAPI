@@ -1,6 +1,7 @@
 import os
 
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
@@ -21,10 +22,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework.authtoken',
     'rest_framework',
-    # 'dj_rql',
-    # 'djoser',
+    'django_filters',
+    'djoser',
     'drf_yasg',
     'corsheaders',
+    'core.apps.CoreConfig',
     'words.apps.WordsConfig',
     'users.apps.UsersConfig',
     'api.apps.ApiConfig',
@@ -92,16 +94,25 @@ AUTH_PASSWORD_VALIDATORS = [
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+        'rest_framework.permissions.IsAuthenticated',
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ],
 
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
+
+    'DEFAULT_PAGINATION_CLASS': 'api.pagination.LimitPagination',
+
+    'DATETIME_FORMAT': "%Y-%m-%d %H:%M",
+}
+
+SIMPLE_JWT = {
+   'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+   'AUTH_HEADER_TYPES': ('Bearer',),
 }
 
 CORS_ALLOWED_ORIGINS = [
@@ -115,8 +126,6 @@ LANGUAGE_CODE = 'ru-ru'
 TIME_ZONE = 'UTC'
 
 USE_I18N = True
-
-USE_L10N = True
 
 USE_TZ = True
 
