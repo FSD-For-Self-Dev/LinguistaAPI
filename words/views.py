@@ -47,9 +47,13 @@ class WordViewSet(viewsets.ModelViewSet):
     ordering = ('-created',)
 
     def get_queryset(self):
-        return self.request.user.words.all().annotate(
-            trnsl_count=Count('translations'), exmpl_count=Count('examples')
-        )
+        user = self.request.user
+        if user.is_authenticated:
+            return user.words.all().annotate(
+                trnsl_count=Count('translations'),
+                exmpl_count=Count('examples')
+            )
+        return None
 
     @action(methods=['get'], detail=False)
     def random(self, request, *args, **kwargs):
