@@ -1,1 +1,2 @@
-# Linguista_dj
+# API for Linguista
+backend | rest api
