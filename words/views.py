@@ -1,27 +1,30 @@
+"""View-функции приложения words."""
+
 import random
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count
-
+from django_filters.rest_framework import DjangoFilterBackend
 # from djoser.views import UserViewSet
-from rest_framework import status, viewsets, filters
+from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 # from rest_framework.exceptions import ValidationError
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from django_filters.rest_framework import DjangoFilterBackend
 
+from core.pagination import LimitPagination
 from words.models import Word
 
-from .serializers import WordSerializer, TranslationSerializer
-from .pagination import LimitPagination
 from .filters import WordFilter
+from .serializers import TranslationSerializer, WordSerializer
 
 User = get_user_model()
 
 
 class WordViewSet(viewsets.ModelViewSet):
+    """Вьюсет для модели слова."""
+
     # queryset = Word.objects.all()
     serializer_class = WordSerializer
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']

@@ -1,3 +1,5 @@
+"""Маршруты приложения words."""
+
 from django.urls import include, path
 
 from rest_framework import routers
@@ -11,8 +13,5 @@ router.register('words', WordViewSet, basename='words')
 # router.register('users', CustomUserViewSet, basename='users')
 
 urlpatterns = [
-    # path('auth/', include('djoser.urls.authtoken')),
     path('', include(router.urls)),
-    path('auth/', include('djoser.urls')),
-    path('auth/', include('djoser.urls.jwt')),
 ]

@@ -1,3 +1,5 @@
+"""Файл с настройками проекта."""
+
 import os
 
 from dotenv import load_dotenv
@@ -29,7 +31,6 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'words.apps.WordsConfig',
     'users.apps.UsersConfig',
-    'api.apps.ApiConfig',
 ]
 
 MIDDLEWARE = [

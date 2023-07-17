@@ -1,3 +1,5 @@
+"""Административные настройки приложения words."""
+
 from django.contrib import admin
 
 from .models import (Collection, Exercise, Tag, Translation,  # Synonym

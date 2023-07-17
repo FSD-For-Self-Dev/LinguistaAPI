@@ -1,3 +1,5 @@
+"""Модели приложения words."""
+
 from django.conf.global_settings import LANGUAGES
 from django.contrib.auth import get_user_model
 from django.db import models
@@ -9,6 +11,7 @@ User = get_user_model()
 
 class Tag(models.Model):
     """Тег"""
+
     name = models.CharField(
         max_length=50,
         unique=True,
@@ -28,6 +31,7 @@ class Tag(models.Model):
 
 class Collection(CreatedModifiedModel):
     """Коллекция"""
+
     title = models.CharField(
         max_length=256,
         verbose_name='Название',
@@ -51,6 +55,7 @@ class Collection(CreatedModifiedModel):
 
 class Word(CreatedModifiedModel):
     """Слово/фраза"""
+
     STATUS = [
         ('PROBLEM', 'Проблемное'),
         ('USEFUL', 'Важное'),
@@ -137,6 +142,7 @@ class Word(CreatedModifiedModel):
 
 class Translation(CreatedModifiedModel):
     """Перевод"""
+
     word = models.ForeignKey(
         Word,
         on_delete=models.CASCADE,
@@ -167,6 +173,7 @@ class Translation(CreatedModifiedModel):
 
 class UsageExample(CreatedModifiedModel):
     """Пример использования"""
+
     word = models.ForeignKey(
         Word,
         on_delete=models.CASCADE,
@@ -221,6 +228,7 @@ class UsageExample(CreatedModifiedModel):
 
 class WordCollection(CreatedModifiedModel):
     """Слова в коллекции"""
+
     word = models.ForeignKey(
         Word,
         on_delete=models.CASCADE
@@ -244,6 +252,7 @@ class WordCollection(CreatedModifiedModel):
 
 class Exercise(models.Model):
     """Упражнение"""
+
     name = models.CharField(
         max_length=256,
         verbose_name='Название',
