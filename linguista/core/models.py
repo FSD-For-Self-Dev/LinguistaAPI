@@ -4,6 +4,8 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from core.constants import LANGS_SORTING_VALS
+
 
 class CreatedModel(models.Model):
     '''
@@ -79,6 +81,18 @@ class Language(models.Model):
 
     def __str__(self):
         return '%s (%s)' % (self.name, self.name_local)
+
+    @classmethod
+    def get_default_pk(cls):
+        lang, created = cls.objects.get_or_create(
+            isocode='en',
+            defaults={
+                'name': 'English',
+                'name_local': 'English',
+                'sorting': LANGS_SORTING_VALS.get('en', 3)
+            },
+        )
+        return lang.pk
 
     class Meta:
         verbose_name = _('Language')
