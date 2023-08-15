@@ -5,141 +5,185 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models import CreatedModel, ModifiedModel
+from core.models import CreatedModel, ModifiedModel, Language
 
 User = get_user_model()
 
 
-class Tag(models.Model):
-    name = models.CharField(
-        max_length=50,
-        unique=True,
-        verbose_name='Тег',
-        help_text='Добавьте тег'
-    )
+class AuthorModel(models.Model):
     author = models.ForeignKey(
         User,
+        verbose_name=_('Author'),
         on_delete=models.CASCADE,
-        related_name='tags',
-        verbose_name='Автор'
+        related_name='%(class)ss'
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Tag(models.Model):
+    name = models.CharField(
+        _('Tag name'),
+        max_length=64,
+        unique=True
     )
 
     def __str__(self) -> str:
         return self.name
 
     class Meta:
-        verbose_name = 'Тег'
-        verbose_name_plural = 'Теги'
+        verbose_name = _('Tag')
+        verbose_name_plural = _('Tags')
 
 
-class Collection(CreatedModel, ModifiedModel):
+class Collection(CreatedModel, ModifiedModel, AuthorModel):
     title = models.CharField(
-        max_length=256,
-        verbose_name='Название',
-        help_text='Дайте название коллекции'
+        _('Collection title'),
+        max_length=256
     )
     description = models.TextField(
-        verbose_name='Описание',
-        help_text='Опишите коллекцию',
+        _('Description'),
+        max_length=512,
         blank=True
     )
-    author = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
+    # author = models.ForeignKey(
+    #     User,
+    #     verbose_name=_('Author'),
+    #     on_delete=models.CASCADE,
+    #     related_name='collections'
+    # )
+    words = models.ManyToManyField(
+        'Word',
+        through='WordsInCollections',
         related_name='collections',
-        verbose_name='Автор'
+        verbose_name=_('Words in collection'),
+        blank=True
     )
 
     def __str__(self) -> str:
-        return self.title
+        return _(f'{self.title} ({self.words.count()} words)')
 
     class Meta:
-        verbose_name = 'Коллекция'
-        verbose_name_plural = 'Коллекции'
+        ordering = ['-created']
+        get_latest_by = ["created", "modified"]
+        verbose_name = _('Collection')
+        verbose_name_plural = _('Collections')
+
+
+class Type(models.Model):
+    name = models.CharField(
+        _('Type name'),
+        max_length=64,
+        unique=True
+    )
+    slug = models.CharField(
+        _('Slug'),
+        max_length=64,
+        unique=True
+    )
+    sorting = models.PositiveIntegerField(
+        _('Sorting order'),
+        blank=False,
+        null=False,
+        default=0,
+        help_text=_('increase to show at top of the list')
+    )
+
+    @classmethod
+    def get_default_pk(cls):
+        word_type, created = cls.objects.get_or_create(
+            slug='noun',
+            defaults={
+                'name': _('Noun'),
+                'sorting': 3
+            },
+        )
+        return word_type.pk
+
+    def __str__(self) -> str:
+        return self.name
+
+    class Meta:
+        verbose_name = _('Type')
+        verbose_name_plural = _('Types')
 
 
 class Word(CreatedModel, ModifiedModel):
-    '''Слово/фраза'''
-
-    STATUS = [
-        ('PROBLEM', 'Проблемное'),
-        ('USEFUL', 'Важное'),
-        ('MASTERED', 'Усвоенное'),
-    ]
-    TYPE = [
-        ('NOUN', 'Существительное'),
-        ('VERB', 'Глагол'),
-        ('ADJECT', 'Прилагательное'),
-        ('ADVERB', 'Наречие'),
-        ('PRONOUN', 'Местоимение'),
-        ('PRETEXT', 'Предлог'),
-        ('UNION', 'Союз'),
-        ('PARTICLE', 'Частица'),
-        ('PARTICIPLE', 'Причастие'),
-        ('GERUND', 'Деепричастие'),
-        ('ARTICLE', 'Артикль'),
-        ('PREDICATIVE', 'Предикатив'),
-        ('NUMERAL', 'Числительное'),
-        ('INTERJ', 'Междометие'),
-        ('PHRASE', 'Фраза'),
-        ('IDIOM', 'Идиома'),
-        ('QUOTE', 'Цитата'),
+    ACTIVITY = [
+        ('INACTIVE', _('Inactive')),
+        ('ACTIVE', _('Active')),
+        ('MASTERED', _('Mastered'))
     ]
 
-    language = models.CharField(max_length=7, choices=LANGUAGES)
-    text = models.CharField(
-        max_length=512,
-        unique=True,
-        verbose_name='Слово/фраза',
-        help_text='Введите слово/фразу'
+    language = models.ForeignKey(
+        Language,
+        verbose_name=_('Language'),
+        on_delete=models.SET_DEFAULT,
+        related_name='words',
+        default=Language.get_default_pk
     )
-    note = models.CharField(
-        max_length=512,
-        verbose_name='Примечание',
-        help_text='Добавьте примечание',
-        blank=True
+    text = models.CharField(
+        _('Word or phrase'),
+        max_length=4096
+    )
+    slug = models.CharField(
+        _('Slug'),
+        max_length=4096
     )
     author = models.ForeignKey(
         User,
+        verbose_name=_('Author'),
         on_delete=models.CASCADE,
-        related_name='vocabulary',
-        verbose_name='Автор'
+        related_name='vocabulary'
+    )
+    type = models.ForeignKey(
+        'Type',
+        verbose_name=_('Type'),
+        on_delete=models.SET_DEFAULT,
+        related_name='words',
+        default=Type.get_default_pk,
+        blank=True,
+        null=True
+    )
+    activity = models.CharField(
+        _('Activity status'),
+        max_length=8,
+        choices=ACTIVITY,
+        blank=False
+    )
+    is_problematic = models.BooleanField(
+        _('Is the word problematic for you'),
+        default=False
     )
     tags = models.ManyToManyField(
-        Tag,
-        verbose_name='Теги',
-        help_text='Добавьте теги к слову',
+        'Tag',
+        verbose_name=_('Word tags'),
         blank=True
     )
-    status = models.CharField(
-        max_length=8,
-        choices=STATUS,
+    synonyms = models.ManyToManyField(
+        'self',
+        through='Synonyms',
+        symmetrical = False,
+        related_name='synonym_to+',
+        verbose_name=_('Synonyms'),
+        help_text=_('Words with similar meaning'),
         blank=True
     )
-    type = models.CharField(
-        max_length=11,
-        choices=TYPE,
+    translations = models.ManyToManyField(
+        'Translation',
+        through='WordTranslations',
+        related_name='translation_for',
+        verbose_name=_('Translations'),
         blank=True
     )
-    collections = models.ManyToManyField(
-        Collection,
-        through='WordCollection',
-        related_name='words',
-        verbose_name='Коллекции',
-        help_text='Добавьте слово в коллекцию'
+    definitions = models.ManyToManyField(
+        'Definition',
+        through='WordDefinitions',
+        related_name='definition_for',
+        verbose_name=_('Translations'),
+        blank=True
     )
-    # foo = models.ImageField(
-    #     upload_to='words/',
-    #     null=True
-    # )
-    # synonyms = models.ManyToManyField(
-    #     'self',
-    #     through='Synonym',
-    #     symmetrical = True,
-    #     verbose_name='Синонимы',
-    #     help_text='Укажите синонимы слова',
-    #     blank=True
-    # )
 
     def __str__(self) -> str:
         return self.text
@@ -147,148 +191,323 @@ class Word(CreatedModel, ModifiedModel):
     class Meta:
         ordering = ['-created']
         get_latest_by = ["created", "modified"]
-        verbose_name = 'Слово или фраза'
-        verbose_name_plural = 'Слова и фразы'
+        verbose_name = _('Word or phrase')
+        verbose_name_plural = _('Words and phrases')
 
 
-class Translation(CreatedModel, ModifiedModel):
-    '''Перевод'''
-
+class WordsInCollections(CreatedModel):
     word = models.ForeignKey(
-        Word,
+        'Word',
+        verbose_name=_('Word'),
         on_delete=models.CASCADE,
-        related_name='translations',
-        verbose_name='Слово'
-    )
-    translation = models.CharField(
-        max_length=512,
-        verbose_name='Перевод',
-        help_text='Введите перевод слова/фразы'
-    )
-    definition = models.CharField(
-        max_length=512,
-        verbose_name='Определение',
-        help_text='Добавьте определение',
-        blank=True
-    )
-    definition_translation = models.CharField(
-        max_length=512,
-        verbose_name='Перевод определения',
-        help_text='Добавьте перевод определения',
-        blank=True
-    )
-
-    def __str__(self) -> str:
-        return f'Перевод слова/фразы {self.word}: {self.translation}'
-    
-    class Meta:
-        verbose_name = 'Перевод'
-        verbose_name_plural = 'Переводы'
-
-
-class UsageExample(CreatedModel, ModifiedModel):
-    '''Пример использования'''
-
-    word = models.ForeignKey(
-        Word,
-        on_delete=models.CASCADE,
-        related_name='examples',
-        verbose_name='Слово'
-    )
-    example = models.CharField(
-        max_length=512,
-        verbose_name='Пример использования слова/фразы',
-        help_text='Добавьте пример использования слова/фразы в предложении'
-    )
-    translation = models.CharField(
-        max_length=512,
-        verbose_name='Перевод',
-        help_text='Введите перевод примера',
-        blank=True
-    )
-
-    def __str__(self) -> str:
-        return f'Пример использования слова/фразы {self.word}: {self.example}'
-
-    class Meta:
-        verbose_name = 'Пример использования'
-        verbose_name_plural = 'Примеры использования'
-
-
-# class Synonym(models.Model):
-#     word = models.ForeignKey(
-#         Word,
-#         related_name='synonyms_info',
-#         on_delete=models.CASCADE
-#     )
-#     synonym = models.ForeignKey(
-#         Word,
-#         related_name='+',
-#         on_delete=models.CASCADE
-#     )
-#     note = models.CharField(
-#         max_length=512,
-#         verbose_name='Примечание',
-#         help_text='Добавьте примечание, например, объяснение разницы',
-#         blank=True
-#     )
-
-    # class Meta:
-    #     constraints = [
-    #         models.UniqueConstraint(
-    #             fields=['word1', 'word2'],
-    #             name='unique_word_synonym'
-    #         )
-    #     ]
-
-    # def __str__(self) -> str:
-    #     return f'{self.synonym} является синонимом {self.word}'
-
-
-class WordCollection(CreatedModel):
-    '''Слова в коллекции'''
-
-    word = models.ForeignKey(
-        Word,
-        on_delete=models.CASCADE
+        related_name='%(class)s'
     )
     collection = models.ForeignKey(
-        Collection,
-        on_delete=models.CASCADE
+        'Collection',
+        verbose_name=_('Collection'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s'
     )
 
+    def __str__(self) -> str:
+        return _(
+            f'Word {self.word} was added to collection {self.collection} '
+            f'at {self.created}'
+        )
+
     class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created"]
+        verbose_name = _('Words in collections')
+        verbose_name_plural = _('Words in collections')
         constraints = [
             models.UniqueConstraint(
                 fields=['word', 'collection'],
-                name='unique_word_collection'
+                name='unique_word_in_collection'
             )
         ]
 
-    def __str__(self) -> str:
-        return f'Слово {self.word} есть в коллекции {self.collection}'
 
-    class Meta:
-        verbose_name = 'Слово в коллекции'
-        verbose_name_plural = 'Слова в коллекции'
-
-
-class Exercise(models.Model):
-    '''Упражнение'''
-
-    name = models.CharField(
-        max_length=256,
-        verbose_name='Название',
-        help_text='Дайте название упражнению'
+class Synonyms(CreatedModel, ModifiedModel):
+    from_word = models.ForeignKey(
+        Word,
+        related_name='from_words',
+        on_delete=models.CASCADE
     )
-    description = models.TextField(
-        verbose_name='Описание',
-        help_text='Опишите упражнение'
+    to_word = models.ForeignKey(
+        Word,
+        related_name='to_words',
+        on_delete=models.CASCADE
+    )
+    difference = models.CharField(
+        max_length=512,
+        verbose_name=_('Difference'),
+        help_text=_('Difference between these synonyms'),
     )
 
     def __str__(self) -> str:
-        return f'{self.name}: {self.description}'
-    
+        return _(
+            f'`{self.from_word}` is synonym for `{self.to_word}`'
+            f'(with a difference in: {self.difference})'
+        )
+
     class Meta:
-        verbose_name = 'Упражнение'
-        verbose_name_plural = 'Упражнения'
+        ordering = ['-created']
+        get_latest_by = ["created", "modified"]
+        verbose_name = _('Synonyms')
+        verbose_name_plural = _('Synonyms')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['from_word', 'to_word'],
+                name='unique_synonym_pair'
+            )
+        ]
+
+
+class Translation(CreatedModel, ModifiedModel, AuthorModel):
+    text = models.CharField(
+        _('Translation'),
+        max_length=4096,
+        help_text=_('A translation of a word or phrase')
+    )
+    # author = models.ForeignKey(
+    #     User,
+    #     verbose_name=_('Author'),
+    #     on_delete=models.CASCADE,
+    #     related_name='translations'
+    # )
+
+    def __str__(self) -> str:
+        return self.text
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created", "modified"]
+        verbose_name = _('Translation')
+        verbose_name_plural = _('Translations')
+
+
+class WordRelatedModel(CreatedModel):
+    word = models.ForeignKey(
+        'Word',
+        verbose_name=_('Word'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s'
+    )
+
+    class Meta:
+        abstract = True
+
+
+class UserRelatedModel(CreatedModel):
+    user = models.ForeignKey(
+        User,
+        verbose_name=_('User'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s'
+    )
+
+    class Meta:
+        abstract = True
+
+
+class WordTranslations(WordRelatedModel):
+    translation = models.ForeignKey(
+        'Translation',
+        verbose_name=_('Translation'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s'
+    )
+
+    def __str__(self) -> str:
+        return _(
+            f'{self.word} is translated as {self.translation} '
+            f'(translation was added at {self.created})'
+        )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created"]
+        verbose_name = _('Word translation')
+        verbose_name_plural = _('Word translations')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['word', 'translation'],
+                name='unique_word_translation'
+            )
+        ]
+
+
+class Definition(CreatedModel, ModifiedModel, AuthorModel):
+    text = models.CharField(
+        _('Definition'),
+        max_length=4096,
+        help_text=_('A definition of a word or phrase')
+    )
+    translation = models.CharField(
+        _('A translation of the definition'),
+        max_length=4096,
+        blank=True
+    )
+    # author = models.ForeignKey(
+    #     User,
+    #     verbose_name=_('Author'),
+    #     on_delete=models.CASCADE,
+    #     related_name='definitions'
+    # )
+
+    def __str__(self) -> str:
+        if self.translation:
+            return _(f'{self.text} ({self.translation})')
+        return self.text
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created", "modified"]
+        verbose_name = _('Definition')
+        verbose_name_plural = _('Definitions')
+
+
+class WordDefinitions(WordRelatedModel):
+    definition = models.ForeignKey(
+        'Definition',
+        verbose_name=_('Definition'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s'
+    )
+
+    def __str__(self) -> str:
+        return _(
+            f'`{self.word}` means `{self.definition}` '
+            f'(definition was added at {self.created})'
+        )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created"]
+        verbose_name = _('Word definition')
+        verbose_name_plural = _('Word definitions')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['word', 'definition'],
+                name='unique_word_definition'
+            )
+        ]
+
+
+class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
+    text = models.CharField(
+        _('Usage example'),
+        max_length=4096,
+        help_text=_('An usage example of a word or phrase')
+    )
+    translation = models.CharField(
+        _('A translation of the example'),
+        max_length=4096,
+        blank=True
+    )
+    # author = models.ForeignKey(
+    #     User,
+    #     verbose_name=_('Author'),
+    #     on_delete=models.CASCADE,
+    #     related_name='examples'
+    # )
+
+    def __str__(self) -> str:
+        if self.translation:
+            return _(f'{self.text} ({self.translation})')
+        return self.text
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created", "modified"]
+        verbose_name = _('Usage example')
+        verbose_name_plural = _('Usage examples')
+
+
+class WordUsageExamples(WordRelatedModel):
+    example = models.ForeignKey(
+        'UsageExample',
+        verbose_name=_('Usage example'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s'
+    )
+
+    def __str__(self) -> str:
+        return _(
+            f'Usage example of `{self.word}`: {self.example} '
+            f'(example was added at {self.created})'
+        )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created"]
+        verbose_name = _('Word usage example')
+        verbose_name_plural = _('Word usage examples')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['word', 'example'],
+                name='unique_word_example'
+            )
+        ]
+
+
+class Note(WordRelatedModel):
+    text = models.CharField(
+        _('Note text'),
+        max_length=4096
+    )
+
+    def __str__(self) -> str:
+        return _(
+            f'Note to the word `{self.word}`: {self.text} '
+            f'(note was added at {self.created})'
+        )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created"]
+        verbose_name = _('Note')
+        verbose_name_plural = _('Notes')
+
+
+class FavoriteWord(UserRelatedModel):
+    word = models.ForeignKey(
+        'Word',
+        verbose_name=_('Word'),
+        on_delete=models.CASCADE,
+        related_name='favorite_for'
+    )
+
+    def __str__(self) -> str:
+        return _(
+            f'The word `{self.word}` was added to favorites by '
+            f'{self.user} at {self.created}'
+        )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created"]
+        verbose_name = _('Favorite word')
+        verbose_name_plural = _('Favorite words')
+
+
+class FavoriteCollection(UserRelatedModel):
+    collection = models.ForeignKey(
+        'Collection',
+        verbose_name=_('Collection'),
+        on_delete=models.CASCADE,
+        related_name='favorite_for'
+    )
+
+    def __str__(self) -> str:
+        return _(
+            f'The collection `{self.collection}` was added to favorites by '
+            f'{self.user} at {self.created}'
+        )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ["created"]
+        verbose_name = _('Favorite collection')
+        verbose_name_plural = _('Favorite collections')
