@@ -2,8 +2,7 @@
 
 from django.contrib import admin
 
-from .models import (Collection, Tag, Translation, Type,
-                     UsageExample, Word)
+from .models import Collection, Tag, Translation, Type, UsageExample, Word
 
 admin.site.register(Word)
 admin.site.register(Translation)
