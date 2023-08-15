@@ -26,11 +26,13 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'djoser',
-    'drf_yasg',
+    'djoser',
     'corsheaders',
+    'django_cleanup.apps.CleanupConfig',
     'core.apps.CoreConfig',
     'vocabulary.apps.VocabularyConfig',
     'users.apps.UsersConfig',
+    'drf_spectacular',
 ]
 
 MIDDLEWARE = [
