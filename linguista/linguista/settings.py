@@ -95,6 +95,27 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+DJOSER = {
+    # 'SEND_ACTIVATION_EMAIL': True,
+    # 'ACTIVATION_URL': '#/activate/{uid}/{token}',
+    # 'PASSWORD_CHANGED_EMAIL_CONFIRMATION': True,
+    # 'PASSWORD_RESET_CONFIRM_URL': '#/reset_password_confirm/{uid}/{token}',
+    # 'SEND_CONFIRMATION_EMAIL': True,
+    # 'PASSWORD_VALIDATORS': [],
+    'HIDE_USERS': False,
+    'PERMISSIONS': {
+        'user_list': ['rest_framework.permissions.AllowAny'],
+        'user_create': ['rest_framework.permissions.AllowAny'],
+        'user': ['rest_framework.permissions.AllowAny'],
+    },
+    # 'SERIALIZERS': {
+    #     'user': 'users.serializers.UserProfileSerializer',
+    #     'user_create': 'users.serializers.UserCreateSerializer',
+    #     'current_user': 'users.serializers.UserProfileSerializer',
+    # },
+    # 'TOKEN_MODEL': None,
+}
+
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
