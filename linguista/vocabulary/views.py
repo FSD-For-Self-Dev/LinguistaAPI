@@ -1,4 +1,4 @@
-"""View-функции приложения words."""
+"""View-функции приложения vocabulary."""
 
 import random
 
@@ -14,10 +14,10 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
-from words.models import Word
+from vocabulary.models import Word
 
 from .filters import WordFilter
-from .serializers import TranslationSerializer, WordSerializer
+from .serializers import TranslationSerializer, VocabularySerializer
 
 User = get_user_model()
 
@@ -26,7 +26,7 @@ class WordViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели слова."""
 
     # queryset = Word.objects.all()
-    serializer_class = WordSerializer
+    serializer_class = VocabularySerializer
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     permission_classes = [
         IsAuthenticated,
@@ -49,7 +49,7 @@ class WordViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
-            return user.words.all().annotate(
+            return user.vocabulary.all().annotate(
                 trnsl_count=Count('translations'),
                 exmpl_count=Count('examples')
             )
@@ -60,7 +60,7 @@ class WordViewSet(viewsets.ModelViewSet):
         '''Get random word from vocabulary'''
         queryset = self.filter_queryset(self.get_queryset())
         word = random.choice(queryset)
-        serializer = WordSerializer(
+        serializer = VocabularySerializer(
             word, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)

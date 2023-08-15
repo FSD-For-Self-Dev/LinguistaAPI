@@ -1,4 +1,4 @@
-"""Модели приложения words."""
+"""Модели приложения vocabulary."""
 
 from django.conf.global_settings import LANGUAGES
 from django.contrib.auth import get_user_model
@@ -105,7 +105,7 @@ class Word(CreatedModifiedModel):
     author = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
-        related_name='words',
+        related_name='vocabulary',
         verbose_name='Автор'
     )
     tags = models.ManyToManyField(

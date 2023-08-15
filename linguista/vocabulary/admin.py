@@ -1,4 +1,4 @@
-"""Административные настройки приложения words."""
+"""Административные настройки приложения vocabulary."""
 
 from django.contrib import admin
 

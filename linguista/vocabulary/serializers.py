@@ -1,4 +1,4 @@
-"""Сериализаторы приложения words."""
+"""Сериализаторы приложения vocabulary."""
 
 from django.contrib.auth import get_user_model
 
@@ -33,7 +33,7 @@ class ExampleSerializer(serializers.ModelSerializer):
         fields = ('example',  'translation')
 
 
-class WordSerializer(serializers.ModelSerializer):
+class VocabularySerializer(serializers.ModelSerializer):
     translations_count = serializers.SerializerMethodField()
     examples_count = serializers.SerializerMethodField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())

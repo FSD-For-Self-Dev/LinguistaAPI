@@ -1,4 +1,4 @@
-"""Маршруты приложения words."""
+"""Маршруты приложения vocabulary."""
 
 from django.urls import include, path
 
@@ -8,7 +8,7 @@ from .views import WordViewSet
 
 router = routers.DefaultRouter()
 
-router.register('words', WordViewSet, basename='words')
+router.register('vocabulary', WordViewSet, basename='vocabulary')
 # router.register('tags', TagViewSet, basename='tags')
 # router.register('users', CustomUserViewSet, basename='users')
 

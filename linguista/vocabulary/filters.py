@@ -1,8 +1,8 @@
-"""Фильтры приложения words."""
+"""Фильтры приложения vocabulary."""
 
 import django_filters as df
 
-from words.models import Word
+from vocabulary.models import Word
 
 
 class WordFilter(df.FilterSet):

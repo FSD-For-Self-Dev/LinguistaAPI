@@ -22,7 +22,7 @@ schema_view = get_schema_view(
 urlpatterns = [
    path('admin/', admin.site.urls),
    path('api/', include('users.urls')),
-   path('api/', include('words.urls')),
+   path('api/', include('vocabulary.urls')),
    # Конфигурация DRF_yasg для генерации документации
    re_path(
       r'^swagger(?P<format>\.json|\.yaml)$',

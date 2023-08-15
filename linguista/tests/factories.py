@@ -1,7 +1,7 @@
 import factory
 
 from django.contrib.auth import get_user_model
-from words.models import Word, Tag, Collection, WordCollection, Translation, UsageExample
+from vocabulary.models import Word, Tag, Collection, WordCollection, Translation, UsageExample
 
 User = get_user_model()
 

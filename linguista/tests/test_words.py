@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # from rest_framework.test import force_authenticate
-from words.models import Collection, Tag, User, Word
+from vocabulary.models import Collection, Tag, User, Word
 
 from .conftest import auth_client
 from .factories import (CollectionFactory, ExampleFactory, TagFactory,
@@ -22,7 +22,7 @@ pytestmark = pytest.mark.django_db
 
 class TestWordEndpoints:
 
-    endpoint = '/api/words/'
+    endpoint = '/api/vocabulary/'
 
     def test_list_not_auth(self, api_client):
         response = api_client().get(self.endpoint)
@@ -145,27 +145,27 @@ class TestWordEndpoints:
 
         assert response.status_code == 200
         assert 'count' in data, (
-            'Проверьте, что при GET запросе `/api/words/` возвращаются данные с пагинацией. '
+            'Проверьте, что при GET запросе `/api/vocabulary/` возвращаются данные с пагинацией. '
             'Не найден параметр `count`'
         )
         assert 'next' in data, (
-            'Проверьте, что при GET запросе `/api/words/` возвращаются данные с пагинацией. '
+            'Проверьте, что при GET запросе `/api/vocabulary/` возвращаются данные с пагинацией. '
             'Не найден параметр `next`'
         )
         assert 'previous' in data, (
-            'Проверьте, что при GET запросе `/api/words/` возвращаются данные с пагинацией. '
+            'Проверьте, что при GET запросе `/api/vocabulary/` возвращаются данные с пагинацией. '
             'Не найден параметр `previous`'
         )
         assert 'results' in data, (
-            'Проверьте, что при GET запросе `/api/words/` возвращаются данные с пагинацией. '
+            'Проверьте, что при GET запросе `/api/vocabulary/` возвращаются данные с пагинацией. '
             'Не найден параметр `results`'
         )
         assert data['count'] == 3, (
-            'Проверьте, что при GET запросе `/api/words/` возвращаются данные с пагинацией. '
+            'Проверьте, что при GET запросе `/api/vocabulary/` возвращаются данные с пагинацией. '
             'Значение параметра `count` не правильное'
         )
         assert len(data['results']) == 3, (
-            'Проверьте, что при GET запросе `/api/words/` возвращаются данные с пагинацией. '
+            'Проверьте, что при GET запросе `/api/vocabulary/` возвращаются данные с пагинацией. '
             'Значение параметра `results` не правильное'
         )
         # тесты фильтров

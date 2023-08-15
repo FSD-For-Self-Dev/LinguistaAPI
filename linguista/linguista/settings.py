@@ -29,7 +29,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'corsheaders',
     'core.apps.CoreConfig',
-    'words.apps.WordsConfig',
+    'vocabulary.apps.VocabularyConfig',
     'users.apps.UsersConfig',
 ]
 
