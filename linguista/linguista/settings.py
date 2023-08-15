@@ -27,7 +27,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'django_filters',
     'djoser',
-    'djoser',
     'corsheaders',
     'django_cleanup.apps.CleanupConfig',
     'core.apps.CoreConfig',
