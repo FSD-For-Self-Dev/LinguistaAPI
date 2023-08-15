@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'django_cleanup.apps.CleanupConfig',
     'core.apps.CoreConfig',
     'vocabulary.apps.VocabularyConfig',
+    'exercises.apps.ExercisesConfig',
     'users.apps.UsersConfig',
     'drf_spectacular',
 ]
