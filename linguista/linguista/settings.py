@@ -32,6 +32,7 @@ INSTALLED_APPS = [
     'core.apps.CoreConfig',
     'vocabulary.apps.VocabularyConfig',
     'exercises.apps.ExercisesConfig',
+    'languages.apps.LanguagesConfig',
     'users.apps.UsersConfig',
     'drf_spectacular',
 ]

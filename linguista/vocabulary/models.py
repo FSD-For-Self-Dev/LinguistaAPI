@@ -5,7 +5,8 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models import CreatedModel, Language, ModifiedModel, UserRelatedModel
+from core.models import CreatedModel, ModifiedModel, UserRelatedModel
+from languages.models import Language
 
 User = get_user_model()
 

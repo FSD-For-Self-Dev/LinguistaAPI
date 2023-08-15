@@ -1,4 +1,4 @@
-''' Exercises admin config '''
+''' Languages admin config '''
 
 from django.contrib import admin
 
