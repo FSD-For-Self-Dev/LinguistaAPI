@@ -37,14 +37,14 @@ class WordViewSet(viewsets.ModelViewSet):
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-    filterset_class = WordFilter
-    search_fields = (
-        'text', 'note', 'tags__name', 'translations__translation',
-        'examples__example'
-    )
-    ordering_fields = (
-        'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
-    )
+    # filterset_class = WordFilter
+    # search_fields = (
+    #     'text', 'note', 'tags__name', 'translations__translation',
+    #     'examples__example'
+    # )
+    # ordering_fields = (
+    #     'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
+    # )
     ordering = ('-created',)
 
     def get_queryset(self):
