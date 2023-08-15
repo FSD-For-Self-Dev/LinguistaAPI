@@ -11,7 +11,7 @@ class CreatedModel(models.Model):
     '''
 
     created = models.DateTimeField(
-        _("date created"),
+        _('Date created'),
         editable=False,
         auto_now_add=True,
         db_index=True
@@ -27,7 +27,7 @@ class ModifiedModel(models.Model):
     '''
 
     modified = models.DateTimeField(
-        _("date modified"),
+        _('Date modified'),
         blank=True,
         null=True
     )
