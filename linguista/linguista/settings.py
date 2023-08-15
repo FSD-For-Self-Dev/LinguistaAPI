@@ -137,18 +137,23 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
+CORS_ALLOWED_ORIGINS = [
+    'http://localhost:3000',
+    'http://localhost',
+    'https://fsd-for-self-dev.github.io',
+    # Дополнительные разрешенные источники, если есть
+]
+
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
+
+CORS_URLS_REGEX = r'^/api/.*$'
+
 SIMPLE_JWT = {
     # Срок жизни токена
     'ACCESS_TOKEN_LIFETIME': timedelta(minutes=45),
-    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=3),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
-
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:3000',
-]
-
-CORS_URLS_REGEX = r'^/api/.*$'
 
 LANGUAGE_CODE = 'ru-ru'
 
