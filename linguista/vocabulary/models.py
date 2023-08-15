@@ -4,7 +4,7 @@ from django.conf.global_settings import LANGUAGES
 from django.contrib.auth import get_user_model
 from django.db import models
 
-from core.models import CreatedModifiedModel
+from core.models import CreatedModel, ModifiedModel
 
 User = get_user_model()
 
@@ -33,7 +33,7 @@ class Tag(models.Model):
         verbose_name_plural = 'Теги'
 
 
-class Collection(CreatedModifiedModel):
+class Collection(CreatedModel, ModifiedModel):
     """Коллекция"""
 
     title = models.CharField(
@@ -61,7 +61,7 @@ class Collection(CreatedModifiedModel):
         verbose_name_plural = 'Коллекции'
 
 
-class Word(CreatedModifiedModel):
+class Word(CreatedModel, ModifiedModel):
     """Слово/фраза"""
 
     STATUS = [
@@ -154,7 +154,7 @@ class Word(CreatedModifiedModel):
         verbose_name_plural = 'Слова и фразы'
 
 
-class Translation(CreatedModifiedModel):
+class Translation(CreatedModel, ModifiedModel):
     """Перевод"""
 
     word = models.ForeignKey(
@@ -189,7 +189,7 @@ class Translation(CreatedModifiedModel):
         verbose_name_plural = 'Переводы'
 
 
-class UsageExample(CreatedModifiedModel):
+class UsageExample(CreatedModel, ModifiedModel):
     """Пример использования"""
 
     word = models.ForeignKey(
@@ -248,7 +248,7 @@ class UsageExample(CreatedModifiedModel):
     #     return f'{self.synonym} является синонимом {self.word}'
 
 
-class WordCollection(CreatedModifiedModel):
+class WordCollection(CreatedModel):
     """Слова в коллекции"""
 
     word = models.ForeignKey(
