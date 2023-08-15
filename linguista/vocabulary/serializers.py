@@ -1,4 +1,4 @@
-"""Сериализаторы приложения vocabulary."""
+""" Vocabulary serializers """
 
 from django.contrib.auth import get_user_model
 

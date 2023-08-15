@@ -1,4 +1,4 @@
-"""Фильтры приложения vocabulary."""
+""" Vocabulary filters """
 
 import django_filters as df
 

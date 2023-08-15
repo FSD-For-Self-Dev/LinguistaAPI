@@ -1,4 +1,4 @@
-"""View-функции приложения users."""
+""" Users views """
 
 # from django_filters.rest_framework import DjangoFilterBackend
 # from drf_spectacular.utils import extend_schema

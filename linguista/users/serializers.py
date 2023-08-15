@@ -1,4 +1,4 @@
-"""Сериализаторы приложения users."""
+""" Users serializers """
 
 from django.contrib.auth import get_user_model
 

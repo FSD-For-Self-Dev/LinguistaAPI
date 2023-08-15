@@ -1,4 +1,4 @@
-"""Конфигурация ASGI проекта."""
+""" ASGI config """
 
 import os
 

@@ -1,4 +1,4 @@
-"""Конфигурация WSGI проекта."""
+""" WSGI config """
 
 import os
 

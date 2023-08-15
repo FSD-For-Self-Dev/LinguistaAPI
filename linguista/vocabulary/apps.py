@@ -1,4 +1,4 @@
-"""Конфигурация приложения vocabulary."""
+""" Vocabulary app config """
 
 from django.apps import AppConfig
 

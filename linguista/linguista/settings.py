@@ -1,4 +1,4 @@
-"""Настройки проекта."""
+""" Project settings """
 
 import os
 from datetime import timedelta

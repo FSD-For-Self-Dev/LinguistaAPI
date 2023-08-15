@@ -1,4 +1,4 @@
-"""Кастомная команда быстрого создания админа."""
+""" Custom command for quick admin creation """
 
 import os
 

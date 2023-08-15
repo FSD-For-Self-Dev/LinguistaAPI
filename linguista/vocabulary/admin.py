@@ -1,4 +1,4 @@
-"""Административные настройки приложения vocabulary."""
+""" Vocabulary admin config """
 
 from django.contrib import admin
 

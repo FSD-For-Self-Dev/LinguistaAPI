@@ -1,4 +1,4 @@
-"""View-функции приложения vocabulary."""
+""" Vocabulary views """
 
 import random
 

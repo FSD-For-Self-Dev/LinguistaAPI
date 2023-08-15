@@ -1,4 +1,4 @@
-"""Модели приложения vocabulary."""
+""" Vocabulary models """
 
 from django.conf.global_settings import LANGUAGES
 from django.contrib.auth import get_user_model

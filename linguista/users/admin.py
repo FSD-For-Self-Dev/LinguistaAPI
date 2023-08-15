@@ -1,4 +1,4 @@
-"""Административные настройки приложения users."""
+""" Users admin config """
 
 from django.contrib import admin
 
