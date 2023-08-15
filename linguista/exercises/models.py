@@ -7,24 +7,23 @@ from core.models import CreatedModel, ModifiedModel, UserRelatedModel
 
 
 class Exercise(CreatedModel, ModifiedModel):
-    '''Упражнение'''
-
     name = models.CharField(
-        max_length=256,
-        verbose_name='Название',
-        help_text='Дайте название упражнению'
+        _('Exercise name'),
+        max_length=256
     )
-    description = models.TextField(
-        verbose_name='Описание',
-        help_text='Опишите упражнение'
+    description = models.CharField(
+        _('Description'),
+        max_length=4096
     )
 
     def __str__(self) -> str:
         return self.name
     
     class Meta:
-        verbose_name = 'Упражнение'
-        verbose_name_plural = 'Упражнения'
+        ordering = ['-created']
+        get_latest_by = ['created', 'modified']
+        verbose_name = _('Exercise')
+        verbose_name_plural = _('Exercises')
 
 
 class FavoriteExercise(UserRelatedModel):
