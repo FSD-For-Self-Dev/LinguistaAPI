@@ -19,25 +19,23 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        if not Language.objects.exists():
-            self.stdout.write('Languages not found, creating ones...')
-            cnt = 0
-            for isocode in LANG_INFO:
-                # we only care about the 2 letter iso codes
-                if len(isocode) == 2:
-                    try:
-                        lang = Language(
-                            isocode=isocode,
-                            name=LANG_INFO[isocode]['name'],
-                            name_local=LANG_INFO[isocode]['name_local']
-                        )
-                        lang.sorting = LANGS_SORTING_VALS.get(lang.isocode, 0)
-                        lang.save()
+        self.stdout.write('Importing languages...')
+        cnt = 0
+        for isocode in LANG_INFO:
+            # we only care about the 2 letter iso codes
+            if len(isocode) == 2:
+                try:
+                    lang, created = Language.objects.get_or_create(
+                        isocode=isocode,
+                        name=LANG_INFO[isocode]['name'],
+                        name_local=LANG_INFO[isocode]['name_local']
+                    )
+                    lang.sorting = LANGS_SORTING_VALS.get(lang.isocode, 0)
+                    lang.save()
+                    if created:
                         cnt += 1
-                    except Exception as e:
-                        raise CommandError(
-                            'Error adding language %s: %s' % (lang, e)
-                        )
-            self.stdout.write('Added %d languages to users' % cnt)
-        else:
-            self.stdout.write('Languages were found, exiting')
+                except Exception as e:
+                    raise CommandError(
+                        'Error adding language %s: %s' % (lang, e)
+                    )
+        self.stdout.write('Added %d languages to users' % cnt)

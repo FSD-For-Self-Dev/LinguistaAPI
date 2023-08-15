@@ -38,24 +38,21 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        if not Type.objects.exists():
-            self.stdout.write('Types not found, creating ones...')
-            cnt = 0
-            for type_info in TYPE_CHOICES:
-                try:
-                    word_type = Type(
-                        slug=type_info[0].lower(),
-                        name=type_info[1],
-                        sorting=type_info[2]
-                    )
-                    word_type.save()
+        self.stdout.write('Importing types...')
+        cnt = 0
+        for type_info in TYPE_CHOICES:
+            try:
+                word_type, created = Type.objects.get_or_create(
+                    slug=type_info[0].lower(),
+                    name=type_info[1],
+                    sorting=type_info[2]
+                )
+                if created:
                     cnt += 1
-                except Exception as e:
-                    raise CommandError(
-                        'Error adding type %s{type}: %s{error}'.format(
-                            type=word_type, error=e
-                        )
+            except Exception as e:
+                raise CommandError(
+                    'Error adding type %s{type}: %s{error}'.format(
+                        type=word_type, error=e
                     )
-            self.stdout.write('Added %d types' % cnt)
-        else:
-            self.stdout.write('Types were found, exiting')
+                )
+        self.stdout.write('Added %d types' % cnt)
