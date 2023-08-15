@@ -133,6 +133,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 100,
 
     'DATETIME_FORMAT': "%Y-%m-%d %H:%M",
+
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 SIMPLE_JWT = {
