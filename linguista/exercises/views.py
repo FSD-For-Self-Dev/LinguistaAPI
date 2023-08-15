@@ -1,1 +1,1 @@
-''' Exercises app config '''
+''' Exercises views '''
