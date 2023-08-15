@@ -4,6 +4,7 @@ import random
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count
+
 from django_filters.rest_framework import DjangoFilterBackend
 # from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets

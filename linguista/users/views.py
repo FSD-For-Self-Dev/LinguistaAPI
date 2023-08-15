@@ -3,6 +3,7 @@
 # from django_filters.rest_framework import DjangoFilterBackend
 # from drf_spectacular.utils import extend_schema
 from django.contrib.auth import get_user_model
+
 from djoser.views import UserViewSet as DjoserViewSet
 
 # from .filters import UserFilter

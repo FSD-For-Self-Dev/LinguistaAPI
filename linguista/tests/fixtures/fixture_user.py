@@ -1,5 +1,6 @@
 import pytest
 
+
 @pytest.fixture
 def user(django_user_model):
     return django_user_model.objects.create_user(
@@ -8,7 +9,8 @@ def user(django_user_model):
 
 @pytest.fixture
 def token_user(user):
-    from rest_framework.authtoken.views import ObtainAuthToken, TokenAuthentication
+    from rest_framework.authtoken.views import (ObtainAuthToken,
+                                                TokenAuthentication)
     token = ObtainAuthToken.post(user)
 
     return {

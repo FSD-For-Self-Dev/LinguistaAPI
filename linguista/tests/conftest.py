@@ -1,8 +1,9 @@
-import pytest
-
 from django.utils.version import get_version
+
+import pytest
 from rest_framework.test import APIClient
 from rest_framework_simplejwt.tokens import RefreshToken
+
 
 @pytest.fixture
 def api_client():

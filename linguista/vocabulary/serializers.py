@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from .models import Word, Translation, UsageExample, Tag  # Synonym
+from .models import Tag, Translation, UsageExample, Word  # Synonym
 
 User = get_user_model()
 
