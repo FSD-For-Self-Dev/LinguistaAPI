@@ -5,7 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from core.models import CreatedModel, ModifiedModel, Language
+from core.models import CreatedModel, ModifiedModel, Language, UserRelatedModel
 
 User = get_user_model()
 
@@ -291,18 +291,6 @@ class WordRelatedModel(CreatedModel):
     word = models.ForeignKey(
         'Word',
         verbose_name=_('Word'),
-        on_delete=models.CASCADE,
-        related_name='%(class)s'
-    )
-
-    class Meta:
-        abstract = True
-
-
-class UserRelatedModel(CreatedModel):
-    user = models.ForeignKey(
-        User,
-        verbose_name=_('User'),
         on_delete=models.CASCADE,
         related_name='%(class)s'
     )

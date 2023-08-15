@@ -1,10 +1,13 @@
-''' Core models '''
+''' Core abstract models '''
 
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth import get_user_model
 
 from core.constants import LANGS_SORTING_VALS
+
+User = get_user_model()
 
 
 class CreatedModel(models.Model):
@@ -41,6 +44,18 @@ class ModifiedModel(models.Model):
         ''' On save, update timestamps '''
         self.modified = timezone.now()
         return super().save(*args, **kwargs)
+
+
+class UserRelatedModel(CreatedModel):
+    user = models.ForeignKey(
+        User,
+        verbose_name=_('User'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s'
+    )
+
+    class Meta:
+        abstract = True
 
 
 class Language(models.Model):
