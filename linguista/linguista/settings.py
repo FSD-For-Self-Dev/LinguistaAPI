@@ -1,4 +1,4 @@
-"""Файл с настройками проекта."""
+"""Настройки проекта."""
 
 import os
 from datetime import timedelta
