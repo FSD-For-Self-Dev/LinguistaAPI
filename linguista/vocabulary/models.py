@@ -1,8 +1,9 @@
-""" Vocabulary models """
+''' Vocabulary models '''
 
 from django.conf.global_settings import LANGUAGES
 from django.contrib.auth import get_user_model
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 
 from core.models import CreatedModel, ModifiedModel
 
@@ -10,8 +11,6 @@ User = get_user_model()
 
 
 class Tag(models.Model):
-    """Тег"""
-
     name = models.CharField(
         max_length=50,
         unique=True,
@@ -34,8 +33,6 @@ class Tag(models.Model):
 
 
 class Collection(CreatedModel, ModifiedModel):
-    """Коллекция"""
-
     title = models.CharField(
         max_length=256,
         verbose_name='Название',
@@ -62,7 +59,7 @@ class Collection(CreatedModel, ModifiedModel):
 
 
 class Word(CreatedModel, ModifiedModel):
-    """Слово/фраза"""
+    '''Слово/фраза'''
 
     STATUS = [
         ('PROBLEM', 'Проблемное'),
@@ -155,7 +152,7 @@ class Word(CreatedModel, ModifiedModel):
 
 
 class Translation(CreatedModel, ModifiedModel):
-    """Перевод"""
+    '''Перевод'''
 
     word = models.ForeignKey(
         Word,
@@ -190,7 +187,7 @@ class Translation(CreatedModel, ModifiedModel):
 
 
 class UsageExample(CreatedModel, ModifiedModel):
-    """Пример использования"""
+    '''Пример использования'''
 
     word = models.ForeignKey(
         Word,
@@ -249,7 +246,7 @@ class UsageExample(CreatedModel, ModifiedModel):
 
 
 class WordCollection(CreatedModel):
-    """Слова в коллекции"""
+    '''Слова в коллекции'''
 
     word = models.ForeignKey(
         Word,
@@ -277,7 +274,7 @@ class WordCollection(CreatedModel):
 
 
 class Exercise(models.Model):
-    """Упражнение"""
+    '''Упражнение'''
 
     name = models.CharField(
         max_length=256,

@@ -1,4 +1,4 @@
-""" Vocabulary urls """
+''' Vocabulary urls '''
 
 from django.urls import include, path
 

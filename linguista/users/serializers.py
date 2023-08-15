@@ -1,4 +1,4 @@
-""" Users serializers """
+''' Users serializers '''
 
 from django.contrib.auth import get_user_model
 
@@ -8,7 +8,7 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    """Сериализатор модели пользователя."""
+    '''Сериализатор модели пользователя.'''
 
 #     is_subscribed = serializers.SerializerMethodField()
 

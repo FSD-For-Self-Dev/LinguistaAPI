@@ -1,4 +1,4 @@
-""" Vocabulary filters """
+''' Vocabulary filters '''
 
 import django_filters as df
 
@@ -6,7 +6,7 @@ from vocabulary.models import Word
 
 
 class WordFilter(df.FilterSet):
-    """Фильтр модели слова"""
+    '''Фильтр модели слова'''
 
     having_tag = df.Filter(field_name="tags", lookup_expr='in')
     created_after = df.Filter(field_name="created", lookup_expr='date__gte')

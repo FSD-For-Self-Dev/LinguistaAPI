@@ -1,4 +1,4 @@
-""" Users models """
+''' Users models '''
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -7,7 +7,7 @@ from core.constants import GENDERS
 
 
 class User(AbstractUser):
-    """Кастомная модель пользователя."""
+    '''Кастомная модель пользователя.'''
 
     # исключаем из таблицы стобец "last_name"
     last_name = None

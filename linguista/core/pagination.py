@@ -1,4 +1,4 @@
-""" Custom pagination """
+''' Custom pagination '''
 
 from rest_framework.pagination import PageNumberPagination
 

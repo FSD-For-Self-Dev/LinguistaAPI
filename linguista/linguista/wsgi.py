@@ -1,4 +1,4 @@
-""" WSGI config """
+''' WSGI config '''
 
 import os
 

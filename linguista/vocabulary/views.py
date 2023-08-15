@@ -1,4 +1,4 @@
-""" Vocabulary views """
+''' Vocabulary views '''
 
 import random
 
@@ -24,7 +24,7 @@ User = get_user_model()
 
 
 class WordViewSet(viewsets.ModelViewSet):
-    """Вьюсет для модели слова."""
+    '''Вьюсет для модели слова.'''
 
     # queryset = Word.objects.all()
     serializer_class = VocabularySerializer

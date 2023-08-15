@@ -1,4 +1,4 @@
-""" Vocabulary serializers """
+''' Vocabulary serializers '''
 
 from django.contrib.auth import get_user_model
 

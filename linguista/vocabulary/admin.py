@@ -1,4 +1,4 @@
-""" Vocabulary admin config """
+''' Vocabulary admin config '''
 
 from django.contrib import admin
 

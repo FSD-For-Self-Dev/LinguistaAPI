@@ -1,4 +1,4 @@
-""" Vocabulary app config """
+''' Vocabulary app config '''
 
 from django.apps import AppConfig
 
