@@ -67,7 +67,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created", "modified"]
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
 
@@ -191,7 +191,7 @@ class Word(CreatedModel, ModifiedModel):
     
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created", "modified"]
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Word or phrase')
         verbose_name_plural = _('Words and phrases')
 
@@ -218,7 +218,7 @@ class WordsInCollections(CreatedModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created"]
+        get_latest_by = ['created']
         verbose_name = _('Words in collections')
         verbose_name_plural = _('Words in collections')
         constraints = [
@@ -254,7 +254,7 @@ class Synonyms(CreatedModel, ModifiedModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created", "modified"]
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Synonyms')
         verbose_name_plural = _('Synonyms')
         constraints = [
@@ -283,7 +283,7 @@ class Translation(CreatedModel, ModifiedModel, AuthorModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created", "modified"]
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Translation')
         verbose_name_plural = _('Translations')
 
@@ -316,7 +316,7 @@ class WordTranslations(WordRelatedModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created"]
+        get_latest_by = ['created']
         verbose_name = _('Word translation')
         verbose_name_plural = _('Word translations')
         constraints = [
@@ -352,7 +352,7 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created", "modified"]
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Definition')
         verbose_name_plural = _('Definitions')
 
@@ -373,7 +373,7 @@ class WordDefinitions(WordRelatedModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created"]
+        get_latest_by = ['created']
         verbose_name = _('Word definition')
         verbose_name_plural = _('Word definitions')
         constraints = [
@@ -409,7 +409,7 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created", "modified"]
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Usage example')
         verbose_name_plural = _('Usage examples')
 
@@ -430,7 +430,7 @@ class WordUsageExamples(WordRelatedModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created"]
+        get_latest_by = ['created']
         verbose_name = _('Word usage example')
         verbose_name_plural = _('Word usage examples')
         constraints = [
@@ -455,7 +455,7 @@ class Note(WordRelatedModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created"]
+        get_latest_by = ['created']
         verbose_name = _('Note')
         verbose_name_plural = _('Notes')
 
@@ -476,7 +476,7 @@ class FavoriteWord(UserRelatedModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created"]
+        get_latest_by = ['created']
         verbose_name = _('Favorite word')
         verbose_name_plural = _('Favorite words')
 
@@ -497,6 +497,6 @@ class FavoriteCollection(UserRelatedModel):
 
     class Meta:
         ordering = ['-created']
-        get_latest_by = ["created"]
+        get_latest_by = ['created']
         verbose_name = _('Favorite collection')
         verbose_name_plural = _('Favorite collections')
