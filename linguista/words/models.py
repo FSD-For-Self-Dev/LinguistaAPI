@@ -131,6 +131,10 @@ class Word(CreatedModifiedModel):
         verbose_name='Коллекции',
         help_text='Добавьте слово в коллекцию'
     )
+    # foo = models.ImageField(
+    #     upload_to='words/',
+    #     null=True
+    # )
     # synonyms = models.ManyToManyField(
     #     'self',
     #     through='Synonym',
