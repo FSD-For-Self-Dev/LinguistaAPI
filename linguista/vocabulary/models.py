@@ -2,7 +2,7 @@
 
 from django.contrib.auth import get_user_model
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext as _
 
 from core.models import (AuthorModel, CreatedModel, ModifiedModel,
                          UserRelatedModel)
@@ -184,40 +184,7 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name_plural = _('Words and phrases')
 
 
-class WordsInCollections(CreatedModel):
-    word = models.ForeignKey(
-        'Word',
-        verbose_name=_('Word'),
-        on_delete=models.CASCADE,
-        related_name='%(class)s'
-    )
-    collection = models.ForeignKey(
-        'Collection',
-        verbose_name=_('Collection'),
-        on_delete=models.CASCADE,
-        related_name='%(class)s'
-    )
-
-    def __str__(self) -> str:
-        return _(
-            f'Word {self.word} was added to collection {self.collection} '
-            f'at {self.created}'
-        )
-
-    class Meta:
-        ordering = ['-created']
-        get_latest_by = ['created']
-        verbose_name = _('Words in collections')
-        verbose_name_plural = _('Words in collections')
-        constraints = [
-            models.UniqueConstraint(
-                fields=['word', 'collection'],
-                name='unique_word_in_collection'
-            )
-        ]
-
-
-class Synonyms(CreatedModel, ModifiedModel):
+class Synonyms(CreatedModel, ModifiedModel, AuthorModel):
     from_word = models.ForeignKey(
         Word,
         related_name='from_words',
@@ -232,13 +199,16 @@ class Synonyms(CreatedModel, ModifiedModel):
         max_length=512,
         verbose_name=_('Difference'),
         help_text=_('Difference between these synonyms'),
+        blank=True
     )
 
     def __str__(self) -> str:
-        return _(
-            f'`{self.from_word}` is synonym for `{self.to_word}`'
-            f'(with a difference in: {self.difference})'
-        )
+        if self.difference:
+            return _(
+                f'`{self.from_word}` is synonym for `{self.to_word}`'
+                f'(with a difference in: {self.difference})'
+            )
+        return f'`{self.from_word}` is synonym for `{self.to_word}`'
 
     class Meta:
         ordering = ['-created']
@@ -288,6 +258,33 @@ class WordRelatedModel(CreatedModel):
         abstract = True
 
 
+class WordsInCollections(WordRelatedModel):
+    collection = models.ForeignKey(
+        'Collection',
+        verbose_name=_('Collection'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s'
+    )
+
+    def __str__(self) -> str:
+        return _(
+            f'Word `{self.word}` was added to collection `{self.collection}` '
+            f'at {self.created}'
+        )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
+        verbose_name = _('Words in collections')
+        verbose_name_plural = _('Words in collections')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['word', 'collection'],
+                name='unique_word_in_collection'
+            )
+        ]
+
+
 class WordTranslations(WordRelatedModel):
     translation = models.ForeignKey(
         'Translation',
@@ -298,7 +295,7 @@ class WordTranslations(WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'{self.word} is translated as {self.translation} '
+            f'`{self.word}` is translated as `{self.translation}` '
             f'(translation was added at {self.created})'
         )
 
