@@ -54,3 +54,15 @@ class UserRelatedModel(CreatedModel):
 
     class Meta:
         abstract = True
+
+
+class AuthorModel(models.Model):
+    author = models.ForeignKey(
+        User,
+        verbose_name=_('Author'),
+        on_delete=models.CASCADE,
+        related_name='%(class)ss'
+    )
+
+    class Meta:
+        abstract = True
