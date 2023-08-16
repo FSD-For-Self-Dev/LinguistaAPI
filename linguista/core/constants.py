@@ -1,6 +1,8 @@
 ''' Core constants '''
 
+from django.utils.translation import gettext_lazy as _
+
 GENDERS = (
-    ('Мужской', 'Мужской'),
-    ('Женский', 'Женский')
+    ('M', _('Male')),
+    ('F', _('Female'))
 )
