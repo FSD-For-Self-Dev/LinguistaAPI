@@ -36,12 +36,6 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         max_length=512,
         blank=True
     )
-    # author = models.ForeignKey(
-    #     User,
-    #     verbose_name=_('Author'),
-    #     on_delete=models.CASCADE,
-    #     related_name='collections'
-    # )
     words = models.ManyToManyField(
         'Word',
         through='WordsInCollections',
@@ -152,11 +146,38 @@ class Word(CreatedModel, ModifiedModel):
     )
     synonyms = models.ManyToManyField(
         'self',
-        through='Synonyms',
+        through='Synonym',
         symmetrical = False,
         related_name='synonym_to+',
         verbose_name=_('Synonyms'),
-        help_text=_('Words with similar meaning'),
+        help_text=_('Words with similar meanings'),
+        blank=True
+    )
+    antonyms = models.ManyToManyField(
+        'self',
+        through='Antonym',
+        symmetrical = False,
+        related_name='antonym_to+',
+        verbose_name=_('Antonyms'),
+        help_text=_('Words with opposite meanings'),
+        blank=True
+    )
+    forms = models.ManyToManyField(
+        'self',
+        through='Form',
+        symmetrical = False,
+        related_name='form_to+',
+        verbose_name=_('Forms'),
+        help_text=_('Word forms'),
+        blank=True
+    )
+    similars = models.ManyToManyField(
+        'self',
+        through='Similar',
+        symmetrical = False,
+        related_name='similar_to+',
+        verbose_name=_('Similars'),
+        help_text=_('Words with similar pronunciation or spelling'),
         blank=True
     )
     translations = models.ManyToManyField(
@@ -173,6 +194,17 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Translations'),
         blank=True
     )
+    pronunciation = models.CharField(
+        _('Pronunciation'),
+        max_length=4096,
+        blank=True
+    )
+    # pronunciation_voice = ...
+    transcription = models.CharField(
+        _('Transcription'),
+        max_length=4096,
+        blank=True
+    )
 
     def __str__(self) -> str:
         return self.text
@@ -184,35 +216,61 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name_plural = _('Words and phrases')
 
 
-class Synonyms(CreatedModel, ModifiedModel, AuthorModel):
+class WordSelfRelatedModel(CreatedModel):
     from_word = models.ForeignKey(
         Word,
-        related_name='from_words',
+        related_name='%(class)s_from_words',
         on_delete=models.CASCADE
     )
     to_word = models.ForeignKey(
         Word,
-        related_name='to_words',
+        related_name='%(class)s_to_words',
         on_delete=models.CASCADE
     )
+
+    def get_classname( self ):
+        return self.__class__.__name__
+
+    def __str__(self) -> str:
+        classname = self.get_classname().lower()
+        return '`{from_word}` is {classname} for `{to_word}`'.format(
+            from_word=self.from_word, classname=classname, to_word=self.to_word
+        )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
+        abstract = True
+
+
+class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
     difference = models.CharField(
         max_length=512,
         verbose_name=_('Difference'),
-        help_text=_('Difference between these synonyms'),
+        help_text=_('Difference between these %(class)ss'),
         blank=True
     )
 
     def __str__(self) -> str:
         if self.difference:
-            return _(
-                f'`{self.from_word}` is synonym for `{self.to_word}`'
-                f'(with a difference in: {self.difference})'
+            classname = self.get_classname().lower()
+            return (
+                '`{from_word}` is {classname} for `{to_word}`'
+                '(with a difference in: {difference})'
+            ).format(
+                from_word=self.from_word, to_word=self.to_word,
+                difference=self.difference, classname=classname
             )
-        return f'`{self.from_word}` is synonym for `{self.to_word}`'
+        return super().__str__()
 
     class Meta:
-        ordering = ['-created']
         get_latest_by = ['created', 'modified']
+        abstract = True
+
+
+class Synonym(WordSelfRelatedWithDifferenceModel, AuthorModel):
+
+    class Meta:
         verbose_name = _('Synonyms')
         verbose_name_plural = _('Synonyms')
         constraints = [
@@ -223,18 +281,51 @@ class Synonyms(CreatedModel, ModifiedModel, AuthorModel):
         ]
 
 
+class Antonym(WordSelfRelatedModel, AuthorModel):
+
+    class Meta:
+        verbose_name = _('Antonym')
+        verbose_name_plural = _('Antonyms')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['from_word', 'to_word'],
+                name='unique_antonym_pair'
+            )
+        ]
+
+
+class Form(WordSelfRelatedModel, AuthorModel):
+
+    class Meta:
+        verbose_name = _('Form')
+        verbose_name_plural = _('Forms')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['from_word', 'to_word'],
+                name='unique_forms'
+            )
+        ]
+
+
+class Similar(WordSelfRelatedModel, AuthorModel):
+
+    class Meta:
+        verbose_name = _('Similar')
+        verbose_name_plural = _('Similars')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['from_word', 'to_word'],
+                name='unique_similars'
+            )
+        ]
+
+
 class Translation(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Translation'),
         max_length=4096,
         help_text=_('A translation of a word or phrase')
     )
-    # author = models.ForeignKey(
-    #     User,
-    #     verbose_name=_('Author'),
-    #     on_delete=models.CASCADE,
-    #     related_name='translations'
-    # )
 
     def __str__(self) -> str:
         return self.text
@@ -323,12 +414,6 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
         max_length=4096,
         blank=True
     )
-    # author = models.ForeignKey(
-    #     User,
-    #     verbose_name=_('Author'),
-    #     on_delete=models.CASCADE,
-    #     related_name='definitions'
-    # )
 
     def __str__(self) -> str:
         if self.translation:
@@ -380,12 +465,6 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
         max_length=4096,
         blank=True
     )
-    # author = models.ForeignKey(
-    #     User,
-    #     verbose_name=_('Author'),
-    #     on_delete=models.CASCADE,
-    #     related_name='examples'
-    # )
 
     def __str__(self) -> str:
         if self.translation:
