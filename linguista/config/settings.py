@@ -134,6 +134,15 @@ REST_FRAMEWORK = {
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
 
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.UserRateThrottle',
+        'rest_framework.throttling.AnonRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'user': '1000/minute',  # Лимит для UserRateThrottle
+        'anon': '100/minute',  # Лимит для AnonRateThrottle
+    },
+
     'DEFAULT_PAGINATION_CLASS': 'core.pagination.LimitPagination',
     'PAGE_SIZE': 100,
 
