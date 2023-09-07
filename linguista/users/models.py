@@ -23,7 +23,8 @@ class User(AbstractUser):
         _('Gender'),
         max_length=1,
         choices=GENDERS,
-        null=True
+        null=True,
+        blank=True
     )
     image = models.ImageField(
         _('Profile image'),
