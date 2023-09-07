@@ -129,4 +129,4 @@ dmypy.json
 .pyre/
 
 # migrations
-migrations/
+/linguista/*/migrations/*
