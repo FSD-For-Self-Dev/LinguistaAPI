@@ -6,6 +6,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 
 from django_filters.rest_framework import DjangoFilterBackend
+from drf_spectacular.utils import extend_schema
 # from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -23,6 +24,7 @@ from .serializers import TranslationSerializer, VocabularySerializer
 User = get_user_model()
 
 
+@extend_schema(tags=['vocabulary'])
 class WordViewSet(viewsets.ModelViewSet):
     '''Вьюсет для модели слова.'''
 
