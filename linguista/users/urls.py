@@ -11,6 +11,7 @@ router = routers.DefaultRouter()
 router.register('users', UserViewSet, basename='users')
 
 urlpatterns = [
-    path('auth/', include('djoser.urls.jwt')),
+    path('auth/', include('dj_rest_auth.urls')),
+    path('auth/registration/', include('dj_rest_auth.registration.urls')),
     path('', include(router.urls)),
 ]

@@ -2,7 +2,8 @@ Django==4.2.3
 django-filter==23.2
 djangorestframework==3.14.0
 djangorestframework-simplejwt==5.2.2
-djoser==2.2.0
+dj-rest-auth==4.0.1
+django-allauth==0.54.0
 django-cors-headers==4.2.0
 drf-spectacular==0.26.3
 python-dotenv==1.0.0
