@@ -57,6 +57,5 @@ docker-compose up -d --build
 Доступна на эндпоинтах
 
 ```
-/swagger/
-/redoc/
+api/schema/docs/
 ```
