@@ -11,9 +11,10 @@ urlpatterns = [
    path('admin/', admin.site.urls),
    path('api/', include('users.urls')),
    path('api/', include('vocabulary.urls')),
+
    # Конфигурация DRF_Spectacular для просмотра документации
-   path('api/v1/schema/', SpectacularAPIView.as_view(), name='schema'),
-   path('api/v1/schema/docs/',
+   path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+   path('api/schema/docs/',
       SpectacularSwaggerView.as_view(url_name='schema'))
 ]
 
