@@ -26,7 +26,7 @@ User = get_user_model()
 
 @extend_schema(tags=['vocabulary'])
 class WordViewSet(viewsets.ModelViewSet):
-    '''Вьюсет для модели слова.'''
+    '''Word model viewset'''
 
     # queryset = Word.objects.all()
     serializer_class = VocabularySerializer
@@ -54,7 +54,7 @@ class WordViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             return user.vocabulary.all().annotate(
                 trnsl_count=Count('translations'),
-                exmpl_count=Count('examples')
+                exmpl_count=Count('wordusageexamples')
             )
         return None
 
@@ -62,7 +62,7 @@ class WordViewSet(viewsets.ModelViewSet):
     def random(self, request, *args, **kwargs):
         '''Get random word from vocabulary'''
         queryset = self.filter_queryset(self.get_queryset())
-        word = random.choice(queryset)
+        word = random.choice(queryset) if queryset else None
         serializer = VocabularySerializer(
             word, context={'request': request}
         )
