@@ -29,13 +29,6 @@ class User(AbstractUser):
         null=True,
         help_text='Пол',
     )
-    # image = models.ImageField(
-    #     upload_to='users/images/',
-    #     verbose_name='Фото',
-    #     help_text='Загрузите картинку профиля',
-    #     blank=True,
-    #     null=True
-    # )
 
     class Meta:
         ordering = ['-date_joined']

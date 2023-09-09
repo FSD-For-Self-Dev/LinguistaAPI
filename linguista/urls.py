@@ -23,6 +23,7 @@ urlpatterns = [
    path('admin/', admin.site.urls),
    path('api/', include('users.urls')),
    path('api/', include('words.urls')),
+   path('__debug__/', include('debug_toolbar.urls')),
    # Конфигурация DRF_yasg для генерации документации
    re_path(
       r'^swagger(?P<format>\.json|\.yaml)$',

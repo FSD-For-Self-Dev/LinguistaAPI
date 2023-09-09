@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.db import models
 
 from core.models import CreatedModifiedModel
+from rest_framework.permissions import IsAuthenticated
 
 User = get_user_model()
 
@@ -131,18 +132,11 @@ class Word(CreatedModifiedModel):
         verbose_name='Коллекции',
         help_text='Добавьте слово в коллекцию'
     )
-    # synonyms = models.ManyToManyField(
-    #     'self',
-    #     through='Synonym',
-    #     symmetrical = True,
-    #     verbose_name='Синонимы',
-    #     help_text='Укажите синонимы слова',
-    #     blank=True
-    # )
+    permission_classes = (IsAuthenticated,)
 
     def __str__(self) -> str:
         return self.text
-    
+
     class Meta:
         ordering = ['-created']
         get_latest_by = ["created", "modified"]
@@ -179,7 +173,7 @@ class Translation(CreatedModifiedModel):
 
     def __str__(self) -> str:
         return f'Перевод слова/фразы {self.word}: {self.translation}'
-    
+
     class Meta:
         verbose_name = 'Перевод'
         verbose_name_plural = 'Переводы'
@@ -232,16 +226,16 @@ class UsageExample(CreatedModifiedModel):
 #         blank=True
 #     )
 
-    # class Meta:
-    #     constraints = [
-    #         models.UniqueConstraint(
-    #             fields=['word1', 'word2'],
-    #             name='unique_word_synonym'
-    #         )
-    #     ]
+# class Meta:
+#     constraints = [
+#         models.UniqueConstraint(
+#             fields=['word1', 'word2'],
+#             name='unique_word_synonym'
+#         )
+#     ]
 
-    # def __str__(self) -> str:
-    #     return f'{self.synonym} является синонимом {self.word}'
+# def __str__(self) -> str:
+#     return f'{self.synonym} является синонимом {self.word}'
 
 
 class WordCollection(CreatedModifiedModel):
@@ -287,7 +281,7 @@ class Exercise(models.Model):
 
     def __str__(self) -> str:
         return f'{self.name}: {self.description}'
-    
+
     class Meta:
         verbose_name = 'Упражнение'
         verbose_name_plural = 'Упражнения'

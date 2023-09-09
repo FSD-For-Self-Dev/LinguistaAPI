@@ -20,28 +20,27 @@ User = get_user_model()
 
 
 class TranslationSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Translation
-        fields = ('translation',  'definition', 'definition_translation')
+        fields = ('translation', 'definition', 'definition_translation')
 
 
 class ExampleSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = UsageExample
-        fields = ('example',  'translation')
+        fields = ('example', 'translation')
 
 
 class WordSerializer(serializers.ModelSerializer):
     translations_count = serializers.SerializerMethodField()
     examples_count = serializers.SerializerMethodField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    translations  = TranslationSerializer(many=True)
-    examples  = ExampleSerializer(many=True)
+    translations = TranslationSerializer(many=True)
+    examples = ExampleSerializer(many=True)
     tags = serializers.SlugRelatedField(
         queryset=Tag.objects.all(), slug_field='name', many=True
     )
+
     # synonyms = SynonymSerializer(many=True)
     # synonyms = serializers.SerializerMethodField()
 
