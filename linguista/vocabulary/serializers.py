@@ -33,7 +33,7 @@ class UsageExampleSerializer(serializers.ModelSerializer):
         fields = ('text',  'translation')
 
 
-class VocabularySerializer(serializers.ModelSerializer):
+class WordSerializer(serializers.ModelSerializer):
     translations_count = serializers.SerializerMethodField()
     examples_count = serializers.SerializerMethodField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())

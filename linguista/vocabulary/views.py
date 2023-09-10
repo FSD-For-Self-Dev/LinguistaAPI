@@ -10,31 +10,26 @@ from drf_spectacular.utils import extend_schema
 # from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-# from rest_framework.exceptions import ValidationError
-from rest_framework.generics import get_object_or_404
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
-from vocabulary.models import Word
 
-from .filters import WordFilter
-from .serializers import TranslationSerializer, VocabularySerializer
+# from .models import Word
+# from .filters import WordFilter
+from .serializers import TranslationSerializer, WordSerializer
 
 User = get_user_model()
 
 
 @extend_schema(tags=['vocabulary'])
 class WordViewSet(viewsets.ModelViewSet):
-    '''Word model viewset'''
+    '''Viewset for actions with words in user vocabulary'''
 
-    # queryset = Word.objects.all()
-    serializer_class = VocabularySerializer
+    lookup_field = 'slug'
+    serializer_class = WordSerializer
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
-    permission_classes = [
-        IsAuthenticated,
-        # AllowAny,
-    ]
+    permission_classes = [IsAuthenticated]
     pagination_class = LimitPagination
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
@@ -50,6 +45,10 @@ class WordViewSet(viewsets.ModelViewSet):
     ordering = ('-created',)
 
     def get_queryset(self):
+        '''
+        Get all words from user's vocabulary with counted translations 
+        & examples
+        '''
         user = self.request.user
         if user.is_authenticated:
             return user.vocabulary.all().annotate(
@@ -63,15 +62,15 @@ class WordViewSet(viewsets.ModelViewSet):
         '''Get random word from vocabulary'''
         queryset = self.filter_queryset(self.get_queryset())
         word = random.choice(queryset) if queryset else None
-        serializer = VocabularySerializer(
+        serializer = WordSerializer(
             word, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @action(methods=['get', 'post'], detail=True)
-    def translations(self, request, *args, **kwargs):
+    def translations(self, request, slug=None, *args, **kwargs):
         '''Get all word's translations or add new translation to word'''
-        word = get_object_or_404(Word, pk=kwargs.get('pk'))
+        word = self.get_object()
         translations = word.translations.all()
         serializer = TranslationSerializer(
             translations, many=True, context={'request': request}
