@@ -60,7 +60,7 @@ class Type(models.Model):
         max_length=64,
         unique=True
     )
-    slug = models.CharField(
+    slug = models.SlugField(
         _('Slug'),
         max_length=64,
         unique=True
@@ -110,8 +110,9 @@ class Word(CreatedModel, ModifiedModel):
         _('Word or phrase'),
         max_length=4096
     )
-    slug = models.CharField(
+    slug = models.SlugField(
         _('Slug'),
+        unique=True,
         max_length=4096
     )
     author = models.ForeignKey(
