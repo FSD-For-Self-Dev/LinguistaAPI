@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from .models import Tag, Translation, UsageExample, Word  # Synonym
+from .models import Tag, Translation, UsageExample, Word, Definition  # Synonym
 
 User = get_user_model()
 
@@ -83,3 +83,12 @@ class VocabularySerializer(serializers.ModelSerializer):
         Translation.objects.bulk_create(translations_objs)
 
         return word
+
+
+class DefinitionSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source='author.username', read_only=True)
+
+    class Meta:
+        model = Definition
+        fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
+        partial = True
