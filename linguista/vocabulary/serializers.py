@@ -33,12 +33,12 @@ class UsageExampleSerializer(serializers.ModelSerializer):
         fields = ('text',  'translation')
 
 
-class VocabularySerializer(serializers.ModelSerializer):
+class WordSerializer(serializers.ModelSerializer):
     translations_count = serializers.SerializerMethodField()
     examples_count = serializers.SerializerMethodField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    translations  = TranslationSerializer(many=True)
-    wordusageexamples  = UsageExampleSerializer(many=True)
+    translations = TranslationSerializer(many=True)
+    wordusageexamples = UsageExampleSerializer(many=True)
     tags = serializers.SlugRelatedField(
         queryset=Tag.objects.all(), slug_field='name', many=True
     )
@@ -91,4 +91,4 @@ class DefinitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Definition
         fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
-        partial = True
+        read_only_fields = ('id', 'author', 'created', 'modified')
