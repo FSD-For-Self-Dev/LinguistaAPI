@@ -47,7 +47,7 @@ class WordViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         '''
         Get all words from user's vocabulary with counted translations 
-        & examples
+        & usage examples
         '''
         user = self.request.user
         if user.is_authenticated:
