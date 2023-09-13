@@ -11,6 +11,9 @@ from .models import (
 
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
+    list_display = ('pk', 'text', 'author')
+    search_fields = ('text', 'author')
+    list_filter = ('author',)
 
 
 admin.site.register(Word, WordAdmin)

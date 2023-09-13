@@ -63,6 +63,12 @@ class WordViewSet(viewsets.ModelViewSet):
             )
         return None
 
+    # def destroy(self, request, *args, **kwargs):
+    #     instance = self.get_object()
+    #     if not instance.slug.endwith(str(self.request.user)):
+    #         return Response(status=status.HTTP_403_FORBIDDEN)
+    #     return super(WordViewSet, self).destroy(request, *args, **kwargs)
+
     @action(methods=('get',), detail=False)
     def random(self, request, *args, **kwargs):
         """Get random word from vocabulary."""
