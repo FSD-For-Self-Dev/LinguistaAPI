@@ -1,12 +1,15 @@
-''' Vocabulary models '''
+"""Vocabulary models."""
 
 from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext as _
 
-from core.models import (AuthorModel, CreatedModel, ModifiedModel,
-                         UserRelatedModel)
+from core.models import (
+    AuthorModel, CreatedModel, ModifiedModel,
+    UserRelatedModel
+)
 from languages.models import Language
+from .utils import slugify_text_author_fields
 
 User = get_user_model()
 
@@ -195,6 +198,12 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Translations'),
         blank=True
     )
+    notes = models.ManyToManyField(
+        'Note',
+        verbose_name=_('Word notes'),
+        related_name='notes_for',
+        blank=True,
+    )
     pronunciation = models.CharField(
         _('Pronunciation'),
         max_length=4096,
@@ -206,6 +215,10 @@ class Word(CreatedModel, ModifiedModel):
         max_length=4096,
         blank=True
     )
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify_text_author_fields(self)
+        super(Word, self).save(*args, **kwargs)
 
     def __str__(self) -> str:
         return self.text
