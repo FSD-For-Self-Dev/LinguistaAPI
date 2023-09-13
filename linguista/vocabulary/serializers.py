@@ -1,10 +1,18 @@
-''' Vocabulary serializers '''
+"""Vocabulary serializers."""
 
 from django.contrib.auth import get_user_model
-
 from rest_framework import serializers
 
-from .models import Tag, Translation, UsageExample, Word, Definition  # Synonym
+from .models import (
+    Definition,
+    Note,
+    Tag,
+    Translation,
+    UsageExample,
+    Word,
+    WordUsageExamples,
+)
+# Synonym
 
 User = get_user_model()
 
@@ -17,6 +25,12 @@ User = get_user_model()
 #         fields = (
 #             'synonym', 'note'
 #         )
+
+class NoteSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Note
+        fields = ('text',)
 
 
 class TranslationSerializer(serializers.ModelSerializer):
@@ -42,13 +56,14 @@ class WordSerializer(serializers.ModelSerializer):
     tags = serializers.SlugRelatedField(
         queryset=Tag.objects.all(), slug_field='name', many=True
     )
+    notes = NoteSerializer(many=True)
     # synonyms = SynonymSerializer(many=True)
     # synonyms = serializers.SerializerMethodField()
 
     class Meta:
         model = Word
         fields = (
-            'id', 'language', 'text', 'activity', 'type', 'note', 'tags',
+            'id', 'language', 'text', 'activity', 'type', 'notes', 'tags',
             'translations_count', 'translations', 'examples_count',
             'wordusageexamples', 'created', 'author'
         )
@@ -71,6 +86,8 @@ class WordSerializer(serializers.ModelSerializer):
         translations = validated_data.pop('translations')
         tags = validated_data.pop('tags', [])
         collections = validated_data.pop('collections', [])
+        wordusageexamples = validated_data.pop('wordusageexamples', [])
+        notes = validated_data.pop('notes', [])
 
         word = Word.objects.create(**validated_data)
         word.tags.set(tags)
@@ -81,6 +98,16 @@ class WordSerializer(serializers.ModelSerializer):
             **data
         ) for data in translations]
         Translation.objects.bulk_create(translations_objs)
+        wordusageexamples_objs = [WordUsageExamples(
+            word=word,
+            **data,
+        ) for data in wordusageexamples]
+        WordUsageExamples.objects.bulk_create(wordusageexamples_objs)
+        notes_objs = [Note(
+            word=word,
+            **data,
+        ) for data in notes]
+        Note.objects.bulk_create(notes_objs)
 
         return word
 

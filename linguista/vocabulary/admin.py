@@ -1,14 +1,17 @@
-''' Vocabulary admin config '''
+"""Vocabulary admin config."""
 
 from django.contrib import admin
 
-from .models import (Antonym, Collection, Definition, FavoriteCollection,
-                     FavoriteWord, Form, Note, Similar, Synonym, Tag,
-                     Translation, Type, UsageExample, Word, WordDefinitions,
-                     WordsInCollections, WordTranslations, WordUsageExamples)
+from .models import (
+    Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
+    Note, Similar, Synonym, Tag, Translation, Type, UsageExample, Word,
+    WordDefinitions, WordTranslations, WordUsageExamples, WordsInCollections
+)
+
 
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
+
 
 admin.site.register(Word, WordAdmin)
 admin.site.register(Translation)
