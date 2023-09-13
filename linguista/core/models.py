@@ -32,7 +32,8 @@ class ModifiedModel(models.Model):
     modified = models.DateTimeField(
         _('Date modified'),
         blank=True,
-        null=True
+        null=True,
+        auto_now=True
     )
 
     class Meta:
