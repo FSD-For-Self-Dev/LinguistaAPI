@@ -38,7 +38,6 @@ class WordViewSet(viewsets.ModelViewSet):
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-
     # filterset_class = WordFilter
     # search_fields = (
     #     'text', 'note', 'tags__name', 'translations__translation',
