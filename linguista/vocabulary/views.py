@@ -106,16 +106,13 @@ class WordViewSet(viewsets.ModelViewSet):
                 )
             case "POST":
                 serializer = self.get_serializer(data=request.data)
-                if serializer.is_valid():
-                    new_def = serializer.save(
-                        author=request.user,
-                        **serializer.validated_data
-                    )
-                    WordDefinitions.objects.create(definition=new_def, word=word)
-                    return Response(self.serializer_class(new_def).data,
-                                    status=status.HTTP_201_CREATED)
-
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                serializer.is_valid(raise_exception=True)
+                new_def = serializer.save(
+                    author=request.user,
+                    **serializer.validated_data
+                )
+                WordDefinitions.objects.create(definition=new_def, word=word)
+                return Response(self.get_serializer(new_def).data, status=status.HTTP_201_CREATED)
 
     @action(
         detail=True,
@@ -141,10 +138,9 @@ class WordViewSet(viewsets.ModelViewSet):
                     data=request.data,
                     partial=True
                 )
-                if serializer.is_valid():
-                    serializer.save()
-                    return Response(serializer.data)
-                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response(serializer.data)
             case 'DELETE':
                 definition.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
