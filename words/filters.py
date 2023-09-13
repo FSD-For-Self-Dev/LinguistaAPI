@@ -2,7 +2,7 @@
 
 import django_filters as df
 
-from words.models import Word
+from .models import Word
 
 
 class WordFilter(df.FilterSet):
@@ -19,4 +19,4 @@ class WordFilter(df.FilterSet):
 
     class Meta:
         model = Word
-        fields = ('status', 'type', 'language', 'created')
+        fields = ['status', 'type', 'language', 'created']

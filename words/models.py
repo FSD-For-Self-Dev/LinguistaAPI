@@ -132,7 +132,7 @@ class Word(CreatedModifiedModel):
         verbose_name='Коллекции',
         help_text='Добавьте слово в коллекцию'
     )
-    permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
 
     def __str__(self) -> str:
         return self.text

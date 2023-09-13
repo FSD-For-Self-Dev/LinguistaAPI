@@ -3,18 +3,14 @@
 import random
 
 from django.contrib.auth import get_user_model
-from django.db.models import Count
-from django_filters.rest_framework import DjangoFilterBackend
 
-from rest_framework import filters, status, viewsets, pagination
+from rest_framework import status, viewsets, pagination
 from rest_framework.decorators import action
 from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from words.models import Word
-
-from .filters import WordFilter
+from .models import Word
 from .serializers import TranslationSerializer, WordSerializer
 
 User = get_user_model()
@@ -38,61 +34,30 @@ class WordViewSetPagination(pagination.PageNumberPagination):
 
 class WordViewSet(viewsets.ModelViewSet):
     """Вьюсет для модели слова."""
-
-    queryset = Word.objects.all()
+    # queryset = Word.objects.all()
     serializer_class = WordSerializer
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
-    permission_classes = [
-        IsAuthenticated,
-    ]
+    permission_classes = [IsAuthenticated]
+    pagination_class = WordViewSetPagination
 
-    filter_backends = [
-        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
-    ]
-    filterset_class = WordFilter
-    search_fields = (
-        'text', 'note', 'tags__name', 'translations__translation',
-        'examples__example'
-    )
-    ordering_fields = (
-        'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
-    )
-    ordering = ('-created',)
-
+    @action(methods=['get'], detail=False)
     def get_word(self, request):
         # Get vocabilary list
-        try:
-            author_id = self.request.user
-            #queryset = Word.objects.filter(author=author_id)
-            queryset = Word.objects.prefetch_related('tags').filter(author=author_id)
-
-        except Word.DoesNotExist:
-            return Response(status=status.HTTP_400_BAD_REQUEST)
-        if request.method == 'GET':
-            if request.user.is_authenticated:
-                paginator = WordViewSetPagination()
-                page_size = 78
-                paginator.page_size = page_size
-                result_page = paginator.paginate_queryset(queryset, request)
-                serializer = WordSerializer(result_page, many=True)
-                # return Response(serializer.data)
-                return paginator.get_paginated_response(serializer.data)
-            else:
-                return Response(status=status.HTTP_400_BAD_REQUEST)
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated:
-            return user.words.all().annotate(
-                trnsl_count=Count('translations'),
-                exmpl_count=Count('examples')
-            )
-        return None
+        author_id = self.request.user
+        queryset = Word.objects.prefetch_related('tags'). \
+            filter(author=author_id)
+        paginator = WordViewSetPagination()
+        page_size = 2
+        paginator.page_size = page_size
+        result_page = paginator.paginate_queryset(queryset, request)
+        serializer = WordSerializer(result_page, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     @action(methods=['get'], detail=False)
     def random(self, request, *args, **kwargs):
         '''Get random word from vocabulary'''
-        queryset = self.filter_queryset(self.get_queryset())
+        author_id = self.request.user
+        queryset = Word.objects.prefetch_related('tags').filter(author=author_id)
         word = random.choice(queryset)
         serializer = WordSerializer(
             word, context={'request': request}
