@@ -1,4 +1,4 @@
-''' Vocabulary urls '''
+"""Маршруты приложения words."""
 
 from django.urls import include, path
 
