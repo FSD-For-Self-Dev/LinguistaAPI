@@ -8,13 +8,13 @@ from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 # from djoser.views import UserViewSet
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, status, viewsets, pagination
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from core.pagination import LimitPagination
+# from core.pagination import LimitPagination
 
 # from vocabulary.models import Word
 # from .filters import WordFilter
@@ -26,15 +26,32 @@ from .permissions import CanAddDefinitionPermission
 User = get_user_model()
 
 
+class WordViewSetPagination(pagination.PageNumberPagination):
+
+    def get_paginated_response(self, data):
+        return Response({
+            'links': {
+                'next': self.get_next_link(),
+                'previous': self.get_previous_link()
+            },
+            'current_page': int(self.request.query_params.get('page', 1)),
+            'total': self.page.paginator.count,
+            'per_page': self.page_size,
+            'total_pages': round(self.page.paginator.count / self.page_size, 1),
+            'data': data,
+        })
+
+
 @extend_schema(tags=['vocabulary'])
 class WordViewSet(viewsets.ModelViewSet):
     '''Viewset for actions with words in user vocabulary'''
 
     lookup_field = 'slug'
     serializer_class = WordSerializer
+    search_fields = ['=activity']
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     permission_classes = [IsAuthenticated]
-    pagination_class = LimitPagination
+    pagination_class = WordViewSetPagination
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
