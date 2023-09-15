@@ -20,7 +20,7 @@ from core.pagination import LimitPagination
 # from .filters import WordFilter
 from .models import Definition, WordDefinitions
 from .serializers import (TranslationSerializer, WordSerializer,
-                          DefinitionSerializer)
+                          DefinitionSerializer, WordShortResponseSerializer)
 from .permissions import CanAddDefinitionPermission
 
 User = get_user_model()
@@ -143,3 +143,18 @@ class WordViewSet(viewsets.ModelViewSet):
             case 'DELETE':
                 definition.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(request=None)
+    @action(
+        detail=True,
+        methods=['post'],
+        serializer_class=WordShortResponseSerializer
+    )
+    def problematic(self, request, *args, **kwargs):
+        """Toggle is_problematic value"""
+        word = self.get_object()
+        word.is_problematic = not word.is_problematic
+        word.save()
+        return Response(self.get_serializer(word).data)
+
+
