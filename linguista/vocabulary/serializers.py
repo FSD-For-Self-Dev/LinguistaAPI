@@ -52,11 +52,11 @@ class WordSerializer(serializers.ModelSerializer):
     examples_count = serializers.SerializerMethodField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
     translations = TranslationSerializer(many=True)
-    wordusageexamples = UsageExampleSerializer(many=True)
+    wordusageexamples = UsageExampleSerializer(many=True, default=[])
     tags = serializers.SlugRelatedField(
-        queryset=Tag.objects.all(), slug_field='name', many=True
+        queryset=Tag.objects.all(), slug_field='name', many=True, default=[]
     )
-    notes = NoteSerializer(many=True)
+    notes = NoteSerializer(many=True, default=[])
     # synonyms = SynonymSerializer(many=True)
     # synonyms = serializers.SerializerMethodField()
 
@@ -110,6 +110,14 @@ class WordSerializer(serializers.ModelSerializer):
         Note.objects.bulk_create(notes_objs)
 
         return word
+
+    # @staticmethod
+    # def set_additional_fields(Model, word, data):
+    #     objs = [Model(
+    #         word=word,
+    #         **item,
+    #     ) for item in data]
+    #     Model.objects.bulk_create(objs)
 
 
 class DefinitionSerializer(serializers.ModelSerializer):
