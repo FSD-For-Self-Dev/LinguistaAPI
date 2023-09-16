@@ -1,5 +1,6 @@
 """Vocabulary serializers."""
 
+from django.db import transaction
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
@@ -75,6 +76,12 @@ class WordSerializer(serializers.ModelSerializer):
     def get_examples_count(self, obj):
         return obj.wordusageexamples.count()
 
+    def validate(self, data):
+        if len(data['translations']) == 0:
+            raise serializers.ValidationError(
+                'У слова должен быть хотя бы один перевод'
+            )
+
     # def get_synonyms(self, obj):
     #     return SynonymSerializer(
     #         obj.synonyms.all() | obj.being_synonym_to.all(),
@@ -82,6 +89,7 @@ class WordSerializer(serializers.ModelSerializer):
     #         context={'request': self.context.get('request')}
     #     ).data
 
+    @transaction.atomic
     def create(self, validated_data):
         translations = validated_data.pop('translations')
         tags = validated_data.pop('tags', [])
