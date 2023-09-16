@@ -9,11 +9,17 @@ from .models import (
 )
 
 
+class WordTranslationInline(admin.TabularInline):
+    model = WordTranslations
+    min_num = 1
+
+
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
     list_display = ('pk', 'text', 'author')
     search_fields = ('text', 'author')
     list_filter = ('author',)
+    inlines = (WordTranslationInline,)
 
 
 admin.site.register(Word, WordAdmin)
