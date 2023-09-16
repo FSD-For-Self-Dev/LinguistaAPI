@@ -137,7 +137,8 @@ class Word(CreatedModel, ModifiedModel):
         _('Activity status'),
         max_length=8,
         choices=ACTIVITY,
-        blank=False
+        blank=False,
+        default='ACTIVE',
     )
     is_problematic = models.BooleanField(
         _('Is the word problematic for you'),
@@ -151,7 +152,7 @@ class Word(CreatedModel, ModifiedModel):
     synonyms = models.ManyToManyField(
         'self',
         through='Synonym',
-        symmetrical = False,
+        symmetrical=False,
         related_name='synonym_to+',
         verbose_name=_('Synonyms'),
         help_text=_('Words with similar meanings'),
@@ -160,7 +161,7 @@ class Word(CreatedModel, ModifiedModel):
     antonyms = models.ManyToManyField(
         'self',
         through='Antonym',
-        symmetrical = False,
+        symmetrical=False,
         related_name='antonym_to+',
         verbose_name=_('Antonyms'),
         help_text=_('Words with opposite meanings'),
@@ -169,7 +170,7 @@ class Word(CreatedModel, ModifiedModel):
     forms = models.ManyToManyField(
         'self',
         through='Form',
-        symmetrical = False,
+        symmetrical=False,
         related_name='form_to+',
         verbose_name=_('Forms'),
         help_text=_('Word forms'),
@@ -178,7 +179,7 @@ class Word(CreatedModel, ModifiedModel):
     similars = models.ManyToManyField(
         'self',
         through='Similar',
-        symmetrical = False,
+        symmetrical=False,
         related_name='similar_to+',
         verbose_name=_('Similars'),
         help_text=_('Words with similar pronunciation or spelling'),
