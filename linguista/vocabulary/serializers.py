@@ -27,10 +27,12 @@ class TranslationSerializer(serializers.ModelSerializer):
 
 
 class UsageExampleSerializer(serializers.ModelSerializer):
+    author = serializers.CharField(source='author.username', read_only=True)
 
     class Meta:
         model = UsageExample
-        fields = ('text',  'translation')
+        fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
+        read_only_fields = ('id', 'author', 'created', 'modified')
 
 
 class WordSerializer(serializers.ModelSerializer):
