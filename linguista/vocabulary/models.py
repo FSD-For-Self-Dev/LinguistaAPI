@@ -207,6 +207,14 @@ class Word(CreatedModel, ModifiedModel):
         blank=True
     )
 
+    examples = models.ManyToManyField(
+        'UsageExample',
+        through='WordUsageExamples',
+        related_name='usage_example_for',
+        verbose_name=_('Usage Example'),
+        blank=True
+    )
+
     def __str__(self) -> str:
         return self.text
     
