@@ -10,14 +10,12 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExampl
 # from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound, PermissionDenied
-# from rest_framework.exceptions import ValidationError
+from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 
-# from vocabulary.models import Word
 # from .filters import WordFilte
 from .models import (Definition, WordDefinitions, WordUsageExamples,
                      UsageExample)
@@ -30,16 +28,12 @@ User = get_user_model()
 
 @extend_schema(tags=['vocabulary'])
 class WordViewSet(viewsets.ModelViewSet):
-    '''Word model viewset'''
+    '''Viewset for actions with words in user vocabulary'''
 
-    # queryset = Word.objects.all()
     lookup_field = 'slug'
     serializer_class = WordSerializer
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
-    permission_classes = [
-        IsAuthenticated,
-        # AllowAny,
-    ]
+    permission_classes = [IsAuthenticated]
     pagination_class = LimitPagination
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
@@ -56,6 +50,10 @@ class WordViewSet(viewsets.ModelViewSet):
     ordering = ('-created',)
 
     def get_queryset(self):
+        '''
+        Get all words from user's vocabulary with counted translations 
+        & examples
+        '''
         user = self.request.user
         if user.is_authenticated:
             return user.vocabulary.all().annotate(
