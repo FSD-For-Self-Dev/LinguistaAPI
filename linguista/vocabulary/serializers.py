@@ -4,8 +4,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from .models import (Tag, Translation, UsageExample, Word,
-                     Definition, WordUsageExamples)  # Synonym
+from .models import Tag, Translation, UsageExample, Word, Definition  # Synonym
 
 User = get_user_model()
 
@@ -31,15 +30,7 @@ class UsageExampleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UsageExample
-        fields = ('text',  'translation')
-
-
-class WordUsageExamplesSerializer(serializers.ModelSerializer):
-    example = UsageExampleSerializer()
-
-    class Meta:
-        model = WordUsageExamples
-        fields = ('id', 'example')
+        fields = ('id', 'text', 'translation')
 
 
 class WordSerializer(serializers.ModelSerializer):
@@ -47,7 +38,7 @@ class WordSerializer(serializers.ModelSerializer):
     examples_count = serializers.SerializerMethodField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
     translations = TranslationSerializer(many=True)
-    examples = WordUsageExamplesSerializer(many=True, source='wordusageexamples')
+    wordusageexamples = UsageExampleSerializer(many=True)
     tags = serializers.SlugRelatedField(
         queryset=Tag.objects.all(), slug_field='name', many=True
     )
@@ -59,7 +50,7 @@ class WordSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'language', 'text', 'activity', 'is_problematic', 'type', 'note', 'tags',
             'translations_count', 'translations', 'examples_count',
-            'examples', 'created', 'author'
+            'wordusageexamples', 'created', 'author'
         )
         read_only_fields = ('id',)
 
