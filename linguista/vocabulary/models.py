@@ -206,7 +206,6 @@ class Word(CreatedModel, ModifiedModel):
         max_length=4096,
         blank=True
     )
-
     examples = models.ManyToManyField(
         'UsageExample',
         through='WordUsageExamples',
