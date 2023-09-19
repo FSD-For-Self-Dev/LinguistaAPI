@@ -199,13 +199,6 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Translations'),
         blank=True
     )
-    collections = models.ManyToManyField(
-        'Collection',
-        through='WordsInCollections',
-        related_name='in_collections',
-        verbose_name=_('Collections'),
-        blank=True
-    )
     examples = models.ManyToManyField(
         'UsageExample',
         through='WordUsageExamples',
