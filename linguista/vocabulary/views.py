@@ -4,9 +4,8 @@ import random
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count
-
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema
 # from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -15,13 +14,23 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
-
 # from .filters import WordFilte
-from .models import (Definition, WordDefinitions, WordUsageExamples,
-                     UsageExample)
-from .serializers import (TranslationSerializer, WordSerializer,
-                          DefinitionSerializer, UsageExampleSerializer)
-from .permissions import CanAddDefinitionPermission, CanAddUsageExamplePermission
+from .models import (
+    Definition,
+    UsageExample,
+    WordDefinitions,
+    WordUsageExamples
+)
+from .permissions import (
+    CanAddDefinitionPermission,
+    CanAddUsageExamplePermission
+)
+from .serializers import (
+    DefinitionSerializer,
+    TranslationSerializer,
+    UsageExampleSerializer,
+    WordSerializer
+)
 
 User = get_user_model()
 
@@ -58,7 +67,7 @@ class WordViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             return user.vocabulary.all().annotate(
                 trnsl_count=Count('translations'),
-                exmpl_count=Count('wordusageexamples')
+                exmpl_count=Count('examples')
             )
         return None
 
@@ -98,12 +107,12 @@ class WordViewSet(viewsets.ModelViewSet):
         defs = word.definitions.all()
 
         match request.method:
-            case "GET":
+            case 'GET':
                 return Response(
                     self.get_serializer(defs, many=True).data,
                     status=status.HTTP_200_OK
                 )
-            case "POST":
+            case 'POST':
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 new_def = serializer.save(
@@ -111,7 +120,10 @@ class WordViewSet(viewsets.ModelViewSet):
                     **serializer.validated_data
                 )
                 WordDefinitions.objects.create(definition=new_def, word=word)
-                return Response(self.get_serializer(new_def).data, status=status.HTTP_201_CREATED)
+                return Response(
+                    self.get_serializer(new_def).data,
+                    status=status.HTTP_201_CREATED
+                )
 
     @action(
         detail=True,
@@ -126,7 +138,7 @@ class WordViewSet(viewsets.ModelViewSet):
         try:
             definition = word.definitions.get(pk=kwargs.get('definition_id'))
         except Definition.DoesNotExist:
-            raise NotFound(detail="The definition not found")
+            raise NotFound(detail='The definition not found')
 
         match request.method:
             case 'GET':
@@ -155,20 +167,26 @@ class WordViewSet(viewsets.ModelViewSet):
         word = self.get_object()
         _examples = word.examples.all()
         match request.method:
-            case "GET":
+            case 'GET':
                 return Response(
                     self.get_serializer(_examples, many=True).data,
                     status=status.HTTP_200_OK
                 )
-            case "POST":
+            case 'POST':
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 new_example = serializer.save(
                     author=request.user,
                     **serializer.validated_data
                 )
-                WordUsageExamples.objects.create(example=new_example, word=word)
-                return Response(self.get_serializer(new_example).data, status=status.HTTP_201_CREATED)
+                WordUsageExamples.objects.create(
+                    example=new_example,
+                    word=word
+                )
+                return Response(
+                    self.get_serializer(new_example).data,
+                    status=status.HTTP_201_CREATED
+                )
 
     @action(
         detail=True,
@@ -183,7 +201,7 @@ class WordViewSet(viewsets.ModelViewSet):
         try:
             _example = word.examples.get(pk=kwargs.get('example_id'))
         except UsageExample.DoesNotExist:
-            raise NotFound(detail="The usage example not found")
+            raise NotFound(detail='The usage example not found')
         match request.method:
             case 'GET':
                 return Response(self.get_serializer(_example).data)

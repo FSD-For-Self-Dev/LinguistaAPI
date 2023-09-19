@@ -55,7 +55,7 @@ class WordSerializer(serializers.ModelSerializer):
     examples_count = serializers.SerializerMethodField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
     translations = TranslationSerializer(many=True)
-    wordusageexamples = UsageExampleSerializer(many=True, default=[])
+    examples = UsageExampleSerializer(many=True, default=[])
     tags = serializers.SlugRelatedField(
         queryset=Tag.objects.all(), slug_field='name', many=True, default=[]
     )
@@ -68,7 +68,7 @@ class WordSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'language', 'text', 'activity', 'type', 'notes', 'tags',
             'translations_count', 'translations', 'examples_count',
-            'wordusageexamples', 'created', 'author'
+            'examples', 'created', 'author'
         )
         read_only_fields = ('id',)
 
