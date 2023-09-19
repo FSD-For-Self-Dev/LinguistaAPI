@@ -138,7 +138,7 @@ class Word(CreatedModel, ModifiedModel):
         max_length=8,
         choices=ACTIVITY,
         blank=False,
-        default='ACTIVE',
+        default='INACTIVE'
     )
     is_problematic = models.BooleanField(
         _('Is the word problematic for you'),
@@ -199,23 +199,14 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Translations'),
         blank=True
     )
-    notes = models.ManyToManyField(
-        'Note',
-        verbose_name=_('Word notes'),
-        related_name='notes_for',
-        blank=True,
-    )
-    pronunciation = models.CharField(
-        _('Pronunciation'),
-        max_length=4096,
+    collections = models.ManyToManyField(
+        'Collection',
+        through='WordsInCollections',
+        related_name='in_collections',
+        verbose_name=_('Collections'),
         blank=True
     )
     # pronunciation_voice = ...
-    transcription = models.CharField(
-        _('Transcription'),
-        max_length=4096,
-        blank=True
-    )
 
     def save(self, *args, **kwargs):
         self.slug = slugify_text_author_fields(self)
@@ -243,7 +234,7 @@ class WordSelfRelatedModel(CreatedModel):
         on_delete=models.CASCADE
     )
 
-    def get_classname( self ):
+    def get_classname(self):
         return self.__class__.__name__
 
     def __str__(self) -> str:
