@@ -206,12 +206,6 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Collections'),
         blank=True
     )
-    # pronunciation_voice = ...
-
-    def save(self, *args, **kwargs):
-        self.slug = slugify_text_author_fields(self)
-        super(Word, self).save(*args, **kwargs)
-
     examples = models.ManyToManyField(
         'UsageExample',
         through='WordUsageExamples',
@@ -219,9 +213,14 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Usage Example'),
         blank=True
     )
+    # pronunciation_voice = ...
 
     def __str__(self) -> str:
         return self.text
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify_text_author_fields(self)
+        super(Word, self).save(*args, **kwargs)
     
     class Meta:
         ordering = ['-created']
