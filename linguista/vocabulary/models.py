@@ -212,6 +212,14 @@ class Word(CreatedModel, ModifiedModel):
         self.slug = slugify_text_author_fields(self)
         super(Word, self).save(*args, **kwargs)
 
+    examples = models.ManyToManyField(
+        'UsageExample',
+        through='WordUsageExamples',
+        related_name='usage_example_for',
+        verbose_name=_('Usage Example'),
+        blank=True
+    )
+
     def __str__(self) -> str:
         return self.text
     
