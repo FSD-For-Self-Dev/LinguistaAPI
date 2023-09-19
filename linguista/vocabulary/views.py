@@ -11,6 +11,7 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExampl
 from rest_framework import filters, status, viewsets, pagination
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
+from rest_framework.filters import OrderingFilter
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
@@ -26,45 +27,24 @@ from .permissions import CanAddDefinitionPermission
 User = get_user_model()
 
 
-class WordViewSetPagination(pagination.PageNumberPagination):
-
-    def get_paginated_response(self, data):
-        return Response({
-            'links': {
-                'next': self.get_next_link(),
-                'previous': self.get_previous_link()
-            },
-            'current_page': int(self.request.query_params.get('page', 1)),
-            'total': self.page.paginator.count,
-            'per_page': self.page_size,
-            'total_pages': round(self.page.paginator.count / self.page_size, 1),
-            'data': data,
-        })
-
-
 @extend_schema(tags=['vocabulary'])
 class WordViewSet(viewsets.ModelViewSet):
     '''Viewset for actions with words in user vocabulary'''
-
     lookup_field = 'slug'
     serializer_class = WordSerializer
-    search_fields = ['=activity']
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     permission_classes = [IsAuthenticated]
-    pagination_class = WordViewSetPagination
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-
-    # filterset_class = WordFilter
-    # search_fields = (
-    #     'text', 'note', 'tags__name', 'translations__translation',
-    #     'examples__example'
-    # )
-    # ordering_fields = (
-    #     'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
-    # )
-    ordering = ('-created',)
+    search_fields = [
+        'text', 'translations__text',
+        'tags__name', 'definitions__text',
+        'definitions__translation'
+    ]
+    ordering = ('-created', '-text',
+                'translations__text',
+                )
 
     def get_queryset(self):
         '''
