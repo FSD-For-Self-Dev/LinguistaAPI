@@ -90,7 +90,7 @@ DATABASES = {
     # }
     'default': dj_database_url.config(
         # Feel free to alter this value to suit your needs.
-        default='postgresql://postgres:postgres@localhost:5432/linguista',
+        default='postgresql://postgres:postgres@localhost:5432/linguista_dev',
         conn_max_age=600
     )
 }
