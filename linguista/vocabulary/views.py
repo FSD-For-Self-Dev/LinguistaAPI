@@ -47,7 +47,6 @@ class WordViewSet(viewsets.ModelViewSet):
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-
     # filterset_class = WordFilter
     # search_fields = (
     #     'text', 'note', 'tags__name', 'translations__translation',
@@ -61,7 +60,7 @@ class WordViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         '''
         Get all words from user's vocabulary with counted translations 
-        & examples
+        & usage examples
         '''
         user = self.request.user
         if user.is_authenticated:

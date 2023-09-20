@@ -1,4 +1,4 @@
-"""Vocabulary models."""
+''' Vocabulary models '''
 
 from django.contrib.auth import get_user_model
 from django.db import models
@@ -214,7 +214,7 @@ class Word(CreatedModel, ModifiedModel):
     def save(self, *args, **kwargs):
         self.slug = slugify_text_author_fields(self)
         super(Word, self).save(*args, **kwargs)
-    
+
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created', 'modified']

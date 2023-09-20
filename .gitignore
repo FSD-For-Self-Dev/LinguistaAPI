@@ -130,3 +130,6 @@ dmypy.json
 
 # migrations
 /linguista/*/migrations/*
+
+# local static files
+static/
