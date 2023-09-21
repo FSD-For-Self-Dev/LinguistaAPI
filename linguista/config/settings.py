@@ -13,8 +13,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='not-a-secret')
 
-# DEBUG = os.getenv('DEBUG', default=False)
-DEBUG = 'RENDER' not in os.environ
+DEBUG = os.getenv('DEBUG', default=False)
+# DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='localhost,127.0.0.1,').split(',')
 
@@ -80,19 +80,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-    #     'NAME': os.getenv('DB_NAME', default='postgres'),
-    #     'USER': os.getenv('POSTGRES_USER', default=''),
-    #     'PASSWORD': os.getenv('POSTGRES_PASSWORD', default=''),
-    #     'HOST': os.getenv('DB_HOST', default=''),
-    #     'PORT': os.getenv('DB_PORT', default='')
-    # }
-    'default': dj_database_url.config(
-        # Feel free to alter this value to suit your needs.
-        default='postgresql://postgres:postgres@localhost:5432/linguista',
-        conn_max_age=600
-    )
+    'default': {
+        'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', default='postgres'),
+        'USER': os.getenv('POSTGRES_USER', default=''),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', default=''),
+        'HOST': os.getenv('DB_HOST', default=''),
+        'PORT': os.getenv('DB_PORT', default='')
+    }
+    # 'default': dj_database_url.config(
+    #     # Feel free to alter this value to suit your needs.
+    #     default='postgresql://postgres:postgres@localhost:5432/linguista',
+    #     conn_max_age=600
+    # )
 }
 
 AUTH_USER_MODEL = "users.User"
