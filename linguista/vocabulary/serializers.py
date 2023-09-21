@@ -7,7 +7,7 @@ from rest_framework import serializers
 from .models import (
     Definition, FavoriteWord, Note, Tag,
     Translation, UsageExample, Word, WordDefinitions, WordTranslations,
-    WordUsageExamples
+    WordUsageExamples, Synonym
 )
 
 User = get_user_model()
@@ -47,28 +47,46 @@ class DefinitionSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'author', 'created', 'modified')
 
 
-# class WordShortSerializer(serializers.ModelSerializer):
-#     """Сериализатор для быстрого добавления слов
-#     (в том числе синонимов, антонимов, форм и похожих слов)."""
-#     translations = TranslationSerializer(many=True)
-#     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
-#
-#     class Meta:
-#         model = Word
-#         fields = ('text', 'translations', 'author')
-#
-#     def validate(self, data):
-#         if len(data['translations']) == 0:
-#             raise serializers.ValidationError(
-#                 'The word must have at least one translation'
-#             )
-#         return data
+class WordShortSerializer(serializers.ModelSerializer):
+    """Сериализатор для быстрого добавления слов
+    (в том числе синонимов, антонимов, форм и похожих слов)."""
+    translations = TranslationSerializer(many=True)
+    # author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Word
+        fields = ('text', 'translations')
+
+    def validate(self, data):
+        if len(data['translations']) == 0:
+            raise serializers.ValidationError(
+                'The word must have at least one translation'
+            )
+        return data
+
+    def create(self, validated_data):
+        translations = validated_data.pop('translations')
+
+        word = Word.objects.create(**validated_data)
+
+        translation_objs = [Translation(**data) for data in translations]
+        Translation.objects.bulk_create(translation_objs)
+        WordTranslations.objects.bulk_create(
+            [
+                WordTranslations(
+                    word=word,
+                    translation=translation
+                ) for translation in translation_objs
+            ]
+        )
+        return word
 
 
-class WordSerializer(serializers.ModelSerializer):
+class WordSerializer(WordShortSerializer):
+    """Основной сериализатор для записи слов."""
     language = serializers.StringRelatedField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    translations = TranslationSerializer(many=True)
+    # translations = TranslationSerializer(many=True)
     translations_count = serializers.SerializerMethodField()
     examples = UsageExampleSerializer(many=True, default=[])
     examples_count = serializers.SerializerMethodField()
@@ -90,9 +108,10 @@ class WordSerializer(serializers.ModelSerializer):
         model = Word
         fields = (
             'id', 'language', 'text', 'author', 'translations',
-            'translations_count', 'examples', 'examples_count', 'definitions',
-            'type', 'tags', 'is_problematic', 'favorite', 'activity',
-            'collections', 'notes', 'created'
+            'examples', 'definitions',
+            'type', 'tags', 'is_problematic', 'activity',
+            'collections', 'notes', 'created', 'synonyms',
+            'translations_count', 'examples_count', 'favorite'
             # 'synonyms', 'antonyms', 'similars', 'forms'
         )
         read_only_fields = ('id', 'activity')
@@ -126,7 +145,7 @@ class WordSerializer(serializers.ModelSerializer):
         examples = validated_data.pop('examples', [])
         definitions = validated_data.pop('definitions', [])
         notes = validated_data.pop('notes', [])
-        # synonyms = validated_data.pop('synonyms', [])
+        synonyms = validated_data.pop('synonyms', [])
         # antonyms = validated_data.pop('antonyms', [])
         # similars = validated_data.pop('similars', [])
         # forms = validated_data.pop('forms', [])
@@ -171,12 +190,26 @@ class WordSerializer(serializers.ModelSerializer):
         note_objs = [Note(word=word, **data) for data in notes]
         Note.objects.bulk_create(note_objs)
 
-        return word
+        for synonym in synonyms:
+            translations = synonym.pop('translations')
+            synonym_word, status = Word.objects.get_or_create(
+                **synonym,
+                author=self.context['request'].user
+            )
+            translation_objs = [Translation(**data) for data in translations]
+            Translation.objects.bulk_create(translation_objs)
+            WordTranslations.objects.bulk_create(
+                [
+                    WordTranslations(
+                        word=synonym_word,
+                        translation=translation
+                    ) for translation in translation_objs
+                ]
+            )
+            Synonym.objects.create(
+                to_word=word,
+                from_word=synonym_word,
+                author=self.context['request'].user
+            )
 
-    # @staticmethod
-    # def set_additional_fields(Model, word, data):
-    #     objs = [Model(
-    #         word=word,
-    #         **item,
-    #     ) for item in data]
-    #     Model.objects.bulk_create(objs)
+        return word
