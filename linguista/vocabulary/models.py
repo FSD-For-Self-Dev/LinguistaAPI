@@ -532,6 +532,26 @@ class Note(WordRelatedModel):
         verbose_name_plural = _('Notes')
 
 
+class ImageAssociation(WordRelatedModel):
+    image = models.ImageField(
+        _('Image'),
+        upload_to='words/associations/images',
+        null=True,
+        blank=True,
+        help_text=_('Image association'),
+    )
+    name = models.CharField(
+        _('Image name'),
+        max_length=64,
+        blank=True
+    )
+
+    def __str__(self) -> str:
+        if self.name:
+            return _(f'Image `{self.name}` for `{self.word}`')
+        return _(f'Image for `{self.word}`')
+
+
 class FavoriteWord(UserRelatedModel):
     word = models.ForeignKey(
         'Word',
