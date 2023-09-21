@@ -3,6 +3,8 @@
 from django.db import models
 from django.utils.translation import gettext as _
 
+from core.models import UserRelatedModel
+
 
 class Language(models.Model):
     '''
@@ -55,6 +57,11 @@ class Language(models.Model):
         help_text=_('increase to show at top of the list')
     )
 
+    class Meta:
+        verbose_name = _('Language')
+        verbose_name_plural = _('Languages')
+        ordering = ('-sorting', 'name', 'isocode')
+
     def __str__(self):
         return '%s (%s)' % (self.name, self.name_local)
 
@@ -70,7 +77,23 @@ class Language(models.Model):
         )
         return lang.pk
 
-    class Meta:
-        verbose_name = _('Language')
-        verbose_name_plural = _('Languages')
-        ordering = ('-sorting', 'name', 'isocode')
+
+class UserLanguage(UserRelatedModel):
+    '''
+    Users native and target languages
+    '''
+
+    language = models.ForeignKey(
+        Language,
+        verbose_name=_('Language'),
+        on_delete=models.CASCADE,
+        related_name='speakers'
+    )
+    is_native = models.BooleanField(
+        default=False
+    )
+
+    def __str__(self):
+        if self.is_native:
+            return '%s is native for %s' % (self.language, self.user)
+        return '%s studies %s' % (self.user, self.language)

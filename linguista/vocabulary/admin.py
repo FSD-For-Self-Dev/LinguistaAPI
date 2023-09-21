@@ -1,11 +1,12 @@
-"""Vocabulary admin config."""
+''' Vocabulary admin config '''
 
 from django.contrib import admin
 
 from .models import (
     Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
     Note, Similar, Synonym, Tag, Translation, Type, UsageExample, Word,
-    WordDefinitions, WordTranslations, WordUsageExamples, WordsInCollections
+    WordDefinitions, WordTranslations, WordUsageExamples, WordsInCollections,
+    ImageAssociation
 )
 
 
@@ -38,5 +39,6 @@ admin.site.register(Antonym)
 admin.site.register(Form)
 admin.site.register(Similar)
 admin.site.register(Note)
+admin.site.register(ImageAssociation)
 admin.site.register(FavoriteWord)
 admin.site.register(FavoriteCollection)
