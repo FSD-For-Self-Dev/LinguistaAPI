@@ -14,7 +14,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.getenv('SECRET_KEY', default='not-a-secret')
 
 DEBUG = os.getenv('DEBUG', default=False)
-# DEBUG = 'RENDER' not in os.environ
 
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='localhost,127.0.0.1,').split(',')
 
@@ -88,11 +87,12 @@ DATABASES = {
         'HOST': os.getenv('DB_HOST', default=''),
         'PORT': os.getenv('DB_PORT', default='')
     }
-    # 'default': dj_database_url.config(
-    #     # Feel free to alter this value to suit your needs.
-    #     default='postgresql://postgres:postgres@localhost:5432/linguista',
-    #     conn_max_age=600
-    # )
+} if DEBUG else {
+    'default': dj_database_url.config(
+        # Feel free to alter this value to suit your needs.
+        default='postgresql://postgres:postgres@localhost:5432/linguista',
+        conn_max_age=600
+    )
 }
 
 AUTH_USER_MODEL = "users.User"
