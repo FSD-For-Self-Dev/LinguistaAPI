@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import (OpenApiExample, OpenApiParameter,
+                                   extend_schema)
 # from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -17,11 +18,13 @@ from rest_framework.response import Response
 from core.pagination import LimitPagination
 
 # from .filters import WordFilte
-from .models import (Definition, WordDefinitions, WordUsageExamples,
-                     UsageExample)
-from .serializers import (TranslationSerializer, WordSerializer,
-                          DefinitionSerializer, UsageExampleSerializer)
-from .permissions import CanAddDefinitionPermission, CanAddUsageExamplePermission
+from .models import (Definition, UsageExample, WordDefinitions,
+                     WordUsageExamples)
+from .permissions import (CanAddDefinitionPermission,
+                          CanAddUsageExamplePermission)
+from .serializers import (DefinitionSerializer, TranslationSerializer,
+                          UsageExampleSerializer, WordListSerializer,
+                          WordSerializer)
 
 User = get_user_model()
 
@@ -31,7 +34,6 @@ class WordViewSet(viewsets.ModelViewSet):
     '''Viewset for actions with words in user vocabulary'''
 
     lookup_field = 'slug'
-    serializer_class = WordSerializer
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     permission_classes = [IsAuthenticated]
     pagination_class = LimitPagination
@@ -60,6 +62,13 @@ class WordViewSet(viewsets.ModelViewSet):
                 examples_count=Count('examples', distinct=True)
             )
         return None
+
+    def get_serializer_class(self):
+        match self.action:
+            case 'list':
+                return WordListSerializer
+            case _:
+                return WordSerializer
 
     @action(methods=['get'], detail=False)
     def random(self, request, *args, **kwargs):
