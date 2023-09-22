@@ -55,9 +55,9 @@ class WordViewSet(viewsets.ModelViewSet):
         '''
         user = self.request.user
         if user.is_authenticated:
-            return user.vocabulary.all().annotate(
-                trnsl_count=Count('translations'),
-                exmpl_count=Count('wordusageexamples')
+            return user.vocabulary.annotate(
+                translations_count=Count('translations', distinct=True),
+                examples_count=Count('examples', distinct=True)
             )
         return None
 

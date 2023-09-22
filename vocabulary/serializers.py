@@ -36,8 +36,8 @@ class UsageExampleSerializer(serializers.ModelSerializer):
 
 
 class WordSerializer(serializers.ModelSerializer):
-    translations_count = serializers.SerializerMethodField()
-    examples_count = serializers.SerializerMethodField()
+    translations_count = serializers.IntegerField()
+    examples_count = serializers.IntegerField()
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
     translations = TranslationSerializer(many=True)
     examples = UsageExampleSerializer(many=True)
@@ -55,12 +55,6 @@ class WordSerializer(serializers.ModelSerializer):
             'examples', 'created', 'author'
         )
         read_only_fields = ('id',)
-
-    def get_translations_count(self, obj):
-        return obj.translations.count()
-
-    def get_examples_count(self, obj):
-        return obj.wordusageexamples.count()
 
     # def get_synonyms(self, obj):
     #     return SynonymSerializer(
