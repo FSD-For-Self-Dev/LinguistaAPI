@@ -89,8 +89,7 @@ DATABASES = {
     }
 } if DEBUG else {
     'default': dj_database_url.config(
-        # Feel free to alter this value to suit your needs.
-        default='postgresql://postgres:postgres@localhost:5432/linguista',
+        default='postgres://postgres_user:u7nfUpD36n2rIciu9kKKzmvboTnPaSt8@dpg-ck6mmjfq54js73fcf6ng-a/postgres_db_hdvk',
         conn_max_age=600
     )
 }
