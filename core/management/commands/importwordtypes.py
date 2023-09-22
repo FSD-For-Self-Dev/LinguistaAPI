@@ -21,8 +21,9 @@ TYPE_CHOICES = [
     ('NUMERAL', _('Numeral'), 2),
     ('INTERJ', _('Interjection'), 1),
     ('PHRASE', _('Phrase'), 3),
-    ('IDIOM', _('Idiom'), 2),
-    ('QUOTE', _('Quote'), 3),
+    ('IDIOM', _('Idiom'), 1),
+    ('QUOTE', _('Quote'), 2),
+    ('Collocation', _('Collocation'), 3),
     ('PROVERB', _('Proverb'), 1),
 ]
 
