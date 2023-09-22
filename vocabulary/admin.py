@@ -15,12 +15,28 @@ class WordTranslationInline(admin.TabularInline):
     min_num = 1
 
 
+class SynonymInline(admin.TabularInline):
+    model = Synonym
+    fk_name = 'to_word'
+
+
+class WordUsageExamplesInline(admin.TabularInline):
+    model = WordUsageExamples
+
+
+class WordDefinitionsInline(admin.TabularInline):
+    model = WordDefinitions
+
+
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
     list_display = ('pk', 'text', 'author')
     search_fields = ('text', 'author')
     list_filter = ('author',)
-    inlines = (WordTranslationInline,)
+    inlines = (
+        WordTranslationInline, SynonymInline, WordUsageExamplesInline,
+        WordDefinitionsInline
+    )
 
 
 admin.site.register(Word, WordAdmin)

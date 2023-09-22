@@ -153,7 +153,7 @@ class Word(CreatedModel, ModifiedModel):
         'self',
         through='Synonym',
         symmetrical=True,
-        related_name='synonym_to',
+        # related_name='synonym_to',
         verbose_name=_('Synonyms'),
         help_text=_('Words with similar meanings'),
         blank=True
@@ -162,7 +162,7 @@ class Word(CreatedModel, ModifiedModel):
         'self',
         through='Antonym',
         symmetrical=True,
-        related_name='antonym_to+',
+        # related_name='antonym_to+',
         verbose_name=_('Antonyms'),
         help_text=_('Words with opposite meanings'),
         blank=True
@@ -171,7 +171,7 @@ class Word(CreatedModel, ModifiedModel):
         'self',
         through='Form',
         symmetrical=True,
-        related_name='form_to+',
+        # related_name='form_to+',
         verbose_name=_('Forms'),
         help_text=_('Word forms'),
         blank=True
@@ -180,7 +180,7 @@ class Word(CreatedModel, ModifiedModel):
         'self',
         through='Similar',
         symmetrical=True,
-        related_name='similar_to+',
+        # related_name='similar_to+',
         verbose_name=_('Similars'),
         help_text=_('Words with similar pronunciation or spelling'),
         blank=True
@@ -220,6 +220,12 @@ class Word(CreatedModel, ModifiedModel):
         get_latest_by = ['created', 'modified']
         verbose_name = _('Word or phrase')
         verbose_name_plural = _('Words and phrases')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['text', 'author'],
+                name='unique_words_in_user_voc'
+            )
+        ]
 
 
 class WordSelfRelatedModel(CreatedModel):
@@ -330,7 +336,7 @@ class Translation(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Translation'),
         max_length=4096,
-        help_text=_('A translation of a word or phrase')
+        help_text=_('A translation of a word or phrase'),
     )
 
     def __str__(self) -> str:
@@ -341,6 +347,12 @@ class Translation(CreatedModel, ModifiedModel, AuthorModel):
         get_latest_by = ['created', 'modified']
         verbose_name = _('Translation')
         verbose_name_plural = _('Translations')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['text', 'author'],
+                name='unique_transl_in_user_voc'
+            )
+        ]
 
 
 class WordRelatedModel(CreatedModel):

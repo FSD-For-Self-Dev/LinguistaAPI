@@ -14,7 +14,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
-# from .filters import WordFilte
+# from .filters import WordFilter
 from .models import (
     Definition,
     UsageExample,
@@ -29,7 +29,8 @@ from .serializers import (
     DefinitionSerializer,
     TranslationSerializer,
     UsageExampleSerializer,
-    WordSerializer
+    WordSerializer,
+    AdvancedWordSerializer
 )
 
 User = get_user_model()
@@ -40,21 +41,13 @@ class WordViewSet(viewsets.ModelViewSet):
     '''Viewset for actions with words in user vocabulary'''
 
     lookup_field = 'slug'
-    serializer_class = WordSerializer
+    serializer_class = AdvancedWordSerializer
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     permission_classes = [IsAuthenticated]
     pagination_class = LimitPagination
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-    # filterset_class = WordFilter
-    # search_fields = (
-    #     'text', 'note', 'tags__name', 'translations__translation',
-    #     'examples__example'
-    # )
-    # ordering_fields = (
-    #     'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
-    # )
     ordering = ('-created',)
 
     def get_queryset(self):
