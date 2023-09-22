@@ -1,7 +1,7 @@
 databases:
-  - name: linguista
-    databaseName: linguista_db
-    user: linguista_db_user
+  - name: postgres
+    databaseName: postgres_db_hdvk
+    user: postgres_user
 
 services:
   - type: web
@@ -13,8 +13,8 @@ services:
     envVars:
       - key: DATABASE_URL
         fromDatabase:
-          name: linguista_db
-          property: connectionString
+          name: postgres_db_hdvk
+          property: postgres://postgres_user:u7nfUpD36n2rIciu9kKKzmvboTnPaSt8@dpg-ck6mmjfq54js73fcf6ng-a/postgres_db_hdvk
       - key: SECRET_KEY
         generateValue: true
       - key: WEB_CONCURRENCY
