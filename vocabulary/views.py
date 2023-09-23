@@ -68,7 +68,7 @@ class WordViewSet(viewsets.ModelViewSet):
         '''Get random word from vocabulary'''
         queryset = self.filter_queryset(self.get_queryset())
         word = random.choice(queryset) if queryset else None
-        serializer = WordSerializer(
+        serializer = self.get_serializer(
             word, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -108,7 +108,7 @@ class WordViewSet(viewsets.ModelViewSet):
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 new_def = serializer.save(
-                    author=request.user,
+                    # author=request.user,
                     **serializer.validated_data
                 )
                 WordDefinitions.objects.create(definition=new_def, word=word)
@@ -168,7 +168,7 @@ class WordViewSet(viewsets.ModelViewSet):
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 new_example = serializer.save(
-                    author=request.user,
+                    # author=request.user,
                     **serializer.validated_data
                 )
                 WordUsageExamples.objects.create(
