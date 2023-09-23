@@ -42,9 +42,7 @@ class WordViewSet(viewsets.ModelViewSet):
         'tags__name', 'definitions__text',
         'definitions__translation'
     ]
-    ordering = ('-created', '-text',
-                'translations__text',
-                )
+    ordering = ('-created', '-text')
 
     def get_queryset(self):
         '''
