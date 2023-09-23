@@ -128,4 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# migrations
+migrations/
 
+# local static files
+static/
