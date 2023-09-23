@@ -7,7 +7,7 @@ from rest_framework import serializers
 from .models import (
     Definition, FavoriteWord, Note, Tag,
     Translation, UsageExample, Word, WordDefinitions, WordTranslations,
-    WordUsageExamples, Synonym
+    WordUsageExamples, Synonym, Antonym, Form, Similar
 )
 
 User = get_user_model()
@@ -48,14 +48,15 @@ class DefinitionSerializer(serializers.ModelSerializer):
 
 
 class WordRelatedSerializer(serializers.ModelSerializer):
+    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
-    def to_representation(self, instance):
-        ret = {'text': instance.text}
-        return ret
+    # def to_representation(self, instance):
+    #     ret = {'text': instance.text}
+    #     return ret
 
     class Meta:
         model = Word
-        fields = ('text',)
+        fields = ('text', 'author')
 
 
 class WordSerializer(serializers.ModelSerializer):
@@ -64,7 +65,7 @@ class WordSerializer(serializers.ModelSerializer):
     translations = TranslationSerializer(many=True)
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
     favorite = serializers.SerializerMethodField()
-    notes = NoteSerializer(source='note', many=True, default=[])
+    notes = NoteSerializer(source='note', many=True, required=False)
 
     class Meta:
         model = Word
@@ -126,24 +127,26 @@ class AdvancedWordSerializer(WordSerializer):
     """Расширенный (полный) сериализатор для создания слов по одному."""
     language = serializers.StringRelatedField()
     translations_count = serializers.SerializerMethodField()
-    examples = UsageExampleSerializer(many=True, default=[])
+    examples = UsageExampleSerializer(many=True, required=False)
     examples_count = serializers.SerializerMethodField()
-    definitions = DefinitionSerializer(many=True, default=[])
+    definitions = DefinitionSerializer(many=True, required=False)
     type = serializers.StringRelatedField()
     tags = serializers.SlugRelatedField(
-        queryset=Tag.objects.all(), slug_field='name', many=True, default=[]
+        queryset=Tag.objects.all(), slug_field='name', many=True,
+        required=False
     )
-    synonyms = WordRelatedSerializer(many=True)
+    synonyms = WordRelatedSerializer(many=True, required=False)
+    antonyms = WordRelatedSerializer(many=True, required=False)
+    forms = WordRelatedSerializer(many=True, required=False)
+    similars = WordRelatedSerializer(many=True, required=False)
 
     class Meta:
         model = Word
         fields = (
-            'id', 'language', 'text', 'translations',
-            'translations_count', 'examples_count',
-            'examples', 'definitions',
-            'type', 'tags', 'is_problematic', 'activity',
-            'collections', 'created', 'synonyms',
-            'favorite', 'author',
+            'id', 'language', 'text', 'translations', 'translations_count',
+            'examples_count', 'examples', 'definitions', 'type', 'tags',
+            'is_problematic', 'activity', 'collections', 'created', 'synonyms',
+            'favorite', 'author', 'antonyms', 'forms', 'similars'
         )
         read_only_fields = ('id',)
 
@@ -159,6 +162,9 @@ class AdvancedWordSerializer(WordSerializer):
         examples = validated_data.pop('examples', [])
         definitions = validated_data.pop('definitions', [])
         synonyms = validated_data.pop('synonyms', [])
+        antonyms = validated_data.pop('antonyms', [])
+        forms = validated_data.pop('forms', [])
+        similars = validated_data.pop('similars', [])
 
         word = super().create(validated_data)
         word.tags.set(tags)
@@ -190,10 +196,42 @@ class AdvancedWordSerializer(WordSerializer):
                 text=synonym.get('text'),
                 author=self.context['request'].user
             )
-
             Synonym.objects.create(
                 to_word=word,
                 from_word=synonym_word,
+                author=self.context['request'].user
+            )
+
+        for antonym in antonyms:
+            antonym_word = Word.objects.get(
+                text=antonym.get('text'),
+                author=self.context['request'].user
+            )
+            Antonym.objects.create(
+                to_word=word,
+                from_word=antonym_word,
+                author=self.context['request'].user
+            )
+
+        for form in forms:
+            form_word = Word.objects.get(
+                text=form.get('text'),
+                author=self.context['request'].user
+            )
+            Form.objects.create(
+                to_word=word,
+                from_word=form_word,
+                author=self.context['request'].user
+            )
+
+        for similar in similars:
+            similar_word = Word.objects.get(
+                text=similar.get('text'),
+                author=self.context['request'].user
+            )
+            Similar.objects.create(
+                to_word=word,
+                from_word=similar_word,
                 author=self.context['request'].user
             )
 

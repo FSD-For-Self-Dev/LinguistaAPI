@@ -20,6 +20,21 @@ class SynonymInline(admin.TabularInline):
     fk_name = 'to_word'
 
 
+class AntonymInline(admin.TabularInline):
+    model = Antonym
+    fk_name = 'to_word'
+
+
+class FormInline(admin.TabularInline):
+    model = Form
+    fk_name = 'to_word'
+
+
+class SimilarInline(admin.TabularInline):
+    model = Similar
+    fk_name = 'to_word'
+
+
 class WordUsageExamplesInline(admin.TabularInline):
     model = WordUsageExamples
 
@@ -35,7 +50,7 @@ class WordAdmin(admin.ModelAdmin):
     list_filter = ('author',)
     inlines = (
         WordTranslationInline, SynonymInline, WordUsageExamplesInline,
-        WordDefinitionsInline
+        WordDefinitionsInline, AntonymInline, FormInline, SimilarInline
     )
 
 
