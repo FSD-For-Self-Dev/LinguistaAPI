@@ -23,7 +23,7 @@ class TranslationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Translation
-        fields = ('text',)
+        fields = ('id', 'text')
 
 
 class UsageExampleSerializer(serializers.ModelSerializer):
@@ -92,3 +92,7 @@ class DefinitionSerializer(serializers.ModelSerializer):
         model = Definition
         fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
         read_only_fields = ('id', 'author', 'created', 'modified')
+
+
+
+
