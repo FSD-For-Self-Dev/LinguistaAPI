@@ -7,8 +7,10 @@ from .models import (Antonym, Collection, Definition, FavoriteCollection,
                      Translation, Type, UsageExample, Word, WordDefinitions,
                      WordsInCollections, WordTranslations, WordUsageExamples)
 
+
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
+
 
 admin.site.register(Word, WordAdmin)
 admin.site.register(Translation)

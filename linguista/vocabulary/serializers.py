@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from .models import Tag, Translation, UsageExample, Word, Definition  # Synonym
+from .models import Tag, Translation, UsageExample, Word, Definition, Word  # Synonym
 
 User = get_user_model()
 
@@ -92,3 +92,9 @@ class DefinitionSerializer(serializers.ModelSerializer):
         model = Definition
         fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
         read_only_fields = ('id', 'author', 'created', 'modified')
+
+
+class WordSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Word
+        fields = '__all__'

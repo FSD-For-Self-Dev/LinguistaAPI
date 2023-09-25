@@ -4,21 +4,23 @@ import random
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count
-
+from django.shortcuts import render, redirect
+from .models import Word
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 # from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-
+from django.contrib import messages
 from core.pagination import LimitPagination
 
 # from vocabulary.models import Word
 # from .filters import WordFilter
 from .models import Definition, WordDefinitions
+from .forms import BulkAddWordsForm
 from .serializers import (TranslationSerializer, WordSerializer,
                           DefinitionSerializer)
 from .permissions import CanAddDefinitionPermission
@@ -143,3 +145,33 @@ class WordViewSet(viewsets.ModelViewSet):
             case 'DELETE':
                 definition.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['POST'])          
+def bulk_add_words(request):
+    if request.method == 'POST':
+        form = BulkAddWordsForm(request.POST)
+        if form.is_valid():
+            words_text = form.cleaned_data['words_input']
+            words_list = words_text.split()
+            created_words = []
+
+            for word_text in words_list:
+                if not word_text.strip():
+                    continue
+
+                if Word.objects.filter(text=word_text).exists():
+                    messages.error(request, f'The word "{word_text}" already exists.')
+                else:
+                    pass
+
+            for word_text in words_list:
+                word, created = Word.objects.get_or_create(text=word_text, author=request.user, activity='ACTIVE')
+                created_words.append(word)
+            if created_words:
+                serializer = WordSerializer(created_words, many=True)
+                return Response(serializer.data)
+            else:
+                messages.success(request, 'Words added successfully')
+
+    return render(request, {'form': form})
+    

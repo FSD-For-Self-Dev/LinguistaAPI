@@ -4,7 +4,7 @@ from django.urls import include, path
 
 from rest_framework import routers
 
-from .views import WordViewSet
+from .views import WordViewSet, views
 
 
 router = routers.DefaultRouter()
@@ -15,4 +15,5 @@ router.register('vocabulary', WordViewSet, basename='vocabulary')
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('bulk_add_words/', views.bulk_add_words, name='bulk_add_words'),
 ]
