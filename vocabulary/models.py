@@ -240,13 +240,12 @@ class WordSelfRelatedModel(CreatedModel):
         on_delete=models.CASCADE
     )
 
-    def get_classname(self):
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created']
         abstract = True
 
-    def get_classname( self ):
+    def get_classname(self):
         return self.__class__.__name__
 
     def __str__(self) -> str:
