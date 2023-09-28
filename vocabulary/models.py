@@ -216,12 +216,18 @@ class Word(CreatedModel, ModifiedModel):
 
     def __str__(self) -> str:
         return self.text
-    
+
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Word or phrase')
         verbose_name_plural = _('Words and phrases')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['text', 'author'],
+                name='unique_words_in_user_voc'
+            )
+        ]
 
 
 class WordSelfRelatedModel(CreatedModel):
