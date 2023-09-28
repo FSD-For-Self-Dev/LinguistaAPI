@@ -16,8 +16,8 @@ from rest_framework.response import Response
 from core.pagination import LimitPagination
 
 # from .filters import WordFilter
-from .models import (Definition, UsageExample, WordDefinitions,
-                     WordUsageExamples)
+from .models import (Definition, Translation, UsageExample, WordDefinitions,
+                     WordTranslations, WordUsageExamples)
 from .permissions import (CanAddDefinitionPermission,
                           CanAddUsageExamplePermission)
 from .serializers import (DefinitionSerializer, TranslationSerializer,
@@ -73,16 +73,75 @@ class WordViewSet(viewsets.ModelViewSet):
     @action(
         methods=['get', 'post'],
         detail=True,
-        serializer_class=TranslationSerializer
+        serializer_class=TranslationSerializer,
+        permission_classes=[IsAuthenticated]
     )
     def translations(self, request, *args, **kwargs):
         '''Get all word's translations or add new translation to word'''
         word = self.get_object()
         translations = word.translations.all()
-        serializer = TranslationSerializer(
-            translations, many=True, context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        match request.method:
+            case 'GET':
+                serializer = TranslationSerializer(
+                    translations, many=True, context={'request': request}
+                )
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            case 'POST':
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+
+                new_translation = serializer.save(
+                    author_id=request.user.id
+                )
+
+                WordTranslations.objects.create(
+                    translation=new_translation,
+                    word=word
+                )
+                return Response(
+                    self.get_serializer(new_translation).data,
+                    status=status.HTTP_201_CREATED
+                )
+
+    @action(
+        detail=True,
+        methods=['patch', 'delete'],
+        url_path=r'translations/(?P<translation_id>\d+)',
+        url_name="word's translations detail",
+        serializer_class=TranslationSerializer,
+    )
+    def translation_detail(self, request, *args, **kwargs):
+        """Update or delete a word's translation"""
+        word = self.get_object()
+        try:
+            translation = word.translations.get(
+                pk=kwargs.get('translation_id')
+            )
+        except Translation.DoesNotExist:
+            raise NotFound(detail="The translation not found")
+
+        match request.method:
+            case 'PATCH':
+                serializer = self.get_serializer(
+                    instance=translation,
+                    data=request.data,
+                    partial=True
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response(serializer.data)
+            case 'DELETE':
+                translation.delete()
+                translations = word.translations.all()
+                serializer = TranslationSerializer(
+                    translations, many=True, context={'request': request}
+                )
+                return Response(
+                    serializer.data,
+                    status=status.HTTP_204_NO_CONTENT
+                )
 
     @action(
         methods=['get', 'post'],
@@ -109,7 +168,10 @@ class WordViewSet(viewsets.ModelViewSet):
                     **serializer.validated_data
                 )
                 WordDefinitions.objects.create(definition=new_def, word=word)
-                return Response(self.get_serializer(new_def).data, status=status.HTTP_201_CREATED)
+                return Response(
+                    self.get_serializer(new_def).data,
+                    status=status.HTTP_201_CREATED
+                )
 
     @action(
         detail=True,
@@ -165,8 +227,14 @@ class WordViewSet(viewsets.ModelViewSet):
                     author=request.user,
                     **serializer.validated_data
                 )
-                WordUsageExamples.objects.create(example=new_example, word=word)
-                return Response(self.get_serializer(new_example).data, status=status.HTTP_201_CREATED)
+                WordUsageExamples.objects.create(
+                    example=new_example,
+                    word=word
+                )
+                return Response(
+                    self.get_serializer(new_example).data,
+                    status=status.HTTP_201_CREATED
+                )
 
     @action(
         detail=True,

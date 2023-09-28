@@ -23,7 +23,7 @@ class TranslationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Translation
-        fields = ('text',)
+        fields = ('id', 'text')
 
 
 class UsageExampleSerializer(serializers.ModelSerializer):
