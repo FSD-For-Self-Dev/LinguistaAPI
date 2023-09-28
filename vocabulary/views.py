@@ -16,7 +16,7 @@ from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 
-# from .filters import WordFilte
+from .filters import WordFilter
 from .models import (Definition, WordDefinitions, WordUsageExamples,
                      UsageExample)
 from .serializers import (TranslationSerializer, WordSerializer,
@@ -35,6 +35,7 @@ class WordViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'head', 'patch', 'delete']
     permission_classes = [IsAuthenticated]
     pagination_class = LimitPagination
+    filterset_class = WordFilter
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
