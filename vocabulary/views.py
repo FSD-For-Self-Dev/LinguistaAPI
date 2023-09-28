@@ -14,15 +14,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
-
 # from .filters import WordFilter
-from .models import (Definition, Translation, UsageExample, WordDefinitions,
-                     WordTranslations, WordUsageExamples)
-from .permissions import (CanAddDefinitionPermission,
-                          CanAddUsageExamplePermission)
-from .serializers import (DefinitionSerializer, TranslationSerializer,
-                          UsageExampleSerializer, WordSerializer,
-                          WordShortResponseSerializer)
+from .models import (
+    Definition, Translation, UsageExample, WordDefinitions,
+    WordTranslations, WordUsageExamples
+)
+from .permissions import (
+    CanAddDefinitionPermission,
+    CanAddUsageExamplePermission
+)
+from .serializers import (
+    AdvancedWordSerializer, DefinitionSerializer, TranslationSerializer,
+    UsageExampleSerializer, WordSerializer
+)
 
 User = get_user_model()
 
@@ -56,9 +60,9 @@ class WordViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         match self.action:
             case 'list':
-                return WordShortResponseSerializer
-            case _:
                 return WordSerializer
+            case _:
+                return AdvancedWordSerializer
 
     @action(methods=['get'], detail=False)
     def random(self, request, *args, **kwargs):
@@ -269,7 +273,7 @@ class WordViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['post'],
         url_path='problematic-toggle',
-        serializer_class=WordShortResponseSerializer
+        serializer_class=WordSerializer
     )
     def problematic(self, request, *args, **kwargs):
         """Toggle is_problematic value"""
