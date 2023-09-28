@@ -7,7 +7,6 @@ from django.db.models import Count
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
-# from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
@@ -16,12 +15,13 @@ from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 
-# from vocabulary.models import Word
 # from .filters import WordFilter
-from .models import Definition, WordDefinitions
+from .models import (Definition, WordDefinitions, WordUsageExamples,
+                     UsageExample)
 from .serializers import (TranslationSerializer, WordSerializer,
-                          DefinitionSerializer, WordShortResponseSerializer)
-from .permissions import CanAddDefinitionPermission
+                          DefinitionSerializer, UsageExampleSerializer,
+                          WordShortResponseSerializer)
+from .permissions import CanAddDefinitionPermission, CanAddUsageExamplePermission
 
 User = get_user_model()
 
@@ -38,27 +38,18 @@ class WordViewSet(viewsets.ModelViewSet):
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-
-    # filterset_class = WordFilter
-    # search_fields = (
-    #     'text', 'note', 'tags__name', 'translations__translation',
-    #     'examples__example'
-    # )
-    # ordering_fields = (
-    #     'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
-    # )
     ordering = ('-created',)
 
     def get_queryset(self):
         '''
         Get all words from user's vocabulary with counted translations 
-        & examples
+        & usage examples
         '''
         user = self.request.user
         if user.is_authenticated:
-            return user.vocabulary.all().annotate(
-                trnsl_count=Count('translations'),
-                exmpl_count=Count('wordusageexamples')
+            return user.vocabulary.annotate(
+                translations_count=Count('translations', distinct=True),
+                examples_count=Count('examples', distinct=True)
             )
         return None
 
@@ -144,6 +135,62 @@ class WordViewSet(viewsets.ModelViewSet):
                 definition.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
+    @action(
+        methods=['get', 'post'],
+        detail=True,
+        serializer_class=UsageExampleSerializer,
+        permission_classes=[IsAuthenticated, CanAddUsageExamplePermission]
+    )
+    def examples(self, request, *args, **kwargs):
+        """Get all usage examples of a word or add new usage example"""
+        word = self.get_object()
+        _examples = word.examples.all()
+        match request.method:
+            case "GET":
+                return Response(
+                    self.get_serializer(_examples, many=True).data,
+                    status=status.HTTP_200_OK
+                )
+            case "POST":
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+                new_example = serializer.save(
+                    author=request.user,
+                    **serializer.validated_data
+                )
+                WordUsageExamples.objects.create(example=new_example, word=word)
+                return Response(self.get_serializer(new_example).data, status=status.HTTP_201_CREATED)
+
+    @action(
+        detail=True,
+        methods=['get', 'patch', 'delete'],
+        url_path=r'examples/(?P<example_id>\d+)',
+        url_name="word's usage example detail",
+        serializer_class=UsageExampleSerializer,
+    )
+    def examples_detail(self, request, *args, **kwargs):
+        """Retrieve, update or delete a word usage example"""
+        word = self.get_object()
+        try:
+            _example = word.examples.get(pk=kwargs.get('example_id'))
+        except UsageExample.DoesNotExist:
+            raise NotFound(detail="The usage example not found")
+        match request.method:
+            case 'GET':
+                return Response(self.get_serializer(_example).data)
+            case 'PATCH':
+                serializer = self.get_serializer(
+                    instance=_example,
+                    data=request.data,
+                    partial=True
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response(serializer.data)
+            case 'DELETE':
+                _example.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+
     @extend_schema(request=None)
     @action(
         detail=True,
@@ -156,5 +203,3 @@ class WordViewSet(viewsets.ModelViewSet):
         word.is_problematic = not word.is_problematic
         word.save()
         return Response(self.get_serializer(word).data)
-
-

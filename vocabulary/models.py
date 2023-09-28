@@ -206,6 +206,13 @@ class Word(CreatedModel, ModifiedModel):
         max_length=4096,
         blank=True
     )
+    examples = models.ManyToManyField(
+        'UsageExample',
+        through='WordUsageExamples',
+        related_name='usage_example_for',
+        verbose_name=_('Usage Example'),
+        blank=True
+    )
 
     def __str__(self) -> str:
         return self.text
@@ -523,6 +530,26 @@ class Note(WordRelatedModel):
         get_latest_by = ['created']
         verbose_name = _('Note')
         verbose_name_plural = _('Notes')
+
+
+class ImageAssociation(WordRelatedModel):
+    image = models.ImageField(
+        _('Image'),
+        upload_to='words/associations/images',
+        null=True,
+        blank=True,
+        help_text=_('Image association'),
+    )
+    name = models.CharField(
+        _('Image name'),
+        max_length=64,
+        blank=True
+    )
+
+    def __str__(self) -> str:
+        if self.name:
+            return _(f'Image `{self.name}` for `{self.word}`')
+        return _(f'Image for `{self.word}`')
 
 
 class FavoriteWord(UserRelatedModel):
