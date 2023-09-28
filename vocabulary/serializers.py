@@ -88,15 +88,3 @@ class DefinitionSerializer(serializers.ModelSerializer):
         model = Definition
         fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
         read_only_fields = ('id', 'author', 'created', 'modified')
-
-
-class CollectionSerializer(serializers.ModelSerializer):
-    # words = serializers.CharField(source='words.words.text', read_only=True)
-    words = serializers.SlugRelatedField(
-        queryset=Word.objects.all(), slug_field='text', many=True
-    )
-
-    class Meta:
-        model = Collection
-        fields = ('title', 'words',
-                  'description',)

@@ -38,14 +38,7 @@ class WordViewSet(viewsets.ModelViewSet):
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-    # filterset_class = WordFilter
-    # search_fields = (
-    #     'text', 'note', 'tags__name', 'translations__translation',
-    #     'examples__example'
-    # )
-    # ordering_fields = (
-    #     'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
-    # )
+
     ordering = ('-created',)
     ordering_fields = ('-text', 'translations_count')
     search_fields = (
@@ -204,26 +197,3 @@ class WordViewSet(viewsets.ModelViewSet):
             case 'DELETE':
                 _example.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@extend_schema(tags=['collection'])
-class CollectionViewSet(viewsets.ModelViewSet):
-    serializer_class = CollectionSerializer
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
-    permission_classes = [IsAuthenticated]
-    pagination_class = LimitPagination
-    filter_backends = [
-        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
-    ]
-    ordering = ('title', )
-    search_fields = [
-        'title',
-    ]
-
-    def get_queryset(self):
-        user = self.request.user
-        if user.is_authenticated:
-            collection = Collection.objects.filter(author=user)
-            return collection
-        return None
-
