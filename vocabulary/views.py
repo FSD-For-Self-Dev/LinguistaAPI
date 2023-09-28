@@ -24,8 +24,8 @@ from .permissions import (
     CanAddUsageExamplePermission
 )
 from .serializers import (
-    AdvancedWordSerializer, DefinitionSerializer, TranslationSerializer,
-    UsageExampleSerializer, WordSerializer
+    WordSerializer, DefinitionSerializer, TranslationSerializer,
+    UsageExampleSerializer, WordShortSerializer
 )
 
 User = get_user_model()
@@ -60,9 +60,9 @@ class WordViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         match self.action:
             case 'list':
-                return WordSerializer
+                return WordShortSerializer
             case _:
-                return AdvancedWordSerializer
+                return WordSerializer
 
     @action(methods=['get'], detail=False)
     def random(self, request, *args, **kwargs):
@@ -273,7 +273,7 @@ class WordViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['post'],
         url_path='problematic-toggle',
-        serializer_class=WordSerializer
+        serializer_class=WordShortSerializer
     )
     def problematic(self, request, *args, **kwargs):
         """Toggle is_problematic value"""

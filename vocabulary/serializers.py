@@ -54,7 +54,7 @@ class WordRelatedSerializer(serializers.ModelSerializer):
         fields = ('id', 'text', 'author')
 
 
-class WordSerializer(serializers.ModelSerializer):
+class WordShortSerializer(serializers.ModelSerializer):
     """Сериализатор для множественного добавления слов (а также синонимов,
     антонимов, форм и похожих слов), а также для чтения в короткой форме."""
     language = serializers.StringRelatedField()
@@ -135,7 +135,7 @@ class WordSerializer(serializers.ModelSerializer):
         return word
 
 
-class AdvancedWordSerializer(WordSerializer):
+class WordSerializer(WordShortSerializer):
     """Расширенный (полный) сериализатор для создания слов по одному."""
     examples = UsageExampleSerializer(many=True, required=False)
     examples_count = serializers.IntegerField(read_only=True)
