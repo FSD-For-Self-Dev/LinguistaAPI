@@ -4,6 +4,7 @@ from vocabulary.models import Word
 
 
 class WordFilter(df.FilterSet):
+    '''Filter for words'''
     language = df.CharFilter(field_name='language__isocode')
     is_problematic = df.BooleanFilter(field_name='is_problematic')
     tags = df.CharFilter(method='filter_tags')
@@ -30,13 +31,6 @@ class WordFilter(df.FilterSet):
         if value:
             tags = value.split(',')
             return queryset.filter(tags__name__in=tags)
-        return queryset
-
-    def filter_have_associations(self, queryset, name, value):
-        if value:
-            return queryset.filter(synonyms__isnull=False) | queryset.filter(
-                antonyms__isnull=False) | queryset.filter(
-                forms__isnull=False) | queryset.filter(similars__isnull=False)
         return queryset
 
     def filter_translations_amount(self, queryset, name, value):
