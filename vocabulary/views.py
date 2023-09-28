@@ -202,6 +202,7 @@ class WordViewSet(viewsets.ModelViewSet):
     @action(
         detail=True,
         methods=['post'],
+        url_path='problematic-toggle',
         serializer_class=WordShortResponseSerializer
     )
     def problematic(self, request, *args, **kwargs):
