@@ -6,9 +6,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import (OpenApiExample, OpenApiParameter,
-                                   extend_schema)
-# from djoser.views import UserViewSet
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
@@ -17,14 +15,13 @@ from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 
-# from .filters import WordFilte
-from .models import (Definition, UsageExample, WordDefinitions,
-                     WordUsageExamples)
-from .permissions import (CanAddDefinitionPermission,
-                          CanAddUsageExamplePermission)
-from .serializers import (DefinitionSerializer, TranslationSerializer,
-                          UsageExampleSerializer, WordListSerializer,
-                          WordSerializer)
+# from .filters import WordFilter
+from .models import (Definition, WordDefinitions, WordUsageExamples,
+                     UsageExample)
+from .serializers import (TranslationSerializer, WordSerializer,
+                          DefinitionSerializer, UsageExampleSerializer,
+                          WordShortResponseSerializer)
+from .permissions import CanAddDefinitionPermission, CanAddUsageExamplePermission
 
 User = get_user_model()
 
@@ -40,14 +37,6 @@ class WordViewSet(viewsets.ModelViewSet):
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-    # filterset_class = WordFilter
-    # search_fields = (
-    #     'text', 'note', 'tags__name', 'translations__translation',
-    #     'examples__example'
-    # )
-    # ordering_fields = (
-    #     'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
-    # )
     ordering = ('-created',)
 
     def get_queryset(self):
@@ -207,3 +196,16 @@ class WordViewSet(viewsets.ModelViewSet):
             case 'DELETE':
                 _example.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @extend_schema(request=None)
+    @action(
+        detail=True,
+        methods=['post'],
+        serializer_class=WordShortResponseSerializer
+    )
+    def problematic(self, request, *args, **kwargs):
+        """Toggle is_problematic value"""
+        word = self.get_object()
+        word.is_problematic = not word.is_problematic
+        word.save()
+        return Response(self.get_serializer(word).data)
