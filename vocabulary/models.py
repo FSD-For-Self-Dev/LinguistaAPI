@@ -18,12 +18,12 @@ class Tag(models.Model):
         unique=True
     )
 
-    def __str__(self) -> str:
-        return self.name
-
     class Meta:
         verbose_name = _('Tag')
         verbose_name_plural = _('Tags')
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Collection(CreatedModel, ModifiedModel, AuthorModel):
@@ -44,14 +44,14 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         blank=True
     )
 
-    def __str__(self) -> str:
-        return _(f'{self.title} ({self.words.count()} words)')
-
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
+
+    def __str__(self) -> str:
+        return _(f'{self.title} ({self.words.count()} words)')
 
 
 class Type(models.Model):
@@ -84,12 +84,12 @@ class Type(models.Model):
         )
         return word_type.pk
 
-    def __str__(self) -> str:
-        return self.name
-
     class Meta:
         verbose_name = _('Type')
         verbose_name_plural = _('Types')
+
+    def __str__(self) -> str:
+        return self.name
 
 
 class Word(CreatedModel, ModifiedModel):
@@ -206,15 +206,28 @@ class Word(CreatedModel, ModifiedModel):
         max_length=4096,
         blank=True
     )
+    examples = models.ManyToManyField(
+        'UsageExample',
+        through='WordUsageExamples',
+        related_name='usage_example_for',
+        verbose_name=_('Usage Example'),
+        blank=True
+    )
 
-    def __str__(self) -> str:
-        return self.text
-    
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Word or phrase')
         verbose_name_plural = _('Words and phrases')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['text', 'author'],
+                name='unique_words_in_user_voc'
+            )
+        ]
+
+    def __str__(self) -> str:
+        return self.text
 
 
 class WordSelfRelatedModel(CreatedModel):
@@ -229,6 +242,11 @@ class WordSelfRelatedModel(CreatedModel):
         on_delete=models.CASCADE
     )
 
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
+        abstract = True
+
     def get_classname( self ):
         return self.__class__.__name__
 
@@ -238,11 +256,6 @@ class WordSelfRelatedModel(CreatedModel):
             from_word=self.from_word, classname=classname, to_word=self.to_word
         )
 
-    class Meta:
-        ordering = ['-created']
-        get_latest_by = ['created']
-        abstract = True
-
 
 class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
     difference = models.CharField(
@@ -251,6 +264,10 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
         help_text=_('Difference between these %(class)ss'),
         blank=True
     )
+
+    class Meta:
+        get_latest_by = ['created', 'modified']
+        abstract = True
 
     def __str__(self) -> str:
         if self.difference:
@@ -263,10 +280,6 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
                 difference=self.difference, classname=classname
             )
         return super().__str__()
-
-    class Meta:
-        get_latest_by = ['created', 'modified']
-        abstract = True
 
 
 class Synonym(WordSelfRelatedWithDifferenceModel, AuthorModel):
@@ -328,14 +341,14 @@ class Translation(CreatedModel, ModifiedModel, AuthorModel):
         help_text=_('A translation of a word or phrase')
     )
 
-    def __str__(self) -> str:
-        return self.text
-
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Translation')
         verbose_name_plural = _('Translations')
+
+    def __str__(self) -> str:
+        return self.text
 
 
 class WordRelatedModel(CreatedModel):
@@ -358,12 +371,6 @@ class WordsInCollections(WordRelatedModel):
         related_name='%(class)s'
     )
 
-    def __str__(self) -> str:
-        return _(
-            f'Word `{self.word}` was added to collection `{self.collection}` '
-            f'at {self.created}'
-        )
-
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created']
@@ -376,6 +383,12 @@ class WordsInCollections(WordRelatedModel):
             )
         ]
 
+    def __str__(self) -> str:
+        return _(
+            f'Word `{self.word}` was added to collection `{self.collection}` '
+            f'at {self.created}'
+        )
+
 
 class WordTranslations(WordRelatedModel):
     translation = models.ForeignKey(
@@ -384,12 +397,6 @@ class WordTranslations(WordRelatedModel):
         on_delete=models.CASCADE,
         related_name='%(class)s'
     )
-
-    def __str__(self) -> str:
-        return _(
-            f'`{self.word}` is translated as `{self.translation}` '
-            f'(translation was added at {self.created})'
-        )
 
     class Meta:
         ordering = ['-created']
@@ -402,6 +409,12 @@ class WordTranslations(WordRelatedModel):
                 name='unique_word_translation'
             )
         ]
+
+    def __str__(self) -> str:
+        return _(
+            f'`{self.word}` is translated as `{self.translation}` '
+            f'(translation was added at {self.created})'
+        )
 
 
 class Definition(CreatedModel, ModifiedModel, AuthorModel):
@@ -416,16 +429,16 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
         blank=True
     )
 
-    def __str__(self) -> str:
-        if self.translation:
-            return _(f'{self.text} ({self.translation})')
-        return self.text
-
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Definition')
         verbose_name_plural = _('Definitions')
+
+    def __str__(self) -> str:
+        if self.translation:
+            return _(f'{self.text} ({self.translation})')
+        return self.text
 
 
 class WordDefinitions(WordRelatedModel):
@@ -435,12 +448,6 @@ class WordDefinitions(WordRelatedModel):
         on_delete=models.CASCADE,
         related_name='%(class)s'
     )
-
-    def __str__(self) -> str:
-        return _(
-            f'`{self.word}` means `{self.definition}` '
-            f'(definition was added at {self.created})'
-        )
 
     class Meta:
         ordering = ['-created']
@@ -453,6 +460,12 @@ class WordDefinitions(WordRelatedModel):
                 name='unique_word_definition'
             )
         ]
+
+    def __str__(self) -> str:
+        return _(
+            f'`{self.word}` means `{self.definition}` '
+            f'(definition was added at {self.created})'
+        )
 
 
 class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
@@ -467,16 +480,16 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
         blank=True
     )
 
-    def __str__(self) -> str:
-        if self.translation:
-            return _(f'{self.text} ({self.translation})')
-        return self.text
-
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Usage example')
         verbose_name_plural = _('Usage examples')
+
+    def __str__(self) -> str:
+        if self.translation:
+            return _(f'{self.text} ({self.translation})')
+        return self.text
 
 
 class WordUsageExamples(WordRelatedModel):
@@ -486,12 +499,6 @@ class WordUsageExamples(WordRelatedModel):
         on_delete=models.CASCADE,
         related_name='%(class)s'
     )
-
-    def __str__(self) -> str:
-        return _(
-            f'Usage example of `{self.word}`: {self.example} '
-            f'(example was added at {self.created})'
-        )
 
     class Meta:
         ordering = ['-created']
@@ -505,6 +512,12 @@ class WordUsageExamples(WordRelatedModel):
             )
         ]
 
+    def __str__(self) -> str:
+        return _(
+            f'Usage example of `{self.word}`: {self.example} '
+            f'(example was added at {self.created})'
+        )
+
 
 class Note(WordRelatedModel):
     text = models.CharField(
@@ -512,17 +525,41 @@ class Note(WordRelatedModel):
         max_length=4096
     )
 
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
+        verbose_name = _('Note')
+        verbose_name_plural = _('Notes')
+
     def __str__(self) -> str:
         return _(
             f'Note to the word `{self.word}`: {self.text} '
             f'(note was added at {self.created})'
         )
 
+
+class ImageAssociation(WordRelatedModel):
+    image = models.ImageField(
+        _('Image'),
+        upload_to='words/associations/images',
+        null=True,
+        blank=True,
+        help_text=_('Image association'),
+    )
+    name = models.CharField(
+        _('Image name'),
+        max_length=64,
+        blank=True
+    )
+
     class Meta:
-        ordering = ['-created']
-        get_latest_by = ['created']
-        verbose_name = _('Note')
-        verbose_name_plural = _('Notes')
+        verbose_name = _('Association image')
+        verbose_name_plural = _('Association images')
+
+    def __str__(self) -> str:
+        if self.name:
+            return _(f'Image `{self.name}` for `{self.word}`')
+        return _(f'Image for `{self.word}`')
 
 
 class FavoriteWord(UserRelatedModel):
@@ -533,17 +570,17 @@ class FavoriteWord(UserRelatedModel):
         related_name='favorite_for'
     )
 
-    def __str__(self) -> str:
-        return _(
-            f'The word `{self.word}` was added to favorites by '
-            f'{self.user} at {self.created}'
-        )
-
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created']
         verbose_name = _('Favorite word')
         verbose_name_plural = _('Favorite words')
+
+    def __str__(self) -> str:
+        return _(
+            f'The word `{self.word}` was added to favorites by '
+            f'{self.user} at {self.created}'
+        )
 
 
 class FavoriteCollection(UserRelatedModel):
@@ -554,14 +591,14 @@ class FavoriteCollection(UserRelatedModel):
         related_name='favorite_for'
     )
 
-    def __str__(self) -> str:
-        return _(
-            f'The collection `{self.collection}` was added to favorites by '
-            f'{self.user} at {self.created}'
-        )
-
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created']
         verbose_name = _('Favorite collection')
         verbose_name_plural = _('Favorite collections')
+
+    def __str__(self) -> str:
+        return _(
+            f'The collection `{self.collection}` was added to favorites by '
+            f'{self.user} at {self.created}'
+        )
