@@ -46,13 +46,13 @@ class WordViewSet(viewsets.ModelViewSet):
     # ordering_fields = (
     #     'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
     # )
-    ordering = ('-created', '-text',
-                'translations_count')
-    search_fields = [
+    ordering = ('-created',)
+    ordering_fields = ('-text', 'translations_count')
+    search_fields = (
         'text', 'translations__text',
         'tags__name', 'definitions__text',
         'definitions__translation'
-    ]
+    )
 
     def get_queryset(self):
         '''
