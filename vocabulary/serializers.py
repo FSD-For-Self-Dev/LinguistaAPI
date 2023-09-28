@@ -35,7 +35,7 @@ class UsageExampleSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'author', 'created', 'modified')
 
 
-class WordListSerializer(serializers.ModelSerializer):
+class WordShortResponseSerializer(serializers.ModelSerializer):
     translations_count = serializers.IntegerField()
     translations = TranslationSerializer(many=True)
     tags = serializers.SlugRelatedField(
@@ -48,8 +48,9 @@ class WordListSerializer(serializers.ModelSerializer):
     class Meta:
         model = Word
         fields = (
-            'id', 'language', 'text', 'activity', 'type', 'note', 'tags',
-            'translations_count', 'translations', 'created', 'author'
+            'id', 'language', 'text', 'activity', 'is_problematic', 'type',
+            'note', 'tags', 'translations_count', 'translations', 'created',
+            'modified', 'author'
         )
         read_only_fields = fields
 
@@ -69,9 +70,9 @@ class WordSerializer(serializers.ModelSerializer):
     class Meta:
         model = Word
         fields = (
-            'id', 'language', 'text', 'activity', 'is_problematic', 'type', 'note', 'tags',
-            'translations_count', 'translations', 'examples_count',
-            'examples', 'created', 'author'
+            'id', 'language', 'text', 'activity', 'is_problematic', 'type',
+            'note', 'tags', 'translations_count', 'translations',
+            'examples_count', 'examples', 'created', 'modified', 'author'
         )
         read_only_fields = ('id',)
 
@@ -98,30 +99,6 @@ class WordSerializer(serializers.ModelSerializer):
         Translation.objects.bulk_create(translations_objs)
 
         return word
-
-
-class WordShortResponseSerializer(serializers.ModelSerializer):
-    translations_count = serializers.SerializerMethodField()
-    examples_count = serializers.SerializerMethodField()
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    tags = serializers.SlugRelatedField(
-        queryset=Tag.objects.all(), slug_field='name', many=True
-    )
-
-    def get_translations_count(self, obj):
-        return obj.translations.count()
-
-    def get_examples_count(self, obj):
-        return obj.wordusageexamples.count()
-
-    class Meta:
-        model = Word
-        fields = (
-            'id', 'language', 'text', 'activity', 'is_problematic', 'type', 'tags',
-            'translations_count', 'examples_count',
-            'created', 'modified', 'author'
-        )
-        read_only_fields = ('id',)
 
 
 class DefinitionSerializer(serializers.ModelSerializer):

@@ -6,7 +6,7 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
@@ -16,12 +16,13 @@ from rest_framework.response import Response
 from core.pagination import LimitPagination
 
 # from .filters import WordFilter
-from .models import (Definition, WordDefinitions, WordUsageExamples,
-                     UsageExample)
-from .serializers import (TranslationSerializer, WordSerializer,
-                          DefinitionSerializer, UsageExampleSerializer,
+from .models import (Definition, UsageExample, WordDefinitions,
+                     WordUsageExamples)
+from .permissions import (CanAddDefinitionPermission,
+                          CanAddUsageExamplePermission)
+from .serializers import (DefinitionSerializer, TranslationSerializer,
+                          UsageExampleSerializer, WordSerializer,
                           WordShortResponseSerializer)
-from .permissions import CanAddDefinitionPermission, CanAddUsageExamplePermission
 
 User = get_user_model()
 
@@ -55,7 +56,7 @@ class WordViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         match self.action:
             case 'list':
-                return WordListSerializer
+                return WordShortResponseSerializer
             case _:
                 return WordSerializer
 
