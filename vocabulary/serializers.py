@@ -94,13 +94,13 @@ class WordShortSerializer(serializers.ModelSerializer):
         return is_favorite
 
     def validate(self, data):
-        request = self.context['request']
-        author_id = request.user
-        text = data.get('text')
-        if Word.objects.filter(author=author_id, text=text).exists():
-            raise serializers.ValidationError(
-                'The word is already in the dictionary'
-            )
+        # request = self.context['request']
+        # author_id = request.user
+        # text = data.get('text')
+        # if Word.objects.filter(author=author_id, text=text).exists():
+        #     raise serializers.ValidationError(
+        #         'The word is already in the dictionary'
+        #     )
 
         translations = data.get('translations')
         if not translations or len(translations) == 0:

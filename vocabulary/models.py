@@ -153,7 +153,6 @@ class Word(CreatedModel, ModifiedModel):
         'self',
         through='Synonym',
         symmetrical=True,
-        # related_name='synonym_to',
         verbose_name=_('Synonyms'),
         help_text=_('Words with similar meanings'),
         blank=True
@@ -162,7 +161,6 @@ class Word(CreatedModel, ModifiedModel):
         'self',
         through='Antonym',
         symmetrical=True,
-        # related_name='antonym_to+',
         verbose_name=_('Antonyms'),
         help_text=_('Words with opposite meanings'),
         blank=True
@@ -171,7 +169,6 @@ class Word(CreatedModel, ModifiedModel):
         'self',
         through='Form',
         symmetrical=True,
-        # related_name='form_to+',
         verbose_name=_('Forms'),
         help_text=_('Word forms'),
         blank=True
@@ -180,7 +177,6 @@ class Word(CreatedModel, ModifiedModel):
         'self',
         through='Similar',
         symmetrical=True,
-        # related_name='similar_to+',
         verbose_name=_('Similars'),
         help_text=_('Words with similar pronunciation or spelling'),
         blank=True
