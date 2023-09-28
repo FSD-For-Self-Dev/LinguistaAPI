@@ -38,21 +38,12 @@ class WordViewSet(viewsets.ModelViewSet):
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-    # filterset_class = WordFilter
-    # search_fields = (
-    #     'text', 'note', 'tags__name', 'translations__translation',
-    #     'examples__example'
-    # )
-    # ordering_fields = (
-    #     'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
-    # )
-    ordering = ('-created', '-text',
-                'translations_count')
-    search_fields = [
-        'text', 'translations__text',
-        'tags__name', 'definitions__text',
-        'definitions__translation'
-    ]
+    ordering = ('-created',)
+    ordering_fields = ('-text', 'translations_count')
+    search_fields = ('text', 'translations__text',
+                     'tags__name', 'definitions__text',
+                     'definitions__translation'
+                     )
 
     def get_queryset(self):
         '''
@@ -215,10 +206,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
     filter_backends = [
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
-    ordering = ('title', )
-    search_fields = [
-        'title',
-    ]
+    ordering_fields = ('title',)
+    search_fields = ('title',)
 
     def get_queryset(self):
         user = self.request.user
@@ -226,4 +215,3 @@ class CollectionViewSet(viewsets.ModelViewSet):
             collection = Collection.objects.filter(author=user)
             return collection
         return None
-

@@ -9,16 +9,6 @@ from .models import Tag, Translation, UsageExample, Word, Definition, Collection
 User = get_user_model()
 
 
-# class SynonymSerializer(serializers.ModelSerializer):
-#     synonym = serializers.StringRelatedField()
-
-#     class Meta:
-#         model = Synonym
-#         fields = (
-#             'synonym', 'note'
-#         )
-
-
 class TranslationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Translation
@@ -44,9 +34,6 @@ class WordSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all(), slug_field='name', many=True
     )
 
-    # synonyms = SynonymSerializer(many=True)
-    # synonyms = serializers.SerializerMethodField()
-
     class Meta:
         model = Word
         fields = (
@@ -55,13 +42,6 @@ class WordSerializer(serializers.ModelSerializer):
             'examples', 'created', 'author'
         )
         read_only_fields = ('id',)
-
-    # def get_synonyms(self, obj):
-    #     return SynonymSerializer(
-    #         obj.synonyms.all() | obj.being_synonym_to.all(),
-    #         many=True,
-    #         context={'request': self.context.get('request')}
-    #     ).data
 
     def create(self, validated_data):
         translations = validated_data.pop('translations')
@@ -91,12 +71,10 @@ class DefinitionSerializer(serializers.ModelSerializer):
 
 
 class CollectionSerializer(serializers.ModelSerializer):
-    # words = serializers.CharField(source='words.words.text', read_only=True)
     words = serializers.SlugRelatedField(
         queryset=Word.objects.all(), slug_field='text', many=True
     )
 
     class Meta:
         model = Collection
-        fields = ('title', 'words',
-                  'description',)
+        fields = ('title', 'words', 'description')
