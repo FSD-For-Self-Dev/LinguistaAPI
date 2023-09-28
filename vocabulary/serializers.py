@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from .models import Tag, Translation, UsageExample, Word, Definition  # Synonym
+from .models import Tag, Translation, UsageExample, Word, Definition, Collection  # Synonym
 
 User = get_user_model()
 
@@ -20,7 +20,6 @@ User = get_user_model()
 
 
 class TranslationSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Translation
         fields = ('text',)
@@ -44,6 +43,7 @@ class WordSerializer(serializers.ModelSerializer):
     tags = serializers.SlugRelatedField(
         queryset=Tag.objects.all(), slug_field='name', many=True
     )
+
     # synonyms = SynonymSerializer(many=True)
     # synonyms = serializers.SerializerMethodField()
 
@@ -88,3 +88,15 @@ class DefinitionSerializer(serializers.ModelSerializer):
         model = Definition
         fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
         read_only_fields = ('id', 'author', 'created', 'modified')
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    # words = serializers.CharField(source='words.words.text', read_only=True)
+    words = serializers.SlugRelatedField(
+        queryset=Word.objects.all(), slug_field='text', many=True
+    )
+
+    class Meta:
+        model = Collection
+        fields = ('title', 'words',
+                  'description',)
