@@ -162,6 +162,34 @@ class WordSerializer(WordShortSerializer):
         )
         read_only_fields = ('id', 'translations_count', 'examples_count')
 
+    @staticmethod
+    def bulk_create_objects(
+            objs, model_cls, related_model_cls, related_field, word
+    ):
+        objs_list = [model_cls(**data) for data in objs]
+        model_cls.objects.bulk_create(objs_list)
+        related_objs_list = [
+            related_model_cls(
+                **{
+                    related_field: related_data,
+                    'word': word
+                }
+            ) for related_data in objs_list
+        ]
+        related_model_cls.objects.bulk_create(related_objs_list)
+
+    def create_links_for_related_objs(self, cls, objs, word):
+        for obj in objs:
+            obj_word = Word.objects.get(
+                text=obj.get('text'),
+                author=self.context['request'].user
+            )
+            cls.objects.create(
+                to_word=word,
+                from_word=obj_word,
+                author=self.context['request'].user
+            )
+
     @transaction.atomic
     def create(self, validated_data):
         examples = validated_data.pop('examples', [])
@@ -173,70 +201,23 @@ class WordSerializer(WordShortSerializer):
 
         word = super().create(validated_data)
 
-        example_objs = [UsageExample(**data) for data in examples]
-        UsageExample.objects.bulk_create(example_objs)
-        WordUsageExamples.objects.bulk_create(
-            [
-                WordUsageExamples(
-                    word=word,
-                    example=example
-                ) for example in example_objs
-            ]
+        self.bulk_create_objects(
+            examples,
+            UsageExample,
+            WordUsageExamples,
+            'example',
+            word
         )
-
-        definition_objs = [Definition(**data) for data in definitions]
-        Definition.objects.bulk_create(definition_objs)
-        WordDefinitions.objects.bulk_create(
-            [
-                WordDefinitions(
-                    word=word,
-                    definition=definition
-                ) for definition in definition_objs
-            ]
+        self.bulk_create_objects(
+            definitions,
+            Definition,
+            WordDefinitions,
+            'definition',
+            word
         )
-
-        for synonym in synonyms:
-            synonym_word = Word.objects.get(
-                text=synonym.get('text'),
-                author=self.context['request'].user
-            )
-            Synonym.objects.create(
-                to_word=word,
-                from_word=synonym_word,
-                author=self.context['request'].user
-            )
-
-        for antonym in antonyms:
-            antonym_word = Word.objects.get(
-                text=antonym.get('text'),
-                author=self.context['request'].user
-            )
-            Antonym.objects.create(
-                to_word=word,
-                from_word=antonym_word,
-                author=self.context['request'].user
-            )
-
-        for form in forms:
-            form_word = Word.objects.get(
-                text=form.get('text'),
-                author=self.context['request'].user
-            )
-            Form.objects.create(
-                to_word=word,
-                from_word=form_word,
-                author=self.context['request'].user
-            )
-
-        for similar in similars:
-            similar_word = Word.objects.get(
-                text=similar.get('text'),
-                author=self.context['request'].user
-            )
-            Similar.objects.create(
-                to_word=word,
-                from_word=similar_word,
-                author=self.context['request'].user
-            )
+        self.create_links_for_related_objs(Synonym, synonyms, word)
+        self.create_links_for_related_objs(Antonym, antonyms, word)
+        self.create_links_for_related_objs(Form, forms, word)
+        self.create_links_for_related_objs(Similar, similars, word)
 
         return word
