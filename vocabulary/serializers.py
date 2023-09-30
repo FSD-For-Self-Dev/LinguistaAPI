@@ -71,6 +71,7 @@ class DefinitionSerializer(serializers.ModelSerializer):
 
 
 class CollectionSerializer(serializers.ModelSerializer):
+    """Сериалайзер коллекций"""
     words = serializers.SlugRelatedField(
         queryset=Word.objects.all(), slug_field='text', many=True
     )

@@ -199,8 +199,9 @@ class WordViewSet(viewsets.ModelViewSet):
 
 @extend_schema(tags=['collection'])
 class CollectionViewSet(viewsets.ModelViewSet):
+    """Вьюсет для отображения коллекций"""
     serializer_class = CollectionSerializer
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
+    http_method_names = ['get']
     permission_classes = [IsAuthenticated]
     pagination_class = LimitPagination
     filter_backends = [
