@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
 
-from .models import Definition, Tag, Translation, UsageExample, Word  # Synonym
+from .models import Definition, Tag, Translation, UsageExample, Word, Collection  # Synonym
 
 User = get_user_model()
 
@@ -108,3 +108,11 @@ class DefinitionSerializer(serializers.ModelSerializer):
         model = Definition
         fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
         read_only_fields = ('id', 'author', 'created', 'modified')
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Collection
+        fields = ('id', 'author', 'title', 'description', 'words', 'created', 'modified')
