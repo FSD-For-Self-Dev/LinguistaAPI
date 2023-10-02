@@ -6,7 +6,7 @@ from rest_framework import serializers
 
 from .models import (
     Antonym, Collection, Definition, FavoriteWord, Form, Note, Similar,
-    Synonym, Tag, Translation, UsageExample, Word, WordDefinitions,
+    Synonym, Tag, Translation, Type, UsageExample, Word, WordDefinitions,
     WordTranslations, WordUsageExamples
 )
 
@@ -58,7 +58,10 @@ class WordShortSerializer(serializers.ModelSerializer):
     """Сериализатор для множественного добавления слов (а также синонимов,
     антонимов, форм и похожих слов), а также для чтения в короткой форме."""
     language = serializers.StringRelatedField()
-    type = serializers.StringRelatedField()
+    type = serializers.SlugRelatedField(
+        queryset=Type.objects.all(), slug_field='name', many=True,
+        required=False
+    )
     notes = NoteSerializer(
         source='note', many=True, required=False, write_only=True
     )
@@ -94,14 +97,6 @@ class WordShortSerializer(serializers.ModelSerializer):
         return is_favorite
 
     def validate(self, data):
-        # request = self.context['request']
-        # author_id = request.user
-        # text = data.get('text')
-        # if Word.objects.filter(author=author_id, text=text).exists():
-        #     raise serializers.ValidationError(
-        #         'The word is already in the dictionary'
-        #     )
-
         translations = data.get('translations')
         if not translations or len(translations) == 0:
             raise serializers.ValidationError(
@@ -112,14 +107,16 @@ class WordShortSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         translations = validated_data.pop('translations')
-        collections = validated_data.pop('collections', [])
-        notes = validated_data.pop('notes', [])
-        tags = validated_data.pop('tags', [])
+        collections = validated_data.pop('collections')
+        notes = validated_data.pop('note')
+        tags = validated_data.pop('tags')
+        word_types = validated_data.pop('type')
 
         word = Word.objects.create(**validated_data)
 
         word.collections.set(collections)
         word.tags.set(tags)
+        word.type.set(word_types)
 
         for translation in translations:
             current_translation, created = (
@@ -192,12 +189,12 @@ class WordSerializer(WordShortSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        examples = validated_data.pop('examples', [])
-        definitions = validated_data.pop('definitions', [])
-        synonyms = validated_data.pop('synonyms', [])
-        antonyms = validated_data.pop('antonyms', [])
-        forms = validated_data.pop('forms', [])
-        similars = validated_data.pop('similars', [])
+        examples = validated_data.pop('examples')
+        definitions = validated_data.pop('definitions')
+        synonyms = validated_data.pop('synonyms')
+        antonyms = validated_data.pop('antonyms')
+        forms = validated_data.pop('forms')
+        similars = validated_data.pop('similars')
 
         word = super().create(validated_data)
 

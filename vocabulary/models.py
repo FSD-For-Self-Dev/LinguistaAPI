@@ -124,14 +124,12 @@ class Word(CreatedModel, ModifiedModel):
         on_delete=models.CASCADE,
         related_name='vocabulary'
     )
-    type = models.ForeignKey(
+    type = models.ManyToManyField(
         'Type',
         verbose_name=_('Type'),
-        on_delete=models.SET_DEFAULT,
         related_name='words',
         default=Type.get_default_pk,
-        blank=True,
-        null=True
+        blank=True
     )
     activity = models.CharField(
         _('Activity status'),

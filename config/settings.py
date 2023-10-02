@@ -185,7 +185,7 @@ CORS_URLS_REGEX = r'^/api/.*$'
 
 SIMPLE_JWT = {
     # Срок жизни токена
-    # 'ACCESS_TOKEN_LIFETIME': timedelta(minutes=45),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=45),
     'ACCESS_TOKEN_LIFETIME': timedelta(days=3),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
