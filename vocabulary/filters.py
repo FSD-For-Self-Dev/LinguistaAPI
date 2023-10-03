@@ -1,22 +1,20 @@
-''' Vocabulary filters '''
-
 import django_filters as df
+from django.db.models import Count
 
-from vocabulary.models import Word
 
+class CollectionFilter(df.FilterSet):
+    """Collection filter."""
+    date_added__gt = df.DateFilter(field_name='created', lookup_expr='gt')
+    date_added__lt = df.DateFilter(field_name='created', lookup_expr='lt')
+    words_amount__gt = df.NumberFilter(method='filter_words_amount',
+                                       lookup_expr='gt')
+    words_amount__lt = df.NumberFilter(method='filter_words_amount',
+                                       lookup_expr='lt')
 
-class WordFilter(df.FilterSet):
-    '''Фильтр модели слова'''
-
-    # having_tag = df.Filter(field_name="tags", lookup_expr='in')
-    # created_after = df.Filter(field_name="created", lookup_expr='date__gte')
-    # created_before = df.Filter(field_name="created", lookup_expr='date__lt')
-    # created = df.Filter(field_name="created", lookup_expr='date__exact')
-    # min_trnsl_count = df.Filter(field_name="trnsl_count", lookup_expr='gte')
-    # max_trnsl_count = df.Filter(field_name="trnsl_count", lookup_expr='lte')
-    # min_exmpl_count = df.Filter(field_name="exmpl_count", lookup_expr='gte')
-    # max_exmpl_count = df.Filter(field_name="exmpl_count", lookup_expr='lte')
-
-    # class Meta:
-    #     model = Word
-    #     fields = ('status', 'type', 'language', 'created')
+    def filter_words_amount(self, queryset, name, value):
+        filter = {name: value}
+        if value:
+            return queryset.annotate(
+                words_amount=Count('words',
+                                   distinct=True)).filter(**filter)
+        return queryset
