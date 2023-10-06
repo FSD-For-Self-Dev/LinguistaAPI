@@ -8,7 +8,7 @@ from .constants import (
     MAX_ANTONYMS_AMOUNT, MAX_DEFINITIONS_AMOUNT, MAX_EXAMPLES_AMOUNT,
     MAX_FORMS_AMOUNT, MAX_NOTES_AMOUNT, MAX_SIMILARS_AMOUNT,
     MAX_SYNONYMS_AMOUNT, MAX_TAGS_AMOUNT, MAX_TRANSLATIONS_AMOUNT,
-    MAX_TYPES_AMOUNT
+    MAX_TYPES_AMOUNT, MIN_TRANSLATIONS_AMOUNT
 )
 from .models import (
     Antonym, Collection, Definition, FavoriteWord, Form, Language, Note,
@@ -59,14 +59,15 @@ class CustomRelatedField(serializers.PrimaryKeyRelatedField):
     Позволяет при записи передавать id объектов,
     а при чтении выводить name.
     """
+
     def to_representation(self, value):
-        ret = value.name
-        return ret
+        return value.name
 
 
 class WordRelatedSerializer(serializers.ModelSerializer):
     """Сериализатор для короткой демонстрации word-related объектов
     (синонимы, антонимы, похожие слова и формы)."""
+
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
@@ -77,15 +78,14 @@ class WordRelatedSerializer(serializers.ModelSerializer):
 class WordShortSerializer(serializers.ModelSerializer):
     """Сериализатор для множественного добавления слов (а также синонимов,
     антонимов, форм и похожих слов), а также для чтения в короткой форме."""
+
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name', required=False
     )
     types = CustomRelatedField(
         queryset=Type.objects.all(), many=True, required=False, default=[1]
     )
-    notes = NoteSerializer(
-        source='note', many=True, required=False, write_only=True
-    )
+    notes = NoteSerializer(source='note', many=True, required=False)
     tags = CustomRelatedField(
         queryset=Tag.objects.all(), many=True, required=False
     )
@@ -93,8 +93,7 @@ class WordShortSerializer(serializers.ModelSerializer):
     translations = TranslationSerializer(many=True)
     favorite = serializers.SerializerMethodField()
     collections = serializers.PrimaryKeyRelatedField(
-        queryset=Collection.objects.all(), many=True,
-        required=False, write_only=True
+        queryset=Collection.objects.all(), many=True, required=False
     )
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
@@ -105,9 +104,7 @@ class WordShortSerializer(serializers.ModelSerializer):
             'notes', 'tags', 'translations_count', 'translations', 'favorite',
             'collections', 'created', 'modified', 'author'
         )
-        read_only_fields = (
-            'id', 'is_problematic', 'translations_count'
-        )
+        read_only_fields = ('id', 'is_problematic', 'translations_count')
 
     @staticmethod
     def max_amount_validate(obj_list, max_amount, attr):
@@ -126,13 +123,12 @@ class WordShortSerializer(serializers.ModelSerializer):
     def validate_translations(self, translations):
         if not translations or len(translations) == 0:
             raise serializers.ValidationError(
-                'The word must have at least one translation'
+                f'The word must have at least '
+                f'{MIN_TRANSLATIONS_AMOUNT} translation'
             )
-        if len(translations) > MAX_TRANSLATIONS_AMOUNT:
-            raise serializers.ValidationError(
-                f'The word cannot have more than '
-                f'{MAX_TRANSLATIONS_AMOUNT} translations'
-            )
+        self.max_amount_validate(
+            translations, MAX_TRANSLATIONS_AMOUNT, 'translations'
+        )
         return translations
 
     def validate_tags(self, tags):
@@ -179,18 +175,16 @@ class WordShortSerializer(serializers.ModelSerializer):
 
 
 class WordSerializer(WordShortSerializer):
-    """Расширенный (полный) сериализатор для создания слов по одному."""
+    """Расширенный (полный) сериализатор для создания слов по одному,
+    а также для просмотра слов."""
+
     examples = UsageExampleSerializer(many=True, required=False)
     examples_count = serializers.IntegerField(read_only=True)
     definitions = DefinitionSerializer(many=True, required=False)
-    notes = NoteSerializer(source='note', many=True, required=False)
     synonyms = WordRelatedSerializer(many=True, required=False)
     antonyms = WordRelatedSerializer(many=True, required=False)
     forms = WordRelatedSerializer(many=True, required=False)
     similars = WordRelatedSerializer(many=True, required=False)
-    collections = serializers.PrimaryKeyRelatedField(
-        queryset=Collection.objects.all(), many=True, required=False
-    )
 
     class Meta:
         model = Word
@@ -248,7 +242,7 @@ class WordSerializer(WordShortSerializer):
         related_model_cls.objects.bulk_create(related_objs_list)
 
     def create_links_for_related_objs(self, cls, objs, word):
-        """Метод для записи объекта в таблицу связи."""
+        """Метод для создания связей между симметричными объектами слов."""
         for obj in objs:
             obj_word = Word.objects.get(
                 text=obj.get('text'),
