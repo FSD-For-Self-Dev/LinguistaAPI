@@ -4,10 +4,12 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 
+from .constants import MAX_TAGS_AMOUNT, MAX_TRANSLATIONS_AMOUNT, \
+    MAX_TYPES_AMOUNT
 from .models import (
-    Antonym, Collection, Definition, FavoriteWord, Form, Note, Similar,
-    Synonym, Tag, Translation, Type, UsageExample, Word, WordDefinitions,
-    WordTranslations, WordUsageExamples
+    Antonym, Collection, Definition, FavoriteWord, Form, Language, Note,
+    Similar, Synonym, Tag, Translation, Type, UsageExample, Word,
+    WordDefinitions, WordTranslations, WordUsageExamples
 )
 
 User = get_user_model()
@@ -57,7 +59,9 @@ class WordRelatedSerializer(serializers.ModelSerializer):
 class WordShortSerializer(serializers.ModelSerializer):
     """Сериализатор для множественного добавления слов (а также синонимов,
     антонимов, форм и похожих слов), а также для чтения в короткой форме."""
-    language = serializers.StringRelatedField()
+    language = serializers.SlugRelatedField(
+        queryset=Language.objects.all(), slug_field='name', required=False
+    )
     type = serializers.SlugRelatedField(
         queryset=Type.objects.all(), slug_field='name', many=True,
         required=False
@@ -96,20 +100,49 @@ class WordShortSerializer(serializers.ModelSerializer):
         ).exists()
         return is_favorite
 
+    @staticmethod
+    def max_amount_validate(obj_list, max_amount, attr):
+        if len(obj_list) > max_amount:
+            raise serializers.ValidationError(
+                f'The word cannot have more than '
+                f'{max_amount} {attr}'
+            )
+
     def validate(self, data):
         translations = data.get('translations')
         if not translations or len(translations) == 0:
             raise serializers.ValidationError(
                 'The word must have at least one translation'
             )
+        if len(translations) > MAX_TRANSLATIONS_AMOUNT:
+            raise serializers.ValidationError(
+                f'The word cannot have more than '
+                f'{MAX_TRANSLATIONS_AMOUNT} translations'
+            )
+        types = data.get('type')
+        if types and len(types) > MAX_TYPES_AMOUNT:
+            raise serializers.ValidationError(
+                f'The word cannot have more than {MAX_TYPES_AMOUNT} types'
+            )
+        tags = data.get('tags')
+        if tags and len(tags) > MAX_TAGS_AMOUNT:
+            raise serializers.ValidationError(
+                f'The word cannot have more than {MAX_TAGS_AMOUNT} tags'
+            )
+        notes = data.get('notes')
+        # if len(notes) >
+
+
+
+
         return data
 
     @transaction.atomic
     def create(self, validated_data):
         translations = validated_data.pop('translations')
-        collections = validated_data.pop('collections')
-        notes = validated_data.pop('note')
-        tags = validated_data.pop('tags')
+        collections = validated_data.pop('collections', [])
+        notes = validated_data.pop('note', [])
+        tags = validated_data.pop('tags', [])
         word_types = validated_data.pop('type')
 
         word = Word.objects.create(**validated_data)
@@ -142,7 +175,6 @@ class WordSerializer(WordShortSerializer):
         queryset=Collection.objects.all(), slug_field='title', many=True,
         required=False
     )
-
     synonyms = WordRelatedSerializer(many=True, required=False)
     antonyms = WordRelatedSerializer(many=True, required=False)
     forms = WordRelatedSerializer(many=True, required=False)
@@ -189,12 +221,12 @@ class WordSerializer(WordShortSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        examples = validated_data.pop('examples')
-        definitions = validated_data.pop('definitions')
-        synonyms = validated_data.pop('synonyms')
-        antonyms = validated_data.pop('antonyms')
-        forms = validated_data.pop('forms')
-        similars = validated_data.pop('similars')
+        examples = validated_data.pop('examples', [])
+        definitions = validated_data.pop('definitions', [])
+        synonyms = validated_data.pop('synonyms', [])
+        antonyms = validated_data.pop('antonyms', [])
+        forms = validated_data.pop('forms', [])
+        similars = validated_data.pop('similars', [])
 
         word = super().create(validated_data)
 

@@ -4,9 +4,9 @@ from django.contrib import admin
 
 from .models import (
     Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
-    Note, Similar, Synonym, Tag, Translation, Type, UsageExample, Word,
-    WordDefinitions, WordTranslations, WordUsageExamples, WordsInCollections,
-    ImageAssociation
+    ImageAssociation, Note, Similar, Synonym, Tag, Translation, Type,
+    UsageExample, Word, WordDefinitions, WordTranslations, WordUsageExamples,
+    WordsInCollections
 )
 
 
@@ -49,8 +49,12 @@ class WordAdmin(admin.ModelAdmin):
     search_fields = ('text', 'author')
     list_filter = ('author',)
     inlines = (
-        WordTranslationInline, SynonymInline, WordUsageExamplesInline,
-        WordDefinitionsInline, AntonymInline, FormInline, SimilarInline
+        WordTranslationInline, WordUsageExamplesInline,
+        WordDefinitionsInline,
+        SynonymInline,
+        AntonymInline,
+        FormInline,
+        SimilarInline
     )
 
 

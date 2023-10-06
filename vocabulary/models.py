@@ -1,6 +1,7 @@
 ''' Vocabulary models '''
 
 from django.contrib.auth import get_user_model
+from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
 from django.utils.translation import gettext as _
 
@@ -10,6 +11,7 @@ from core.models import (
 )
 from languages.models import Language
 from .utils import slugify_text_author_fields
+from .constants import REGEX_WORD_MASK
 
 User = get_user_model()
 
@@ -78,13 +80,14 @@ class Type(models.Model):
 
     @classmethod
     def get_default_pk(cls):
-        word_type, created = cls.objects.get_or_create(
+        word_type = cls.objects.get(
             slug='noun',
-            defaults={
-                'name': _('Noun'),
-                'sorting': 3
-            },
+            # defaults={
+            #     'name': _('Noun'),
+            #     'sorting': 3
+            # },
         )
+        print(f'{word_type.pk=}')
         return word_type.pk
 
     class Meta:
@@ -111,7 +114,17 @@ class Word(CreatedModel, ModifiedModel):
     )
     text = models.CharField(
         _('Word or phrase'),
-        max_length=4096
+        max_length=4096,
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_WORD_MASK,
+                message='Acceptable characters: Latin letters (A-Z, a-z), '
+                        'Cyrillic letters (А-Я, а-я), Hyphen, '
+                        'Exclamation point, Question mark. Make sure your '
+                        'word does not start or end with a space.'
+            )
+        )
     )
     slug = models.SlugField(
         _('Slug'),
@@ -127,9 +140,7 @@ class Word(CreatedModel, ModifiedModel):
     type = models.ManyToManyField(
         'Type',
         verbose_name=_('Type'),
-        related_name='words',
-        default=Type.get_default_pk,
-        blank=True
+        related_name='words'
     )
     activity = models.CharField(
         _('Activity status'),
@@ -184,7 +195,7 @@ class Word(CreatedModel, ModifiedModel):
         through='WordTranslations',
         related_name='translation_for',
         verbose_name=_('Translations'),
-        blank=True
+        validators=(MinLengthValidator(1),)
     )
     definitions = models.ManyToManyField(
         'Definition',
@@ -220,6 +231,9 @@ class Word(CreatedModel, ModifiedModel):
     def save(self, *args, **kwargs):
         self.slug = slugify_text_author_fields(self)
         super(Word, self).save(*args, **kwargs)
+        default_type_pk = Type.get_default_pk()
+        print(f'{default_type_pk=}')
+        self.type.add(default_type_pk)
 
 
 class WordSelfRelatedModel(CreatedModel):
