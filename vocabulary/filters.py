@@ -2,8 +2,6 @@
 
 import django_filters as df
 
-from vocabulary.models import Word
-
 
 class WordFilter(df.FilterSet):
     '''Фильтр модели слова'''

@@ -67,14 +67,7 @@ class Language(models.Model):
 
     @classmethod
     def get_default_pk(cls):
-        lang= cls.objects.get(
-            isocode='en',
-            # defaults={
-            #     'name': 'English',
-            #     'name_local': 'English',
-            #     'sorting': cls.LANGS_SORTING_VALS.get('en', 3)
-            # },
-        )
+        lang = cls.objects.get(isocode='en')
         return lang.pk
 
 
