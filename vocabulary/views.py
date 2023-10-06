@@ -6,7 +6,6 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
-# from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
@@ -24,8 +23,8 @@ from .permissions import (
     CanAddUsageExamplePermission
 )
 from .serializers import (
-    WordSerializer, DefinitionSerializer, TranslationSerializer,
-    UsageExampleSerializer, WordShortSerializer
+    DefinitionSerializer, TranslationSerializer, UsageExampleSerializer,
+    WordSerializer, WordShortSerializer
 )
 
 User = get_user_model()
@@ -46,7 +45,7 @@ class WordViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         '''
-        Get all words from user's vocabulary with counted translations 
+        Get all words from user's vocabulary with counted translations
         & usage examples
         '''
         user = self.request.user
