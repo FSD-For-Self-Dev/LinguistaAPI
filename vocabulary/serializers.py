@@ -5,10 +5,10 @@ from django.db import transaction
 from rest_framework import serializers
 
 from .constants import (
-    MAX_NOTES_AMOUNT, MAX_TAGS_AMOUNT, MAX_TRANSLATIONS_AMOUNT,
-    MAX_TYPES_AMOUNT, MAX_EXAMPLES_AMOUNT, MAX_DEFINITIONS_AMOUNT,
-    MAX_FORMS_AMOUNT, MAX_SYNONYMS_AMOUNT, MAX_ANTONYMS_AMOUNT,
-    MAX_SIMILARS_AMOUNT
+    MAX_ANTONYMS_AMOUNT, MAX_DEFINITIONS_AMOUNT, MAX_EXAMPLES_AMOUNT,
+    MAX_FORMS_AMOUNT, MAX_NOTES_AMOUNT, MAX_SIMILARS_AMOUNT,
+    MAX_SYNONYMS_AMOUNT, MAX_TAGS_AMOUNT, MAX_TRANSLATIONS_AMOUNT,
+    MAX_TYPES_AMOUNT
 )
 from .models import (
     Antonym, Collection, Definition, FavoriteWord, Form, Language, Note,
@@ -52,7 +52,21 @@ class DefinitionSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'author', 'created', 'modified')
 
 
+class CustomRelatedField(serializers.PrimaryKeyRelatedField):
+    """
+    Кастомное поле для использования в сериализаторе слов.
+
+    Позволяет при записи передавать id объектов,
+    а при чтении выводить name.
+    """
+    def to_representation(self, value):
+        ret = value.name
+        return ret
+
+
 class WordRelatedSerializer(serializers.ModelSerializer):
+    """Сериализатор для короткой демонстрации word-related объектов
+    (синонимы, антонимы, похожие слова и формы)."""
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
@@ -66,22 +80,20 @@ class WordShortSerializer(serializers.ModelSerializer):
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name', required=False
     )
-    types = serializers.SlugRelatedField(
-        queryset=Type.objects.all(), slug_field='name', many=True,
-        required=False, default=[1]
+    types = CustomRelatedField(
+        queryset=Type.objects.all(), many=True, required=False, default=[1]
     )
     notes = NoteSerializer(
         source='note', many=True, required=False, write_only=True
     )
-    tags = serializers.SlugRelatedField(
-        queryset=Tag.objects.all(), slug_field='name', many=True,
-        required=False
+    tags = CustomRelatedField(
+        queryset=Tag.objects.all(), many=True, required=False
     )
     translations_count = serializers.IntegerField(read_only=True)
     translations = TranslationSerializer(many=True)
     favorite = serializers.SerializerMethodField()
-    collections = serializers.SlugRelatedField(
-        queryset=Collection.objects.all(), slug_field='title', many=True,
+    collections = serializers.PrimaryKeyRelatedField(
+        queryset=Collection.objects.all(), many=True,
         required=False, write_only=True
     )
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
@@ -99,6 +111,8 @@ class WordShortSerializer(serializers.ModelSerializer):
 
     @staticmethod
     def max_amount_validate(obj_list, max_amount, attr):
+        """Статический метод для валидации максимального количества элементов
+        произвольного атрибута слова."""
         if len(obj_list) > max_amount:
             raise serializers.ValidationError(
                 f'The word cannot have more than '
@@ -170,14 +184,13 @@ class WordSerializer(WordShortSerializer):
     examples_count = serializers.IntegerField(read_only=True)
     definitions = DefinitionSerializer(many=True, required=False)
     notes = NoteSerializer(source='note', many=True, required=False)
-    collections = serializers.SlugRelatedField(
-        queryset=Collection.objects.all(), slug_field='title', many=True,
-        required=False
-    )
     synonyms = WordRelatedSerializer(many=True, required=False)
     antonyms = WordRelatedSerializer(many=True, required=False)
     forms = WordRelatedSerializer(many=True, required=False)
     similars = WordRelatedSerializer(many=True, required=False)
+    collections = serializers.PrimaryKeyRelatedField(
+        queryset=Collection.objects.all(), many=True, required=False
+    )
 
     class Meta:
         model = Word
@@ -220,6 +233,8 @@ class WordSerializer(WordShortSerializer):
     def bulk_create_objects(
             objs, model_cls, related_model_cls, related_field, word
     ):
+        """Статический метод для массового создания объектов
+        для полей many-to-many."""
         objs_list = [model_cls(**data) for data in objs]
         model_cls.objects.bulk_create(objs_list)
         related_objs_list = [
@@ -233,6 +248,7 @@ class WordSerializer(WordShortSerializer):
         related_model_cls.objects.bulk_create(related_objs_list)
 
     def create_links_for_related_objs(self, cls, objs, word):
+        """Метод для записи объекта в таблицу связи."""
         for obj in objs:
             obj_word = Word.objects.get(
                 text=obj.get('text'),
