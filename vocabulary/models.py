@@ -10,8 +10,8 @@ from core.models import (
     UserRelatedModel
 )
 from languages.models import Language
-from .utils import slugify_text_author_fields
 from .constants import REGEX_WORD_MASK
+from .utils import slugify_text_author_fields
 
 User = get_user_model()
 
