@@ -68,7 +68,7 @@ class WordShortSerializer(serializers.ModelSerializer):
     )
     types = serializers.SlugRelatedField(
         queryset=Type.objects.all(), slug_field='name', many=True,
-        required=False
+        required=False, default=[1]
     )
     notes = NoteSerializer(
         source='note', many=True, required=False, write_only=True
@@ -125,7 +125,7 @@ class WordShortSerializer(serializers.ModelSerializer):
         self.max_amount_validate(tags, MAX_TAGS_AMOUNT, 'tags')
         return tags
 
-    def validate(self, notes):
+    def validate_notes(self, notes):
         self.max_amount_validate(notes, MAX_NOTES_AMOUNT, 'notes')
         return notes
 
@@ -139,29 +139,27 @@ class WordShortSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         translations = validated_data.pop('translations')
-        collections = validated_data.pop('collections', [])
+        word_types = validated_data.pop('types')
         notes = validated_data.pop('note', [])
+        collections = validated_data.pop('collections', [])
         tags = validated_data.pop('tags', [])
 
-        if 'types' not in self.initial_data:
-            word = Word.objects.create(**validated_data)
-        else:
-            word_types = validated_data.pop('types')
-            word = Word.objects.create(**validated_data)
-            word.collections.set(collections)
-            word.tags.set(tags)
-            word.type.set(word_types)
+        word = Word.objects.create(**validated_data)
 
-            for translation in translations:
-                current_translation, created = (
-                    Translation.objects.get_or_create(**translation)
-                )
-                WordTranslations.objects.create(
-                    word=word, translation=current_translation
-                )
+        word.collections.set(collections)
+        word.tags.set(tags)
+        word.types.set(word_types)
 
-            note_objs = [Note(word=word, **data) for data in notes]
-            Note.objects.bulk_create(note_objs)
+        for translation in translations:
+            current_translation, created = (
+                Translation.objects.get_or_create(**translation)
+            )
+            WordTranslations.objects.create(
+                word=word, translation=current_translation
+            )
+
+        note_objs = [Note(word=word, **data) for data in notes]
+        Note.objects.bulk_create(note_objs)
 
         return word
 
@@ -243,6 +241,11 @@ class WordSerializer(WordShortSerializer):
             cls.objects.create(
                 to_word=word,
                 from_word=obj_word,
+                author=self.context['request'].user
+            )
+            cls.objects.create(
+                to_word=obj_word,
+                from_word=word,
                 author=self.context['request'].user
             )
 

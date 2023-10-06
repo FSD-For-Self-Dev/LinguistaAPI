@@ -80,14 +80,7 @@ class Type(models.Model):
 
     @classmethod
     def get_default_pk(cls):
-        word_type = cls.objects.get(
-            slug='noun',
-            # defaults={
-            #     'name': _('Noun'),
-            #     'sorting': 3
-            # },
-        )
-        print(f'{word_type.pk=}')
+        word_type = cls.objects.get(slug='noun')
         return word_type.pk
 
     class Meta:
@@ -231,8 +224,7 @@ class Word(CreatedModel, ModifiedModel):
         self.slug = slugify_text_author_fields(self)
         super(Word, self).save(*args, **kwargs)
         default_type_pk = Type.get_default_pk()
-        print(f'{default_type_pk=}')
-        self.type.add(default_type_pk)
+        self.types.add(default_type_pk)
 
 
 class WordSelfRelatedModel(CreatedModel):
