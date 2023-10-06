@@ -27,6 +27,7 @@ pytest-django = "^4.4.0"
 pytest-pythonpath = "^0.7.3"
 factory-boy = "^3.3.0"
 django-cleanup = "^8.0.0"
+flake8 = "^6.1.0"
 
 [build-system]
 requires = ["poetry>=0.12"]
