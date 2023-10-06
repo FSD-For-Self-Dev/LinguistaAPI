@@ -137,7 +137,7 @@ class Word(CreatedModel, ModifiedModel):
         on_delete=models.CASCADE,
         related_name='vocabulary'
     )
-    type = models.ManyToManyField(
+    types = models.ManyToManyField(
         'Type',
         verbose_name=_('Type'),
         related_name='words'
@@ -194,8 +194,7 @@ class Word(CreatedModel, ModifiedModel):
         'Translation',
         through='WordTranslations',
         related_name='translation_for',
-        verbose_name=_('Translations'),
-        validators=(MinLengthValidator(1),)
+        verbose_name=_('Translations')
     )
     definitions = models.ManyToManyField(
         'Definition',

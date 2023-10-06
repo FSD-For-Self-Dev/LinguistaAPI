@@ -4,8 +4,12 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from rest_framework import serializers
 
-from .constants import MAX_TAGS_AMOUNT, MAX_TRANSLATIONS_AMOUNT, \
-    MAX_TYPES_AMOUNT
+from .constants import (
+    MAX_NOTES_AMOUNT, MAX_TAGS_AMOUNT, MAX_TRANSLATIONS_AMOUNT,
+    MAX_TYPES_AMOUNT, MAX_EXAMPLES_AMOUNT, MAX_DEFINITIONS_AMOUNT,
+    MAX_FORMS_AMOUNT, MAX_SYNONYMS_AMOUNT, MAX_ANTONYMS_AMOUNT,
+    MAX_SIMILARS_AMOUNT
+)
 from .models import (
     Antonym, Collection, Definition, FavoriteWord, Form, Language, Note,
     Similar, Synonym, Tag, Translation, Type, UsageExample, Word,
@@ -62,7 +66,7 @@ class WordShortSerializer(serializers.ModelSerializer):
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name', required=False
     )
-    type = serializers.SlugRelatedField(
+    types = serializers.SlugRelatedField(
         queryset=Type.objects.all(), slug_field='name', many=True,
         required=False
     )
@@ -85,20 +89,13 @@ class WordShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Word
         fields = (
-            'id', 'language', 'text', 'activity', 'is_problematic', 'type',
+            'id', 'language', 'text', 'activity', 'is_problematic', 'types',
             'notes', 'tags', 'translations_count', 'translations', 'favorite',
             'collections', 'created', 'modified', 'author'
         )
         read_only_fields = (
             'id', 'is_problematic', 'translations_count'
         )
-
-    def get_favorite(self, obj):
-        request = self.context.get('request')
-        is_favorite = FavoriteWord.objects.filter(
-            word=obj, user=request.user
-        ).exists()
-        return is_favorite
 
     @staticmethod
     def max_amount_validate(obj_list, max_amount, attr):
@@ -108,8 +105,11 @@ class WordShortSerializer(serializers.ModelSerializer):
                 f'{max_amount} {attr}'
             )
 
-    def validate(self, data):
-        translations = data.get('translations')
+    def validate_types(self, types):
+        self.max_amount_validate(types, MAX_TYPES_AMOUNT, 'types')
+        return types
+
+    def validate_translations(self, translations):
         if not translations or len(translations) == 0:
             raise serializers.ValidationError(
                 'The word must have at least one translation'
@@ -119,23 +119,22 @@ class WordShortSerializer(serializers.ModelSerializer):
                 f'The word cannot have more than '
                 f'{MAX_TRANSLATIONS_AMOUNT} translations'
             )
-        types = data.get('type')
-        if types and len(types) > MAX_TYPES_AMOUNT:
-            raise serializers.ValidationError(
-                f'The word cannot have more than {MAX_TYPES_AMOUNT} types'
-            )
-        tags = data.get('tags')
-        if tags and len(tags) > MAX_TAGS_AMOUNT:
-            raise serializers.ValidationError(
-                f'The word cannot have more than {MAX_TAGS_AMOUNT} tags'
-            )
-        notes = data.get('notes')
-        # if len(notes) >
+        return translations
 
+    def validate_tags(self, tags):
+        self.max_amount_validate(tags, MAX_TAGS_AMOUNT, 'tags')
+        return tags
 
+    def validate(self, notes):
+        self.max_amount_validate(notes, MAX_NOTES_AMOUNT, 'notes')
+        return notes
 
-
-        return data
+    def get_favorite(self, obj):
+        request = self.context.get('request')
+        is_favorite = FavoriteWord.objects.filter(
+            word=obj, user=request.user
+        ).exists()
+        return is_favorite
 
     @transaction.atomic
     def create(self, validated_data):
@@ -143,24 +142,26 @@ class WordShortSerializer(serializers.ModelSerializer):
         collections = validated_data.pop('collections', [])
         notes = validated_data.pop('note', [])
         tags = validated_data.pop('tags', [])
-        word_types = validated_data.pop('type')
 
-        word = Word.objects.create(**validated_data)
+        if 'types' not in self.initial_data:
+            word = Word.objects.create(**validated_data)
+        else:
+            word_types = validated_data.pop('types')
+            word = Word.objects.create(**validated_data)
+            word.collections.set(collections)
+            word.tags.set(tags)
+            word.type.set(word_types)
 
-        word.collections.set(collections)
-        word.tags.set(tags)
-        word.type.set(word_types)
+            for translation in translations:
+                current_translation, created = (
+                    Translation.objects.get_or_create(**translation)
+                )
+                WordTranslations.objects.create(
+                    word=word, translation=current_translation
+                )
 
-        for translation in translations:
-            current_translation, created = (
-                Translation.objects.get_or_create(**translation)
-            )
-            WordTranslations.objects.create(
-                word=word, translation=current_translation
-            )
-
-        note_objs = [Note(word=word, **data) for data in notes]
-        Note.objects.bulk_create(note_objs)
+            note_objs = [Note(word=word, **data) for data in notes]
+            Note.objects.bulk_create(note_objs)
 
         return word
 
@@ -184,12 +185,38 @@ class WordSerializer(WordShortSerializer):
         model = Word
         fields = (
             'id', 'language', 'text', 'translations', 'translations_count',
-            'examples_count', 'examples', 'definitions', 'type', 'tags',
+            'examples_count', 'examples', 'definitions', 'types', 'tags',
             'is_problematic', 'activity', 'collections', 'created', 'modified',
             'synonyms', 'favorite', 'author', 'antonyms', 'forms', 'similars',
             'notes'
         )
         read_only_fields = ('id', 'translations_count', 'examples_count')
+
+    def validate_examples(self, examples):
+        self.max_amount_validate(examples, MAX_EXAMPLES_AMOUNT, 'examples')
+        return examples
+
+    def validate_definitions(self, definitions):
+        self.max_amount_validate(
+            definitions, MAX_DEFINITIONS_AMOUNT, 'definitions'
+        )
+        return definitions
+
+    def validate_synonyms(self, synonyms):
+        self.max_amount_validate(synonyms, MAX_SYNONYMS_AMOUNT, 'synonyms')
+        return synonyms
+
+    def validate_antonyms(self, antonyms):
+        self.max_amount_validate(antonyms, MAX_ANTONYMS_AMOUNT, 'antonyms')
+        return antonyms
+
+    def validate_similars(self, similars):
+        self.max_amount_validate(similars, MAX_SIMILARS_AMOUNT, 'similars')
+        return similars
+
+    def validate_forms(self, forms):
+        self.max_amount_validate(forms, MAX_FORMS_AMOUNT, 'forms')
+        return forms
 
     @staticmethod
     def bulk_create_objects(
