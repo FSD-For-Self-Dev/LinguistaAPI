@@ -3,10 +3,11 @@
 from django.contrib import admin
 
 from .models import (Antonym, Collection, Definition, FavoriteCollection,
-                     FavoriteWord, Form, Note, Similar, Synonym, Tag,
-                     Translation, Type, UsageExample, Word, WordDefinitions,
-                     WordsInCollections, WordTranslations, WordUsageExamples,
-                     ImageAssociation)
+                     FavoriteWord, Form, ImageAssociation, Note, Similar,
+                     Synonym, Tag, Translation, Type, UsageExample, Word,
+                     WordDefinitions, WordsInCollections, WordTranslations,
+                     WordUsageExamples)
+
 
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
