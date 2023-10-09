@@ -1,4 +1,4 @@
-''' Vocabulary views '''
+"""Обработчики приложения vocabulary."""
 
 import random
 
