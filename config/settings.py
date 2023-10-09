@@ -13,9 +13,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.getenv('SECRET_KEY', default='not-a-secret')
 
-DEBUG = os.getenv('DEBUG', default=False)
+DEBUG = os.getenv('DEBUG', default=True)
 
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', default='localhost,127.0.0.1,').split(',')
+ALLOWED_HOSTS = []
 
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
@@ -82,8 +82,8 @@ DATABASES = {
     'default': {
         'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
         'NAME': os.getenv('DB_NAME', default='postgres'),
-        'USER': os.getenv('POSTGRES_USER', default=''),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', default=''),
+        'USER': os.getenv('DB_USER', default=''),
+        'PASSWORD': os.getenv('DB_PASSWORD', default=''),
         'HOST': os.getenv('DB_HOST', default=''),
         'PORT': os.getenv('DB_PORT', default='')
     }
@@ -165,7 +165,7 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_PAGINATION_CLASS': 'core.pagination.LimitPagination',
-    'PAGE_SIZE': 100,
+    'PAGE_SIZE': 2,
 
     'DATETIME_FORMAT': "%Y-%m-%d %H:%M",
 

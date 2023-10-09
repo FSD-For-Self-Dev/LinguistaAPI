@@ -1,4 +1,4 @@
-''' Users urls '''
+"""Маршруты приложения users."""
 
 from django.urls import include, path
 
