@@ -1,12 +1,17 @@
 ''' Vocabulary models '''
 
 from django.contrib.auth import get_user_model
+from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
 from django.utils.translation import gettext as _
 
-from core.models import (AuthorModel, CreatedModel, ModifiedModel,
-                         UserRelatedModel)
+from core.models import (
+    AuthorModel, CreatedModel, ModifiedModel,
+    UserRelatedModel
+)
 from languages.models import Language
+from .constants import REGEX_WORD_MASK
+from .utils import slugify_text_author_fields
 
 User = get_user_model()
 
@@ -75,13 +80,7 @@ class Type(models.Model):
 
     @classmethod
     def get_default_pk(cls):
-        word_type, created = cls.objects.get_or_create(
-            slug='noun',
-            defaults={
-                'name': _('Noun'),
-                'sorting': 3
-            },
-        )
+        word_type = cls.objects.get(slug='noun')
         return word_type.pk
 
     class Meta:
@@ -108,7 +107,17 @@ class Word(CreatedModel, ModifiedModel):
     )
     text = models.CharField(
         _('Word or phrase'),
-        max_length=4096
+        max_length=4096,
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_WORD_MASK,
+                message='Acceptable characters: Latin letters (A-Z, a-z), '
+                        'Cyrillic letters (А-Я, а-я), Hyphen, '
+                        'Exclamation point, Question mark. Make sure your '
+                        'word does not start or end with a space.'
+            )
+        )
     )
     slug = models.SlugField(
         _('Slug'),
@@ -121,20 +130,17 @@ class Word(CreatedModel, ModifiedModel):
         on_delete=models.CASCADE,
         related_name='vocabulary'
     )
-    type = models.ForeignKey(
+    types = models.ManyToManyField(
         'Type',
         verbose_name=_('Type'),
-        on_delete=models.SET_DEFAULT,
-        related_name='words',
-        default=Type.get_default_pk,
-        blank=True,
-        null=True
+        related_name='words'
     )
     activity = models.CharField(
         _('Activity status'),
         max_length=8,
         choices=ACTIVITY,
-        blank=False
+        blank=False,
+        default='INACTIVE'
     )
     is_problematic = models.BooleanField(
         _('Is the word problematic for you'),
@@ -148,8 +154,7 @@ class Word(CreatedModel, ModifiedModel):
     synonyms = models.ManyToManyField(
         'self',
         through='Synonym',
-        symmetrical = False,
-        related_name='synonym_to+',
+        symmetrical=True,
         verbose_name=_('Synonyms'),
         help_text=_('Words with similar meanings'),
         blank=True
@@ -157,8 +162,7 @@ class Word(CreatedModel, ModifiedModel):
     antonyms = models.ManyToManyField(
         'self',
         through='Antonym',
-        symmetrical = False,
-        related_name='antonym_to+',
+        symmetrical=True,
         verbose_name=_('Antonyms'),
         help_text=_('Words with opposite meanings'),
         blank=True
@@ -166,8 +170,7 @@ class Word(CreatedModel, ModifiedModel):
     forms = models.ManyToManyField(
         'self',
         through='Form',
-        symmetrical = False,
-        related_name='form_to+',
+        symmetrical=True,
         verbose_name=_('Forms'),
         help_text=_('Word forms'),
         blank=True
@@ -175,8 +178,7 @@ class Word(CreatedModel, ModifiedModel):
     similars = models.ManyToManyField(
         'self',
         through='Similar',
-        symmetrical = False,
-        related_name='similar_to+',
+        symmetrical=True,
         verbose_name=_('Similars'),
         help_text=_('Words with similar pronunciation or spelling'),
         blank=True
@@ -185,25 +187,13 @@ class Word(CreatedModel, ModifiedModel):
         'Translation',
         through='WordTranslations',
         related_name='translation_for',
-        verbose_name=_('Translations'),
-        blank=True
+        verbose_name=_('Translations')
     )
     definitions = models.ManyToManyField(
         'Definition',
         through='WordDefinitions',
         related_name='definition_for',
         verbose_name=_('Translations'),
-        blank=True
-    )
-    pronunciation = models.CharField(
-        _('Pronunciation'),
-        max_length=4096,
-        blank=True
-    )
-    # pronunciation_voice = ...
-    transcription = models.CharField(
-        _('Transcription'),
-        max_length=4096,
         blank=True
     )
     examples = models.ManyToManyField(
@@ -213,6 +203,7 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Usage Example'),
         blank=True
     )
+    # pronunciation_voice = ...
 
     class Meta:
         ordering = ['-created']
@@ -228,6 +219,12 @@ class Word(CreatedModel, ModifiedModel):
 
     def __str__(self) -> str:
         return self.text
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify_text_author_fields(self)
+        super(Word, self).save(*args, **kwargs)
+        default_type_pk = Type.get_default_pk()
+        self.types.add(default_type_pk)
 
 
 class WordSelfRelatedModel(CreatedModel):
@@ -247,7 +244,7 @@ class WordSelfRelatedModel(CreatedModel):
         get_latest_by = ['created']
         abstract = True
 
-    def get_classname( self ):
+    def get_classname(self):
         return self.__class__.__name__
 
     def __str__(self) -> str:
@@ -338,7 +335,7 @@ class Translation(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Translation'),
         max_length=4096,
-        help_text=_('A translation of a word or phrase')
+        help_text=_('A translation of a word or phrase'),
     )
 
     class Meta:
@@ -346,6 +343,12 @@ class Translation(CreatedModel, ModifiedModel, AuthorModel):
         get_latest_by = ['created', 'modified']
         verbose_name = _('Translation')
         verbose_name_plural = _('Translations')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['text', 'author'],
+                name='unique_transl_in_user_voc'
+            )
+        ]
 
     def __str__(self) -> str:
         return self.text
