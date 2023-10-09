@@ -27,6 +27,7 @@ TYPE_CHOICES = [
     ('PROVERB', _('Proverb'), 1),
 ]
 
+
 class Command(BaseCommand):
     '''
     Command to import possible word types from TYPE_CHOICES
