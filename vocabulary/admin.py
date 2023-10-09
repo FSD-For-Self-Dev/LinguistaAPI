@@ -1,4 +1,4 @@
-''' Vocabulary admin config '''
+"""Конфигурация админ-панели приложения vocabulary."""
 
 from django.contrib import admin
 

@@ -1,4 +1,4 @@
-''' Vocabulary views '''
+"""Обработчики приложения vocabulary."""
 
 import random
 
@@ -42,6 +42,12 @@ class WordViewSet(viewsets.ModelViewSet):
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
     ordering = ('-created',)
+    ordering_fields = ('created', 'text', 'translations_count')
+    search_fields = (
+        'text', 'translations__text',
+        'tags__name', 'definitions__text',
+        'definitions__translation'
+    )
 
     def get_queryset(self):
         '''

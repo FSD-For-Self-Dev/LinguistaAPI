@@ -1,4 +1,4 @@
-"""Vocabulary constants."""
+"""Константы приложения vocabulary."""
 
 MAX_TYPES_AMOUNT = 3
 MAX_TAGS_AMOUNT = 10

@@ -1,3 +1,5 @@
+"""Разрешения приложения vocabulary."""
+
 from rest_framework.permissions import BasePermission
 
 from core.constants import MAX_DEFINITIONS_AMOUNT, MAX_USAGE_EXAMPLES_AMOUNT
