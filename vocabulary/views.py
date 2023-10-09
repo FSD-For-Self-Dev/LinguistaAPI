@@ -42,7 +42,7 @@ class WordViewSet(viewsets.ModelViewSet):
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     ]
     ordering = ('-created',)
-    ordering_fields = ('-text', 'translations_count')
+    ordering_fields = ('created', 'text', 'translations_count')
     search_fields = (
         'text', 'translations__text',
         'tags__name', 'definitions__text',
