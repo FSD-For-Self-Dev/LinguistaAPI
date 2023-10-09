@@ -1,23 +1,19 @@
 version: '3.8'
 services:
   db:
-    image: postgres:11.1-alpine
+    image: postgres:12.1-alpine
     restart: always
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    # env_file:
-    #   - ./.env
-    environment:
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+    env_file:
+      - ./.env
 
   app:
     image: fsdforselfdev/linguista:latest
     restart: always
     volumes:
-      - static_value:/linguista/static/
-      - media_value:/linguista/media/
+      - static_value:/app/static/
+      - media_value:/app/media/
     depends_on:
       - db
     env_file:
@@ -27,12 +23,7 @@ services:
   #   ...
 
   nginx:
-    # image: whywe-nginx:latest
-    # build:
-    #   context: .
-    #   dockerfile: nginx/Dockerfile
     image: nginx:1.21-alpine
-    # image: nginx:1.21.3
     ports:
       - 80:80
     volumes:
