@@ -4,7 +4,6 @@ import random
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count
-
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import extend_schema
 from rest_framework import filters, status, viewsets
@@ -14,15 +13,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
-
 # from .filters import WordFilter
-from .models import (Definition, Translation, UsageExample, WordDefinitions,
-                     WordTranslations, WordUsageExamples)
-from .permissions import (CanAddDefinitionPermission,
-                          CanAddUsageExamplePermission)
-from .serializers import (DefinitionSerializer, TranslationSerializer,
-                          UsageExampleSerializer, WordSerializer,
-                          WordShortResponseSerializer)
+from .models import (
+    Definition, Translation, UsageExample, WordDefinitions,
+    WordTranslations, WordUsageExamples
+)
+from .permissions import (
+    CanAddDefinitionPermission,
+    CanAddUsageExamplePermission
+)
+from .serializers import (
+    DefinitionSerializer, TranslationSerializer, UsageExampleSerializer,
+    WordSerializer, WordShortSerializer
+)
 
 User = get_user_model()
 
@@ -42,7 +45,7 @@ class WordViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         '''
-        Get all words from user's vocabulary with counted translations 
+        Get all words from user's vocabulary with counted translations
         & usage examples
         '''
         user = self.request.user
@@ -56,7 +59,7 @@ class WordViewSet(viewsets.ModelViewSet):
     def get_serializer_class(self):
         match self.action:
             case 'list':
-                return WordShortResponseSerializer
+                return WordShortSerializer
             case _:
                 return WordSerializer
 
@@ -65,7 +68,7 @@ class WordViewSet(viewsets.ModelViewSet):
         '''Get random word from vocabulary'''
         queryset = self.filter_queryset(self.get_queryset())
         word = random.choice(queryset) if queryset else None
-        serializer = WordSerializer(
+        serializer = self.get_serializer(
             word, context={'request': request}
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -155,16 +158,15 @@ class WordViewSet(viewsets.ModelViewSet):
         defs = word.definitions.all()
 
         match request.method:
-            case "GET":
+            case 'GET':
                 return Response(
                     self.get_serializer(defs, many=True).data,
                     status=status.HTTP_200_OK
                 )
-            case "POST":
+            case 'POST':
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 new_def = serializer.save(
-                    author=request.user,
                     **serializer.validated_data
                 )
                 WordDefinitions.objects.create(definition=new_def, word=word)
@@ -186,7 +188,7 @@ class WordViewSet(viewsets.ModelViewSet):
         try:
             definition = word.definitions.get(pk=kwargs.get('definition_id'))
         except Definition.DoesNotExist:
-            raise NotFound(detail="The definition not found")
+            raise NotFound(detail='The definition not found')
 
         match request.method:
             case 'GET':
@@ -215,16 +217,15 @@ class WordViewSet(viewsets.ModelViewSet):
         word = self.get_object()
         _examples = word.examples.all()
         match request.method:
-            case "GET":
+            case 'GET':
                 return Response(
                     self.get_serializer(_examples, many=True).data,
                     status=status.HTTP_200_OK
                 )
-            case "POST":
+            case 'POST':
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 new_example = serializer.save(
-                    author=request.user,
                     **serializer.validated_data
                 )
                 WordUsageExamples.objects.create(
@@ -249,7 +250,7 @@ class WordViewSet(viewsets.ModelViewSet):
         try:
             _example = word.examples.get(pk=kwargs.get('example_id'))
         except UsageExample.DoesNotExist:
-            raise NotFound(detail="The usage example not found")
+            raise NotFound(detail='The usage example not found')
         match request.method:
             case 'GET':
                 return Response(self.get_serializer(_example).data)
@@ -271,7 +272,7 @@ class WordViewSet(viewsets.ModelViewSet):
         detail=True,
         methods=['post'],
         url_path='problematic-toggle',
-        serializer_class=WordShortResponseSerializer
+        serializer_class=WordShortSerializer
     )
     def problematic(self, request, *args, **kwargs):
         """Toggle is_problematic value"""
