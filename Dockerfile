@@ -9,6 +9,7 @@ RUN pip3 install -r requirements.txt --no-cache-dir
 COPY . .
 
 RUN python manage.py collectstatic --no-input
+RUN python manage.py makemigrations users
 
 EXPOSE 80
 
