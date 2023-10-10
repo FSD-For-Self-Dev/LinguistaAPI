@@ -176,7 +176,6 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost',
     'https://fsd-for-self-dev.github.io',
-    'https://linguista.onrender.com',
     # Дополнительные разрешенные источники, если есть
 ]
 
