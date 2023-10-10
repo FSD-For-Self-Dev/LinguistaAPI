@@ -85,7 +85,7 @@ DATABASES = {
         'USER': os.getenv('DB_USER', default=''),
         'PASSWORD': os.getenv('DB_PASSWORD', default=''),
         'HOST': os.getenv('DB_HOST', default=''),
-        'PORT': os.getenv('DB_PORT', default='')
+        'PORT': os.getenv('DB_PORT', default='5432')
     }
 } if DEBUG else {
     'default': dj_database_url.config(
