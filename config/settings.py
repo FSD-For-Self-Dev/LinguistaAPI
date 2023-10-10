@@ -89,7 +89,7 @@ DATABASES = {
     }
 } if DEBUG else {
     'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL', default='postgresql://postgres:postgres@localhost:5432/linguista'),
+        default=os.getenv('DATABASE_URL', default=''),
         conn_max_age=600
     )
 }
