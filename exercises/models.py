@@ -27,21 +27,22 @@ class Exercise(CreatedModel, ModifiedModel):
 
 
 class FavoriteExercise(UserRelatedModel):
-    exercise = models.ForeignKey(
-        'Exercise',
-        verbose_name=_('Exercise'),
-        on_delete=models.CASCADE,
-        related_name='favorite_for'
-    )
+    pass
+#     exercise = models.ForeignKey(
+#         'Exercise',
+#         verbose_name=_('Exercise'),
+#         on_delete=models.CASCADE,
+#         related_name='favorite_for'
+#     )
 
-    def __str__(self) -> str:
-        return _(
-            f'The exercise `{self.exercise}` was added to favorites by '
-            f'{self.user} at {self.created}'
-        )
+#     def __str__(self) -> str:
+#         return _(
+#             f'The exercise `{self.exercise}` was added to favorites by '
+#             f'{self.user} at {self.created}'
+#         )
 
-    class Meta:
-        ordering = ['-created']
-        get_latest_by = ["created"]
-        verbose_name = _('Favorite exercise')
-        verbose_name_plural = _('Favorite exercises')
+#     class Meta:
+#         ordering = ['-created']
+#         get_latest_by = ["created"]
+#         verbose_name = _('Favorite exercise')
+#         verbose_name_plural = _('Favorite exercises')
