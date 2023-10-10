@@ -78,12 +78,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-DATABASES = {
-    'default': dj_database_url.config(
-        default='postgres://linguista_db_user:wtzX5SQ1mehjZx0EtdLmP6a8CVrdGKkj@dpg-ckihn4olk5ic73aedcqg-a/linguista_db_5az4',
-        conn_max_age=600
-    )
+if DEBUG:
+    DATABASES = {
+    'default': {
+        'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', default='postgres'),
+        'USER': os.getenv('DB_USER', default=''),
+        'PASSWORD': os.getenv('DB_PASSWORD', default=''),
+        'HOST': os.getenv('DB_HOST', default=''),
+        'PORT': os.getenv('DB_PORT', default='')
+    }
 }
+else:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default='postgres://linguista_db_user:wtzX5SQ1mehjZx0EtdLmP6a8CVrdGKkj@dpg-ckihn4olk5ic73aedcqg-a/linguista_db_5az4',
+            conn_max_age=600
+        )
+    }
 
 AUTH_USER_MODEL = 'users.User'
 
