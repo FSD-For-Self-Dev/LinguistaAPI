@@ -11,7 +11,9 @@ COPY . .
 RUN python manage.py collectstatic --no-input
 RUN python manage.py makemigrations users
 RUN python manage.py makemigrations
+RUN python manage.py migrate
+RUN python manage.py makesuperuser
 
 EXPOSE 80
 
-CMD export && python manage.py migrate && (gunicorn --log-level debug --bind 0.0.0.0:80 config.wsgi)
+CMD export && (gunicorn --log-level debug --bind 0.0.0.0:80 config.wsgi)
