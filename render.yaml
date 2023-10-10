@@ -7,7 +7,7 @@ services:
   - type: web
     name: linguista_docker
     runtime: docker
-    repo: https://github.com/render-examples/webdis.git # optional
+    repo: https://github.com/FSD-For-Self-Dev/LinguistaAPI.git
     branch: develop
     rootDir: app
     envVars:
