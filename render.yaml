@@ -23,6 +23,8 @@ envVarGroups:
         value: 2
       - key: SECRET
         generateValue: true
+      - key: DEBUG
+        value: false
   - name: stripe
     envVars:
       - key: STRIPE_API_URL
