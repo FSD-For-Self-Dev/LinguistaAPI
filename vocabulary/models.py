@@ -80,7 +80,13 @@ class Type(models.Model):
 
     @classmethod
     def get_default_pk(cls):
-        word_type = cls.objects.get(slug='noun')
+        word_type, created = cls.objects.get_or_create(
+            slug='noun',
+            defaults={
+                'name': _('Noun'),
+                'sorting': 3
+            },
+        )
         return word_type.pk
 
     class Meta:
