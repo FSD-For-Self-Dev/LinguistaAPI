@@ -10,4 +10,6 @@ COPY . .
 
 RUN python manage.py collectstatic --no-input
 
-CMD ["gunicorn", "config.wsgi:application", "--bind", "0:8000" ] 
+EXPOSE 80
+
+CMD python manage.py migrate && (gunicorn --log-level debug --bind 0.0.0.0:80 config.wsgi)
