@@ -9,6 +9,7 @@ services:
     runtime: docker
     repo: https://github.com/FSD-For-Self-Dev/LinguistaAPI.git
     branch: develop
+    rootDir: app
     envVars:
       - fromGroup: conc-settings
       - key: DATABASE_URL
