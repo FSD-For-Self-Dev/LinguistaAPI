@@ -1,9 +1,11 @@
-"""Файл c кастомными командами управления."""
+''' Custom command for quick admin creation '''
+
 import os
 
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.utils.crypto import get_random_string
+
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,7 +14,9 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    """Команда для создания админа"""
+    '''
+    Command to create admin
+    '''
 
     def handle(self, *args, **options):
         username = 'admin'
@@ -23,7 +27,7 @@ class Command(BaseCommand):
                 not User.objects.filter(username=username).exists()
                 and not User.objects.filter(is_superuser=True).exists()
             ):
-                print("admin user not found, creating one")
+                print("Admin user not found, creating one")
 
                 new_password = os.getenv(
                     'DJANGO_SUPERUSER_PASSWORD', default=get_random_string(10)
@@ -39,7 +43,7 @@ class Command(BaseCommand):
                 )
                 print("===================================")
             else:
-                print("admin user found. Skipping super user creation")
+                print("Admin user found. Skipping super user creation")
                 print(u)
         except Exception as e:
             print(f"There was an error: {e}")

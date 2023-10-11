@@ -1,10 +1,10 @@
-''' Users app config '''
+''' Exercises app config '''
 
 from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
 
-class UsersConfig(AppConfig):
+class ExercisesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'users'
-    verbose_name = _('Users')
+    name = 'exercises'
+    verbose_name = _('Exercises')

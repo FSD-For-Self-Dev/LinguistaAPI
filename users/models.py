@@ -1,43 +1,39 @@
-"""Модели приложения users."""
+''' Users models '''
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils.translation import gettext as _
 
 from core.constants import GENDERS
 
 
 class User(AbstractUser):
-    """Кастомная модель пользователя."""
-
-    # исключаем из таблицы стобец "last_name"
     last_name = None
 
     email = models.EmailField(
-        'Электронная почта',
+        _('Email'),
         unique=True,
-        help_text='Пользовательский email',
+        blank=True
     )
     slug = models.SlugField(
-        'Слаг',
-        max_length=255,
-        help_text='Слаг',
+        _('Slug'),
+        max_length=255
     )
     gender = models.CharField(
-        'Пол',
-        max_length=10,
+        _('Gender'),
+        max_length=1,
         choices=GENDERS,
         null=True,
-        help_text='Пол',
+        blank=True
     )
-    # image = models.ImageField(
-    #     upload_to='users/images/',
-    #     verbose_name='Фото',
-    #     help_text='Загрузите картинку профиля',
-    #     blank=True,
-    #     null=True
-    # )
+    image = models.ImageField(
+        _('Profile image'),
+        upload_to='users/profile-images/',
+        blank=True,
+        null=True
+    )
 
     class Meta:
         ordering = ['-date_joined']
-        verbose_name = 'Пользователь'
-        verbose_name_plural = 'Пользователи'
+        verbose_name = _('User')
+        verbose_name_plural = _('Users')

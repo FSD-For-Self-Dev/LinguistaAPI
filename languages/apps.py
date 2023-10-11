@@ -1,10 +1,10 @@
-''' Users app config '''
+''' Languages app config '''
 
 from django.apps import AppConfig
 from django.utils.translation import gettext_lazy as _
 
 
-class UsersConfig(AppConfig):
+class LanguagesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
-    name = 'users'
-    verbose_name = _('Users')
+    name = 'languages'
+    verbose_name = _('Languages')

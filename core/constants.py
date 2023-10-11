@@ -1,7 +1,11 @@
-"""Общие константы."""
+''' Core constants '''
 
-# Выбор пола пользователя на сайте
+from django.utils.translation import gettext_lazy as _
+
 GENDERS = (
-    ('Мужской', 'Мужской'),
-    ('Женский', 'Женский')
+    ('M', _('Male')),
+    ('F', _('Female'))
 )
+
+MAX_DEFINITIONS_AMOUNT = 10
+MAX_USAGE_EXAMPLES_AMOUNT = 20

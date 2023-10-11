@@ -129,4 +129,12 @@ dmypy.json
 .pyre/
 
 # migrations
-migrations/
+/*/migrations/*
+
+# local static files
+static/
+
+# IDE folders
+
+.vscode/
+.idea/
