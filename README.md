@@ -9,18 +9,51 @@ backend | rest api
 
 ## Запуск проекта в режиме разработчика
 
-Выполнить из директории проекта
+### Создание окружения poetry
+
+Создание виртуального окружения:
+```bash
+
+poetry env use python3.11
 
 ```
-python -m venv venv
-. venv/Sctipts/actvate | source venv/Scripts/activate
-python -m pip install --upgrade pip
+
+Установка зависимостей (для разработки):
+```bash
+poetry install --with dev
 ```
+
+Запуск оболочки и активация виртуального окружения (из папки проекта):
+```bash
+poetry shell
+```
+
+Проверка активации виртуального окружения:
+```bash
+poetry env list
+```
+
+
+### Создание окружениия venv
+Выполнить из директории проекта
+```
+
+python -m venv venv
+
+. venv/Sctipts/actvate | source venv/Scripts/activate
+
+python -m pip install --upgrade pip
+
+```
+
 
 Выполнить из директории с requirements.txt для установки зависимостей
 
+
 ```
+
 pip install -r requirements.txt
+
 ```
 
 Выполнить миграции из директории с manage.py

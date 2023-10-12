@@ -1,3 +1,5 @@
+"""Фильтры приложения vocabulary."""
+
 import django_filters as df
 
 from vocabulary.models import Word
