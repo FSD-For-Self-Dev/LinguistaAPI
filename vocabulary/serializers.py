@@ -31,7 +31,8 @@ class TranslationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Translation
-        fields = ('text', 'author')
+        fields = ('id', 'text', 'author')
+        read_only_fields = ('id',)
 
 
 class UsageExampleSerializer(serializers.ModelSerializer):
@@ -80,7 +81,7 @@ class WordShortSerializer(serializers.ModelSerializer):
     антонимов, форм и похожих слов), а также для чтения в короткой форме."""
 
     language = serializers.SlugRelatedField(
-        queryset=Language.objects.all(), slug_field='name', required=False
+        queryset=Language.objects.all(), slug_field='name', required=True
     )
     types = CustomRelatedField(
         queryset=Type.objects.all(), many=True, required=False, default=[1]
@@ -100,11 +101,13 @@ class WordShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Word
         fields = (
-            'id', 'language', 'text', 'activity', 'is_problematic', 'types',
-            'notes', 'tags', 'translations_count', 'translations', 'favorite',
-            'collections', 'created', 'modified', 'author'
+            'id', 'slug','language', 'text', 'activity', 'is_problematic',
+            'types', 'notes', 'tags', 'translations_count', 'translations',
+            'favorite', 'collections', 'created', 'modified', 'author'
         )
-        read_only_fields = ('id', 'is_problematic', 'translations_count')
+        read_only_fields = (
+            'id', 'slug', 'is_problematic', 'translations_count'
+        )
 
     @staticmethod
     def max_amount_validate(obj_list, max_amount, attr):
@@ -189,13 +192,15 @@ class WordSerializer(WordShortSerializer):
     class Meta:
         model = Word
         fields = (
-            'id', 'language', 'text', 'translations', 'translations_count',
-            'examples_count', 'examples', 'definitions', 'types', 'tags',
-            'is_problematic', 'activity', 'collections', 'created', 'modified',
-            'synonyms', 'favorite', 'author', 'antonyms', 'forms', 'similars',
-            'notes'
+            'id', 'slug', 'language', 'text', 'translations',
+            'translations_count', 'examples_count', 'examples', 'definitions',
+            'types', 'tags', 'is_problematic', 'activity', 'collections',
+            'created', 'modified', 'synonyms', 'favorite', 'author',
+            'antonyms', 'forms', 'similars', 'notes'
         )
-        read_only_fields = ('id', 'translations_count', 'examples_count')
+        read_only_fields = (
+            'id', 'slug', 'translations_count', 'examples_count'
+        )
 
     def validate_examples(self, examples):
         self.max_amount_validate(examples, MAX_EXAMPLES_AMOUNT, 'examples')
