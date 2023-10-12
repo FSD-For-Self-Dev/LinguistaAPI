@@ -8,6 +8,7 @@ from .views import WordViewSet
 router = routers.DefaultRouter()
 
 router.register('vocabulary', WordViewSet, basename='vocabulary')
+router.register('favorite', WordViewSet, basename='favorite')
 # router.register('tags', TagViewSet, basename='tags')
 # router.register('users', CustomUserViewSet, basename='users')
 
