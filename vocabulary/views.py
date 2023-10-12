@@ -15,13 +15,19 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
-
 from .filters import WordFilter
-from .models import (Definition, WordDefinitions, WordUsageExamples,
-                     UsageExample)
-from .serializers import (TranslationSerializer, WordSerializer,
-                          DefinitionSerializer, UsageExampleSerializer)
-from .permissions import CanAddDefinitionPermission, CanAddUsageExamplePermission
+from .models import (
+    Definition, Translation, UsageExample, WordDefinitions,
+    WordTranslations, WordUsageExamples
+)
+from .permissions import (
+    CanAddDefinitionPermission,
+    CanAddUsageExamplePermission
+)
+from .serializers import (
+    DefinitionSerializer, TranslationSerializer, UsageExampleSerializer,
+    WordSerializer, WordShortSerializer
+)
 
 User = get_user_model()
 
@@ -31,22 +37,13 @@ class WordViewSet(viewsets.ModelViewSet):
     '''Viewset for actions with words in user vocabulary'''
 
     lookup_field = 'slug'
-    serializer_class = WordSerializer
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
-    permission_classes = [IsAuthenticated]
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
-    filterset_class = WordFilter
-    filter_backends = [
+    filter_backends = (
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
-    ]
-    # filterset_class = WordFilter
-    # search_fields = (
-    #     'text', 'note', 'tags__name', 'translations__translation',
-    #     'examples__example'
-    # )
-    # ordering_fields = (
-    #     'created', 'modified', 'text', 'trnsl_count', 'exmpl_count'
-    # )
+    )
+    filterset_class = WordFilter
     ordering = ('-created',)
 
     def get_queryset(self):

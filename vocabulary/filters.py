@@ -1,50 +1,63 @@
 import django_filters as df
-from django.db.models import Count
+
 from vocabulary.models import Word
 
 
+class CustomFilterList(df.Filter):
+    """Фильтрация по списку значений."""
+
+    def filter(self, qs, value):
+        if value not in (None, ''):
+            values = [v for v in value.split(',')]
+            return qs.filter(**{'%s__%s' %
+                                (self.field_name, self.lookup_expr): values})
+        return qs
+
+
 class WordFilter(df.FilterSet):
-    '''Filter for words'''
+    """Фильтры слов."""
+
     language = df.CharFilter(field_name='language__isocode')
     is_problematic = df.BooleanFilter(field_name='is_problematic')
-    tags = df.CharFilter(method='filter_tags')
+    tags = CustomFilterList(
+        field_name='tags__name', lookup_expr='in'
+    )
     activity = df.ChoiceFilter(choices=Word.ACTIVITY)
-    type = df.CharFilter(field_name='type__name')
-    date_added = df.DateFilter(field_name='created', lookup_expr='exact')
-    date_added__gt = df.DateFilter(field_name='created', lookup_expr='gt')
-    date_added__lt = df.DateFilter(field_name='created', lookup_expr='lt')
+    types = CustomFilterList(
+        field_name='types__slug', lookup_expr='in'
+    )
     first_letter = df.CharFilter(field_name='text', lookup_expr='istartswith')
-    have_associations = df.BooleanFilter(method='filter_have_associations')
-    translations_amount = df.NumberFilter(method='filter_translations_amount',
-                                          lookup_expr='exact')
-    translations_amount__gt = df.NumberFilter(
-        method='filter_translations_amount', lookup_expr='gt')
-    translations_amount__lt = df.NumberFilter(
-        method='filter_translations_amount', lookup_expr='lt')
-    examples_amount = df.NumberFilter(method='filter_examples_amount')
-    examples_amount__gt = df.NumberFilter(method='filter_examples_amount',
-                                          lookup_expr='gt')
-    examples_amount__lt = df.NumberFilter(method='filter_examples_amount',
-                                          lookup_expr='lt')
+    # have_associations = df.BooleanFilter(method='filter_have_associations')
+    translations_count = df.NumberFilter(
+        field_name='translations_count',
+        lookup_expr='exact'
+    )
+    translations_count__gt = df.NumberFilter(
+        field_name='translations_count',
+        lookup_expr='gt'
+    )
+    translations_count__lt = df.NumberFilter(
+        field_name='translations_count',
+        lookup_expr='lt'
+    )
+    examples_count = df.NumberFilter(
+        field_name='examples_count',
+        lookup_expr='exact'
+    )
+    examples_count__gt = df.NumberFilter(
+        field_name='examples_count',
+        lookup_expr='gt'
+    )
+    examples_count__lt = df.NumberFilter(
+        field_name='examples_count',
+        lookup_expr='lt'
+    )
 
-    def filter_tags(self, queryset, name, value):
-        if value:
-            tags = value.split(',')
-            return queryset.filter(tags__name__in=tags)
-        return queryset
-
-    def filter_translations_amount(self, queryset, name, value):
-        filter = {name: value}
-        if value:
-            return queryset.annotate(
-                translations_amount=Count('translations',
-                                          distinct=True)).filter(**filter)
-        return queryset
-
-    def filter_examples_amount(self, queryset, name, value):
-        filter = {name: value}
-        if value:
-            queryset.annotate(
-                examples_amount=Count('examples',
-                                      distinct=True)).filter(**filter)
-        return queryset
+    class Meta:
+        model = Word
+        fields = {
+            'created': [
+                'exact', 'gt', 'lt', 'year', 'year__gt', 'year__lt',
+                'month', 'month__gt', 'month__lt'
+            ],
+        }
