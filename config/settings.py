@@ -78,8 +78,7 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-# if DEBUG:
-#     DATABASES = {
+# DATABASES = {
 #     'default': {
 #         'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
 #         'NAME': os.getenv('DB_NAME', default='postgres'),
@@ -87,9 +86,8 @@ WSGI_APPLICATION = 'config.wsgi.application'
 #         'PASSWORD': os.getenv('DB_PASSWORD', default=''),
 #         'HOST': os.getenv('DB_HOST', default=''),
 #         'PORT': os.getenv('DB_PORT', default='')
-#         }
 #     }
-# else:
+# }
 DATABASES = {
     'default': dj_database_url.config(
         default='postgres://linguista_db_user:8JKllVIbb35uQfgrVKHByaWiMlQdSgKU@dpg-ckjd1cgmccbs7392lv00-a/linguista_db_uwxs',
