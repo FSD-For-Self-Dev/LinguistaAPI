@@ -13,7 +13,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
-# from .filters import WordFilter
+from .filters import WordFilter
 from .models import (
     Definition, Translation, UsageExample, WordDefinitions,
     WordTranslations, WordUsageExamples
@@ -35,12 +35,13 @@ class WordViewSet(viewsets.ModelViewSet):
     '''Viewset for actions with words in user vocabulary'''
 
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
-    permission_classes = [IsAuthenticated]
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
-    filter_backends = [
+    filter_backends = (
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
-    ]
+    )
+    filterset_class = WordFilter
     ordering = ('-created',)
     ordering_fields = ('created', 'text', 'translations_count')
     search_fields = (
