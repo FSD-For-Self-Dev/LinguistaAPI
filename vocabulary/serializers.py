@@ -53,15 +53,22 @@ class DefinitionSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'author', 'created', 'modified')
 
 
-class CollectionSerializer(serializers.ModelSerializer):
+class ShortCollectionSerializer(serializers.ModelSerializer):
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    words = serializers.SlugRelatedField(
+        slug_field='text', read_only=True, many=True
+    )
+    words_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Collection
         fields = (
-            'id', 'author', 'title', 'description', 'words', 'created',
+            'id', 'author', 'title', 'words_count', 'words', 'created',
             'modified'
         )
+
+    def get_words_count(self, obj):
+        return obj.words.count()
 
 
 class CustomRelatedField(serializers.PrimaryKeyRelatedField):
@@ -128,7 +135,7 @@ class WordShortSerializer(serializers.ModelSerializer):
     )
     collections = RelatedSerializerField(
         queryset=Collection.objects.all(), many=True, required=False,
-        serializer_class=CollectionSerializer
+        serializer_class=ShortCollectionSerializer
     )
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
