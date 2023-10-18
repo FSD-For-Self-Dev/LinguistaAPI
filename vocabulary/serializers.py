@@ -53,6 +53,17 @@ class DefinitionSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'author', 'created', 'modified')
 
 
+class CollectionSerializer(serializers.ModelSerializer):
+    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Collection
+        fields = (
+            'id', 'author', 'title', 'description', 'words', 'created',
+            'modified'
+        )
+
+
 class CustomRelatedField(serializers.PrimaryKeyRelatedField):
     """
     Кастомное поле для использования в сериализаторе слов.
