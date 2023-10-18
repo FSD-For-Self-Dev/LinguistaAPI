@@ -92,7 +92,10 @@ class WordShortSerializer(serializers.ModelSerializer):
     )
     translations_count = serializers.IntegerField(read_only=True)
     translations = TranslationSerializer(many=True)
-    favorite = serializers.SerializerMethodField()
+    favorite = serializers.BooleanField(
+        source='get_favorite',
+        read_only=True
+    )
     collections = serializers.PrimaryKeyRelatedField(
         queryset=Collection.objects.all(), many=True, required=False
     )
