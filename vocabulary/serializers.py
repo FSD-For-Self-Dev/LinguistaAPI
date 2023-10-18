@@ -53,6 +53,24 @@ class DefinitionSerializer(serializers.ModelSerializer):
         read_only_fields = ('id', 'author', 'created', 'modified')
 
 
+class ShortCollectionSerializer(serializers.ModelSerializer):
+    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    words = serializers.SlugRelatedField(
+        slug_field='text', read_only=True, many=True
+    )
+    words_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Collection
+        fields = (
+            'id', 'author', 'title', 'words_count', 'words', 'created',
+            'modified'
+        )
+
+    def get_words_count(self, obj):
+        return obj.words.count()
+
+
 class CustomRelatedField(serializers.PrimaryKeyRelatedField):
     """
     Кастомное поле для использования в сериализаторе слов.
@@ -63,6 +81,25 @@ class CustomRelatedField(serializers.PrimaryKeyRelatedField):
 
     def to_representation(self, value):
         return value.name
+
+
+class RelatedSerializerField(serializers.PrimaryKeyRelatedField):
+    """
+    Кастомное поле для использования в сериализаторе слов.
+
+    Позволяет при записи передавать id объектов,
+    а при чтении выводить данные сериализатора.
+    """
+
+    def __init__(self, serializer_class, many=False, **kwargs):
+        self.serializer_class = serializer_class
+        self.many = many
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        return self.serializer_class(
+            value, many=self.many, required=self.required
+        ).data
 
 
 class WordRelatedSerializer(serializers.ModelSerializer):
@@ -92,9 +129,13 @@ class WordShortSerializer(serializers.ModelSerializer):
     )
     translations_count = serializers.IntegerField(read_only=True)
     translations = TranslationSerializer(many=True)
-    favorite = serializers.SerializerMethodField()
-    collections = serializers.PrimaryKeyRelatedField(
-        queryset=Collection.objects.all(), many=True, required=False
+    favorite = serializers.BooleanField(
+        source='get_favorite',
+        read_only=True
+    )
+    collections = RelatedSerializerField(
+        queryset=Collection.objects.all(), many=True, required=False,
+        serializer_class=ShortCollectionSerializer
     )
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
