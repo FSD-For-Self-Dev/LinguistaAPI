@@ -20,7 +20,6 @@ User = get_user_model()
 
 
 class NoteSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Note
         fields = ('text',)
@@ -101,7 +100,7 @@ class WordShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = Word
         fields = (
-            'id', 'slug','language', 'text', 'activity', 'is_problematic',
+            'id', 'slug', 'language', 'text', 'activity', 'is_problematic',
             'types', 'notes', 'tags', 'translations_count', 'translations',
             'favorite', 'collections', 'created', 'modified', 'author'
         )
@@ -295,3 +294,14 @@ class WordSerializer(WordShortSerializer):
         self.create_links_for_related_objs(Similar, similars, word)
 
         return word
+
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    """Сериализатор для избранных слов"""
+    word = serializers.SlugRelatedField(
+        queryset=FavoriteWord.objects.all(), slug_field='text'
+    )
+
+    class Meta:
+        model = FavoriteWord
+        fields = ('word',)

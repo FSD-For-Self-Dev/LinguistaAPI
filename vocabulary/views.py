@@ -18,7 +18,7 @@ from core.pagination import LimitPagination
 from .filters import WordFilter
 from .models import (
     Definition, Translation, UsageExample, WordDefinitions,
-    WordTranslations, WordUsageExamples
+    WordTranslations, WordUsageExamples, FavoriteWord, Word
 )
 from .permissions import (
     CanAddDefinitionPermission,
@@ -26,7 +26,7 @@ from .permissions import (
 )
 from .serializers import (
     DefinitionSerializer, TranslationSerializer, UsageExampleSerializer,
-    WordSerializer, WordShortSerializer
+    WordSerializer, WordShortSerializer, FavoriteSerializer
 )
 
 User = get_user_model()
@@ -40,82 +40,82 @@ User = get_user_model()
             status.HTTP_200_OK: WordShortSerializer,
         },
         description=(
-            'Просмотреть список своих слов с пагинацией и применением '
-            'фильтров, сортировки и поиска. Нужна авторизация.'
+                'Просмотреть список своих слов с пагинацией и применением '
+                'фильтров, сортировки и поиска. Нужна авторизация.'
         ),
         parameters=[
             OpenApiParameter(
                 "created", OpenApiTypes.DATETIME, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по дате добавления. Включая сравнение больше и '
-                    'меньше: created__gt и created__lt.'
+                        'Фильтр по дате добавления. Включая сравнение больше и '
+                        'меньше: created__gt и created__lt.'
                 )
             ),
             OpenApiParameter(
                 "created__year", OpenApiTypes.INT, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по году добавления. Включая сравнение больше и '
-                    'меньше: created__year__gt и created__year__lt.'
+                        'Фильтр по году добавления. Включая сравнение больше и '
+                        'меньше: created__year__gt и created__year__lt.'
                 )
             ),
             OpenApiParameter(
                 "created__month", OpenApiTypes.INT, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по месяцу добавления. Включая сравнение больше и '
-                    'меньше: created__month__gt и created__month__lt.'
+                        'Фильтр по месяцу добавления. Включая сравнение больше и '
+                        'меньше: created__month__gt и created__month__lt.'
                 )
             ),
             OpenApiParameter(
                 "language", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по языку. Принимает isocode языка.'
+                        'Фильтр по языку. Принимает isocode языка.'
                 )
             ),
             OpenApiParameter(
                 "is_problematic", OpenApiTypes.BOOL, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по метке "проблемное".'
+                        'Фильтр по метке "проблемное".'
                 )
             ),
             OpenApiParameter(
                 "tags", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по тегам. Принимает name тегов через запятую, '
-                    'если несколько.'
+                        'Фильтр по тегам. Принимает name тегов через запятую, '
+                        'если несколько.'
                 )
             ),
             OpenApiParameter(
                 "activity", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по статусу активности. Принимает варианты '
-                    'INACTIVE, ACTIVE, MASTERED.'
+                        'Фильтр по статусу активности. Принимает варианты '
+                        'INACTIVE, ACTIVE, MASTERED.'
                 )
             ),
             OpenApiParameter(
                 "types", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по типам. Принимает slug типов через запятую, '
-                    'если несколько.'
+                        'Фильтр по типам. Принимает slug типов через запятую, '
+                        'если несколько.'
                 )
             ),
             OpenApiParameter(
                 "first_letter", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по первой букве слова.'
+                        'Фильтр по первой букве слова.'
                 )
             ),
             OpenApiParameter(
                 "translations_count", OpenApiTypes.INT, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по кол-ву переводов. Включая сравнение больше и '
-                    'меньше: translations_count__gt и translations_count__lt.'
+                        'Фильтр по кол-ву переводов. Включая сравнение больше и '
+                        'меньше: translations_count__gt и translations_count__lt.'
                 )
             ),
             OpenApiParameter(
                 "examples_count", OpenApiTypes.INT, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по кол-ву примеров. Включая сравнение больше и '
-                    'меньше: examples_count__gt и examples_count__lt.'
+                        'Фильтр по кол-ву примеров. Включая сравнение больше и '
+                        'меньше: examples_count__gt и examples_count__lt.'
                 )
             ),
         ],
@@ -521,3 +521,24 @@ class WordViewSet(viewsets.ModelViewSet):
         word.is_problematic = not word.is_problematic
         word.save()
         return Response(self.get_serializer(word).data)
+
+
+@extend_schema(tags=['favorite'])
+class FavoriteViewSet(viewsets.ModelViewSet):
+    """Вьюсет для отображения избранных слов"""
+    serializer_class = FavoriteSerializer
+    http_method_names = ['get', 'post', 'put', 'delete']
+    permission_classes = [IsAuthenticated]
+    pagination_class = LimitPagination
+    filter_backends = [
+        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
+    ]
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            favorite = FavoriteWord.objects.filter(user=user)
+            return favorite
+        return None
+
+
