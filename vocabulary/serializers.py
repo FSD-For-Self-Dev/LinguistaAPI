@@ -76,6 +76,25 @@ class CustomRelatedField(serializers.PrimaryKeyRelatedField):
         return value.name
 
 
+class RelatedSerializerField(serializers.PrimaryKeyRelatedField):
+    """
+    Кастомное поле для использования в сериализаторе слов.
+
+    Позволяет при записи передавать id объектов,
+    а при чтении выводить данные сериализатора.
+    """
+
+    def __init__(self, serializer_class, many=False, **kwargs):
+        self.serializer_class = serializer_class
+        self.many = many
+        super().__init__(**kwargs)
+
+    def to_representation(self, value):
+        return self.serializer_class(
+            value, many=self.many, required=self.required
+        ).data
+
+
 class WordRelatedSerializer(serializers.ModelSerializer):
     """Сериализатор для короткой демонстрации word-related объектов
     (синонимы, антонимы, похожие слова и формы)."""
@@ -107,8 +126,9 @@ class WordShortSerializer(serializers.ModelSerializer):
         source='get_favorite',
         read_only=True
     )
-    collections = serializers.PrimaryKeyRelatedField(
-        queryset=Collection.objects.all(), many=True, required=False
+    collections = RelatedSerializerField(
+        queryset=Collection.objects.all(), many=True, required=False,
+        serializer_class=CollectionSerializer
     )
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
