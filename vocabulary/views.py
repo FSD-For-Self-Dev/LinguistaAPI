@@ -286,12 +286,12 @@ class CollectionViewSet(viewsets.ModelViewSet):
     '''Viewset for actions with word collections'''
 
     lookup_field = 'slug'
-    http_method_names = ['get', 'post', 'head', 'patch', 'delete']
-    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
     pagination_class = LimitPagination
-    filter_backends = [
+    filter_backends = (
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
-    ]
+    )
     ordering = ('-created',)
 
     def get_serializer_class(self):
@@ -301,4 +301,5 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return user.collections
+        return user.collections.annotate(words_count=Count('words',
+                                                           distinct=True))

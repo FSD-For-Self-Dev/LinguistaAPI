@@ -9,16 +9,16 @@ from .models import (Antonym, Collection, Definition, FavoriteCollection,
                      WordUsageExamples)
 
 
+@admin.register(Word)
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
 
 
+@admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title', 'author')}
 
 
-admin.site.register(Word, WordAdmin)
-admin.site.register(Collection, CollectionAdmin)
 admin.site.register(Translation)
 admin.site.register(WordTranslations)
 admin.site.register(UsageExample)
