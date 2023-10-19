@@ -6,7 +6,8 @@ from django.contrib.auth import get_user_model
 from django.db.models import Count
 
 from django_filters.rest_framework import DjangoFilterBackend
-from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.utils import extend_schema, OpenApiParameter, \
+    OpenApiExample
 # from djoser.views import UserViewSet
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
@@ -18,10 +19,13 @@ from core.pagination import LimitPagination
 
 # from .filters import WordFilte
 from .models import (Definition, WordDefinitions, WordUsageExamples,
-                     UsageExample)
+                     UsageExample, Collection)
 from .serializers import (TranslationSerializer, WordSerializer,
-                          DefinitionSerializer, UsageExampleSerializer)
-from .permissions import CanAddDefinitionPermission, CanAddUsageExamplePermission
+                          DefinitionSerializer, UsageExampleSerializer,
+                          CollectionSerializer)
+from .permissions import CanAddDefinitionPermission, \
+    CanAddUsageExamplePermission
+from .filters import CollectionFilter
 
 User = get_user_model()
 
@@ -110,7 +114,8 @@ class WordViewSet(viewsets.ModelViewSet):
                     **serializer.validated_data
                 )
                 WordDefinitions.objects.create(definition=new_def, word=word)
-                return Response(self.get_serializer(new_def).data, status=status.HTTP_201_CREATED)
+                return Response(self.get_serializer(new_def).data,
+                                status=status.HTTP_201_CREATED)
 
     @action(
         detail=True,
@@ -166,8 +171,10 @@ class WordViewSet(viewsets.ModelViewSet):
                     author=request.user,
                     **serializer.validated_data
                 )
-                WordUsageExamples.objects.create(example=new_example, word=word)
-                return Response(self.get_serializer(new_example).data, status=status.HTTP_201_CREATED)
+                WordUsageExamples.objects.create(example=new_example,
+                                                 word=word)
+                return Response(self.get_serializer(new_example).data,
+                                status=status.HTTP_201_CREATED)
 
     @action(
         detail=True,
@@ -198,3 +205,17 @@ class WordViewSet(viewsets.ModelViewSet):
             case 'DELETE':
                 _example.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class CollectionViewSet(viewsets.ModelViewSet):
+    queryset = Collection.objects.all()
+    serializer_class = CollectionSerializer
+    filterset_class = CollectionFilter
+
+    def get_queryset(self):
+        user = self.request.user
+        if user.is_authenticated:
+            return user.collections.annotate(
+                words_count=Count('words', distinct=True),
+            )
+        return None

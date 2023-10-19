@@ -1,20 +1,20 @@
 import django_filters as df
-from django.db.models import Count
+from .models import Collection
 
 
 class CollectionFilter(df.FilterSet):
-    """Collection filter."""
-    date_added__gt = df.DateFilter(field_name='created', lookup_expr='gt')
-    date_added__lt = df.DateFilter(field_name='created', lookup_expr='lt')
-    words_amount__gt = df.NumberFilter(method='filter_words_amount',
+    """Фильтры коллекций."""
+
+    words_count__gt = df.NumberFilter(field_name='words_count',
                                        lookup_expr='gt')
-    words_amount__lt = df.NumberFilter(method='filter_words_amount',
+    words_count__lt = df.NumberFilter(field_name='words_count',
                                        lookup_expr='lt')
 
-    def filter_words_amount(self, queryset, name, value):
-        filter = {name: value}
-        if value:
-            return queryset.annotate(
-                words_amount=Count('words',
-                                   distinct=True)).filter(**filter)
-        return queryset
+    class Meta:
+        model = Collection
+        fields = {
+            'created': [
+                'exact', 'gt', 'lt', 'year', 'year__gt', 'year__lt',
+                'month', 'month__gt', 'month__lt'
+            ],
+        }
