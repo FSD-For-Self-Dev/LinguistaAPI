@@ -1,9 +1,13 @@
 ''' Project settings '''
 
 import os
-import dj_database_url
+
 from datetime import timedelta
 from pathlib import Path
+
+from django.utils.translation import gettext_lazy as _
+
+import dj_database_url
 
 from dotenv import load_dotenv
 
@@ -22,6 +26,7 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 INSTALLED_APPS = [
+    'modeltranslation',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +56,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -203,6 +209,10 @@ SPECTACULAR_SETTINGS = {
 }
 
 LANGUAGE_CODE = 'ru-ru'
+LANGUAGES = (
+    ('en', _('English')),
+    ('ru', _('Russian')),
+)
 
 TIME_ZONE = 'UTC'
 
