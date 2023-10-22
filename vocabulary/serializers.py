@@ -331,3 +331,16 @@ class WordSerializer(WordShortSerializer):
         self.create_links_for_related_objs(Similar, similars, word)
 
         return word
+
+
+class TypeSerializer(serializers.ModelSerializer):
+    """Сериализатор для просмотра всех возможных типов слов и фраз."""
+
+    class Meta:
+        model = Type
+        fields = (
+            'name',
+            'slug',
+            'sorting',
+        )
+        read_only_fields = fields
