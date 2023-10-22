@@ -106,7 +106,11 @@ class WordRelatedSerializer(serializers.ModelSerializer):
     """Сериализатор для короткой демонстрации word-related объектов
     (синонимы, антонимы, похожие слова и формы)."""
 
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = serializers.SlugRelatedField(
+        queryset=User.objects.all(),
+        slug_field='username',
+        default=serializers.CurrentUserDefault()
+    )
 
     class Meta:
         model = Word
@@ -137,7 +141,11 @@ class WordShortSerializer(serializers.ModelSerializer):
         queryset=Collection.objects.all(), many=True, required=False,
         serializer_class=ShortCollectionSerializer
     )
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = serializers.SlugRelatedField(
+        queryset=User.objects.all(),
+        slug_field='username',
+        default=serializers.CurrentUserDefault()
+    )
 
     class Meta:
         model = Word
