@@ -179,10 +179,14 @@ class WordViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         match self.action:
-            case 'list':
+            case 'list'|'random':
                 return WordShortSerializer
-            case 'random':
-                return WordShortSerializer
+            case 'translations'|'translations_detail':
+                return Translation
+            case 'definitions'|'definitions_detail':
+                return DefinitionSerializer
+            case 'examples'|'examples_detail':
+                return UsageExampleSerializer
             case _:
                 return WordSerializer
 
@@ -276,7 +280,7 @@ class WordViewSet(viewsets.ModelViewSet):
         url_name="word's translations detail",
         serializer_class=TranslationSerializer
     )
-    def translation_detail(self, request, *args, **kwargs):
+    def translations_detail(self, request, *args, **kwargs):
         """Получить, редактировать или удалить перевод слова."""
         word = self.get_object()
         try:
