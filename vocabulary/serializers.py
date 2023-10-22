@@ -217,6 +217,33 @@ class WordShortSerializer(serializers.ModelSerializer):
 
         return word
 
+    @transaction.atomic
+    def update(self, validated_data):
+        translations = validated_data.pop('translations')
+        word_types = validated_data.pop('types')
+        notes = validated_data.pop('note', [])
+        collections = validated_data.pop('collections', [])
+        tags = validated_data.pop('tags', [])
+
+        word = Word.objects.create(**validated_data)
+
+        word.collections.set(collections)
+        word.tags.set(tags)
+        word.types.set(word_types)
+
+        for translation in translations:
+            current_translation, created = (
+                Translation.objects.get_or_create(**translation)
+            )
+            WordTranslations.objects.create(
+                word=word, translation=current_translation
+            )
+
+        note_objs = [Note(word=word, **data) for data in notes]
+        Note.objects.bulk_create(note_objs)
+
+        return word
+
 
 class WordSerializer(WordShortSerializer):
     """Расширенный (полный) сериализатор для создания слов по одному,
@@ -307,6 +334,38 @@ class WordSerializer(WordShortSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
+        examples = validated_data.pop('examples', [])
+        definitions = validated_data.pop('definitions', [])
+        synonyms = validated_data.pop('synonyms', [])
+        antonyms = validated_data.pop('antonyms', [])
+        forms = validated_data.pop('forms', [])
+        similars = validated_data.pop('similars', [])
+
+        word = super().create(validated_data)
+
+        self.bulk_create_objects(
+            examples,
+            UsageExample,
+            WordUsageExamples,
+            'example',
+            word
+        )
+        self.bulk_create_objects(
+            definitions,
+            Definition,
+            WordDefinitions,
+            'definition',
+            word
+        )
+        self.create_links_for_related_objs(Synonym, synonyms, word)
+        self.create_links_for_related_objs(Antonym, antonyms, word)
+        self.create_links_for_related_objs(Form, forms, word)
+        self.create_links_for_related_objs(Similar, similars, word)
+
+        return word
+
+    @transaction.atomic
+    def update(self, instance, validated_data):
         examples = validated_data.pop('examples', [])
         definitions = validated_data.pop('definitions', [])
         synonyms = validated_data.pop('synonyms', [])
