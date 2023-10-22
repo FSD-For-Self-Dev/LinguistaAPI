@@ -8,7 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     extend_schema, extend_schema_view, OpenApiParameter, OpenApiTypes
 )
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, status, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -528,7 +528,7 @@ class WordViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=['types'])
-class TypeViewSet(viewsets.ReadOnlyModelViewSet):
+class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """Вьюсет для просмотра всех возможных типов слов и фраз."""
 
     queryset = Type.objects.all()
