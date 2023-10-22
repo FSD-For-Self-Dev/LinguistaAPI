@@ -193,7 +193,8 @@ class Word(CreatedModel, ModifiedModel):
         'Translation',
         through='WordTranslations',
         related_name='translation_for',
-        verbose_name=_('Translations')
+        verbose_name=_('Translations'),
+        blank=True
     )
     definitions = models.ManyToManyField(
         'Definition',
