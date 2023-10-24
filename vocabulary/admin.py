@@ -67,6 +67,11 @@ class TypeAdmin(TranslationAdmin):
     list_display_links = ('name',)
 
 
+@admin.register(Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('title', 'author')}
+
+
 admin.site.register(Translation)
 admin.site.register(WordTranslations)
 admin.site.register(UsageExample)
@@ -74,7 +79,6 @@ admin.site.register(WordUsageExamples)
 admin.site.register(Definition)
 admin.site.register(WordDefinitions)
 admin.site.register(Tag)
-admin.site.register(Collection)
 admin.site.register(WordsInCollections)
 admin.site.register(Synonym)
 admin.site.register(Antonym)

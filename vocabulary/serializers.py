@@ -344,3 +344,13 @@ class TypeSerializer(serializers.ModelSerializer):
             'sorting',
         )
         read_only_fields = fields
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Collection
+        fields = ('id', 'author', 'title', 'description', 'words', 'created',
+                  'modified')
+        read_only_fields = ('id', 'author', 'created', 'modified')
