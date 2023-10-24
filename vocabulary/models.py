@@ -36,6 +36,13 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         _('Collection title'),
         max_length=256
     )
+
+    slug = models.SlugField(
+        _('Slug'),
+        null=True,
+        unique=True
+    )
+
     description = models.TextField(
         _('Description'),
         max_length=512,
@@ -54,6 +61,9 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         get_latest_by = ['created', 'modified']
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
+
+    def words_count(self) -> int:
+        return self.words.count()
 
     def __str__(self) -> str:
         return _(f'{self.title} ({self.words.count()} words)')

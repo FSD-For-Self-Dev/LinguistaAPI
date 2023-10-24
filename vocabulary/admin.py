@@ -2,11 +2,13 @@
 
 from django.contrib import admin
 
+from modeltranslation.admin import TranslationAdmin
+
 from .models import (
     Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
     ImageAssociation, Note, Similar, Synonym, Tag, Translation, Type,
-    UsageExample, Word, WordDefinitions, WordTranslations, WordUsageExamples,
-    WordsInCollections
+    UsageExample, Word, WordDefinitions, WordsInCollections, WordTranslations,
+    WordUsageExamples,
 )
 
 
@@ -43,6 +45,7 @@ class WordDefinitionsInline(admin.TabularInline):
     model = WordDefinitions
 
 
+@admin.register(Word)
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
     list_display = ('pk', 'text', 'author')
@@ -58,7 +61,19 @@ class WordAdmin(admin.ModelAdmin):
     )
 
 
-admin.site.register(Word, WordAdmin)
+@admin.register(Type)
+class TypeAdmin(TranslationAdmin):
+    list_display = ('name', 'sorting') 
+    list_display_links = ('name',)
+
+
+@admin.register(Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('title', 'author')}
+    list_display = ('id', 'title', 'author', 'slug', 'words_count')
+    list_display_links = ('title',)
+
+
 admin.site.register(Translation)
 admin.site.register(WordTranslations)
 admin.site.register(UsageExample)
@@ -66,8 +81,6 @@ admin.site.register(WordUsageExamples)
 admin.site.register(Definition)
 admin.site.register(WordDefinitions)
 admin.site.register(Tag)
-admin.site.register(Type)
-admin.site.register(Collection)
 admin.site.register(WordsInCollections)
 admin.site.register(Synonym)
 admin.site.register(Antonym)

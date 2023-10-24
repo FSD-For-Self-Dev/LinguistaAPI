@@ -8,25 +8,25 @@ from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     extend_schema, extend_schema_view, OpenApiParameter, OpenApiTypes
 )
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, status, viewsets, mixins
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 from .filters import WordFilter
 from .models import (
     Definition, Translation, UsageExample, WordDefinitions,
-    WordTranslations, WordUsageExamples
+    WordTranslations, WordUsageExamples, Type
 )
 from .permissions import (
-    CanAddDefinitionPermission,
+    CanAddDefinitionPermission, IsAuthorOrReadOnly,
     CanAddUsageExamplePermission
 )
 from .serializers import (
     DefinitionSerializer, TranslationSerializer, UsageExampleSerializer,
-    WordSerializer, WordShortSerializer
+    WordSerializer, WordShortSerializer, TypeSerializer, CollectionSerializer
 )
 
 User = get_user_model()
@@ -525,3 +525,48 @@ class WordViewSet(viewsets.ModelViewSet):
         word.is_problematic = not word.is_problematic
         word.save()
         return Response(self.get_serializer(word).data)
+
+
+@extend_schema(tags=['types'])
+class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Вьюсет для просмотра всех возможных типов слов и фраз."""
+
+    queryset = Type.objects.all()
+    serializer_class = TypeSerializer
+    lookup_field = 'slug'
+    http_method_names = ('get',)
+    pagination_class = None
+    permission_classes = (
+        AllowAny,
+    )
+    filter_backends = (
+        filters.SearchFilter,
+    )
+    search_fields = (
+        'name',
+    )
+
+
+@extend_schema(tags=['collections'])
+class CollectionViewSet(viewsets.ModelViewSet):
+    '''Viewset for actions with word collections'''
+
+    lookup_field = 'slug'
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
+    pagination_class = LimitPagination
+    filter_backends = (
+        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
+    )
+    ordering = ('-created',)
+
+    def get_serializer_class(self):
+        match self.action:
+            case _:
+                return CollectionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return user.collections.annotate(
+            words_count=Count('words', distinct=True)
+        )
