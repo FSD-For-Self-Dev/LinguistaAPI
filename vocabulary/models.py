@@ -36,12 +36,12 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         _('Collection title'),
         max_length=256
     )
-    slug = models.SlugField(
-        _('Slug'),
-        null=True,
-        blank=True,
-        unique=True
-    )
+    # slug = models.SlugField(
+    #     _('Slug'),
+    #     null=True,
+    #     blank=True,
+    #     unique=True
+    # )
     description = models.TextField(
         _('Description'),
         max_length=512,
