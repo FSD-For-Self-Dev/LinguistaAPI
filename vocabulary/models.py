@@ -39,6 +39,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
     slug = models.SlugField(
         _('Slug'),
         null=True,
+        blank=True,
         unique=True
     )
     description = models.TextField(
