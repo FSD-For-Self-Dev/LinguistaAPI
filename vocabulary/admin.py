@@ -43,6 +43,7 @@ class WordDefinitionsInline(admin.TabularInline):
     model = WordDefinitions
 
 
+@admin.register(Word)
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
     list_display = ('pk', 'text', 'author')
@@ -58,7 +59,12 @@ class WordAdmin(admin.ModelAdmin):
     )
 
 
-admin.site.register(Word, WordAdmin)
+
+@admin.register(Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('title', 'author')}
+
+
 admin.site.register(Translation)
 admin.site.register(WordTranslations)
 admin.site.register(UsageExample)
@@ -67,7 +73,6 @@ admin.site.register(Definition)
 admin.site.register(WordDefinitions)
 admin.site.register(Tag)
 admin.site.register(Type)
-admin.site.register(Collection)
 admin.site.register(WordsInCollections)
 admin.site.register(Synonym)
 admin.site.register(Antonym)

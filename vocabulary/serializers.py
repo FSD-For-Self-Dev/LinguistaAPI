@@ -331,3 +331,13 @@ class WordSerializer(WordShortSerializer):
         self.create_links_for_related_objs(Similar, similars, word)
 
         return word
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Collection
+        fields = ('id', 'author', 'title', 'description', 'words', 'created',
+                  'modified')
+        read_only_fields = ('id', 'author', 'created', 'modified')

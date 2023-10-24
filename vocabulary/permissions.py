@@ -1,5 +1,6 @@
 """Разрешения приложения vocabulary."""
 
+from rest_framework import permissions
 from rest_framework.permissions import BasePermission
 
 from core.constants import MAX_DEFINITIONS_AMOUNT, MAX_USAGE_EXAMPLES_AMOUNT
@@ -29,3 +30,11 @@ class CanAddUsageExamplePermission(BasePermission):
         if request.method == 'POST':
             return word.examples.count() < MAX_USAGE_EXAMPLES_AMOUNT
         return True
+
+
+class IsAuthorOrReadOnly(permissions.BasePermission):
+    message = f'Only author has permission to perform this action'
+
+    def has_object_permission(self, request, view, obj):
+        return (request.method in permissions.SAFE_METHODS
+                or obj.author == request.user)

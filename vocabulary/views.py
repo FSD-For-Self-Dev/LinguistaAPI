@@ -21,12 +21,12 @@ from .models import (
     WordTranslations, WordUsageExamples
 )
 from .permissions import (
-    CanAddDefinitionPermission,
+    CanAddDefinitionPermission, IsAuthorOrReadOnly,
     CanAddUsageExamplePermission
 )
 from .serializers import (
     DefinitionSerializer, TranslationSerializer, UsageExampleSerializer,
-    WordSerializer, WordShortSerializer
+    WordSerializer, WordShortSerializer, CollectionSerializer
 )
 
 User = get_user_model()
@@ -525,3 +525,27 @@ class WordViewSet(viewsets.ModelViewSet):
         word.is_problematic = not word.is_problematic
         word.save()
         return Response(self.get_serializer(word).data)
+
+
+@extend_schema(tags=['collections'])
+class CollectionViewSet(viewsets.ModelViewSet):
+    '''Viewset for actions with word collections'''
+
+    lookup_field = 'slug'
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
+    pagination_class = LimitPagination
+    filter_backends = (
+        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
+    )
+    ordering = ('-created',)
+
+    def get_serializer_class(self):
+        match self.action:
+            case _:
+                return CollectionSerializer
+
+    def get_queryset(self):
+        user = self.request.user
+        return user.collections.annotate(words_count=Count('words',
+                                                           distinct=True))
