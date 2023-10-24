@@ -567,5 +567,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return user.collections.annotate(words_count=Count('words',
-                                                           distinct=True))
+        return user.collections.annotate(
+            words_count=Count('words', distinct=True)
+        )
