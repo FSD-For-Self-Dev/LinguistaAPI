@@ -37,3 +37,6 @@ class User(AbstractUser):
         ordering = ['-date_joined']
         verbose_name = _('User')
         verbose_name_plural = _('Users')
+
+    def words_in_vocabulary(self) -> int:
+        return self.vocabulary.count()
