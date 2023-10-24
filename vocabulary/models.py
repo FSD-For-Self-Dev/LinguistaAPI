@@ -62,6 +62,9 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
 
+    def words_count(self) -> int:
+        return self.words.count()
+
     def __str__(self) -> str:
         return _(f'{self.title} ({self.words.count()} words)')
 

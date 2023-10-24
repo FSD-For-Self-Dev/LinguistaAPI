@@ -70,6 +70,8 @@ class TypeAdmin(TranslationAdmin):
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title', 'author')}
+    list_display = ('id', 'title', 'author', 'slug', 'words_count')
+    list_display_links = ('title',)
 
 
 admin.site.register(Translation)
