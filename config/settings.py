@@ -78,23 +78,24 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+#         'NAME': os.getenv('DB_NAME', default='postgres'),
+#         'USER': os.getenv('DB_USER', default=''),
+#         'PASSWORD': os.getenv('DB_PASSWORD', default=''),
+#         'HOST': os.getenv('DB_HOST', default=''),
+#         'PORT': os.getenv('DB_PORT', default='')
+#     }
+# }
 DATABASES = {
-    'default': {
-        'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-        'NAME': os.getenv('DB_NAME', default='postgres'),
-        'USER': os.getenv('POSTGRES_USER', default=''),
-        'PASSWORD': os.getenv('POSTGRES_PASSWORD', default=''),
-        'HOST': os.getenv('DB_HOST', default=''),
-        'PORT': os.getenv('DB_PORT', default='')
-    }
-} if DEBUG else {
     'default': dj_database_url.config(
-        default=os.getenv('DATABASE_URL', default='postgresql://postgres:postgres@localhost:5432/linguista'),
+        default='postgres://linguista_db_user:8JKllVIbb35uQfgrVKHByaWiMlQdSgKU@dpg-ckjd1cgmccbs7392lv00-a/linguista_db_uwxs',
         conn_max_age=600
     )
 }
 
-AUTH_USER_MODEL = "users.User"
+AUTH_USER_MODEL = 'users.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
@@ -165,7 +166,7 @@ REST_FRAMEWORK = {
     ],
 
     'DEFAULT_PAGINATION_CLASS': 'core.pagination.LimitPagination',
-    'PAGE_SIZE': 100,
+    'PAGE_SIZE': 2,
 
     'DATETIME_FORMAT': "%Y-%m-%d %H:%M",
 
@@ -195,10 +196,10 @@ SPECTACULAR_SETTINGS = {
     'DESCRIPTION': 'API endpoints for Linguista app',
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
-    "SWAGGER_UI_SETTINGS": {
-        "filter": True,  # включить поиск по тегам
+    'SWAGGER_UI_SETTINGS': {
+        'filter': True,  # включить поиск по тегам
     },
-    "COMPONENT_SPLIT_REQUEST": True,
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 LANGUAGE_CODE = 'ru-ru'
@@ -227,12 +228,12 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = os.getenv("EMAIL_HOST")
-EMAIL_PORT = os.getenv("EMAIL_PORT")
-EMAIL_USE_TLS = os.getenv("EMAIL_USE_TLS")
-EMAIL_USE_SSL = os.getenv("EMAIL_USE_SSL")
-EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD")
+EMAIL_HOST = os.getenv('EMAIL_HOST')
+EMAIL_PORT = os.getenv('EMAIL_PORT')
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS')
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 SERVER_EMAIL = EMAIL_HOST_USER
 EMAIL_ADMIN = EMAIL_HOST_USER
