@@ -539,7 +539,7 @@ class WordViewSet(viewsets.ModelViewSet):
     )
 )
 class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Вьюсет для просмотра всех возможных типов слов и фраз."""
+    """Просмотр списка всех возможных типов слов и фраз."""
 
     queryset = Type.objects.all()
     serializer_class = TypeSerializer
@@ -558,8 +558,42 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
 
 @extend_schema(tags=['collections'])
+@extend_schema_view(
+    list=extend_schema(
+        summary=(
+            'Просмотр списка всех коллекций пользователя'
+        ),
+        responses={
+            status.HTTP_200_OK: CollectionSerializer,
+        },
+    ),
+    create=extend_schema(
+        summary='Добавление новой коллекции',
+        responses={
+            status.HTTP_201_CREATED: CollectionSerializer,
+        },
+    ),
+    retrieve=extend_schema(
+        summary='Просмотр коллекции',
+        responses={
+            status.HTTP_200_OK: CollectionSerializer,
+        },
+    ),
+    partial_update=extend_schema(
+        summary='Редактирование коллекции',
+        responses={
+            status.HTTP_200_OK: CollectionSerializer,
+        },
+    ),
+    destroy=extend_schema(
+        summary='Удаление коллекции',
+        responses={
+            status.HTTP_204_NO_CONTENT: None,
+        },
+    )
+)
 class CollectionViewSet(viewsets.ModelViewSet):
-    '''Viewset for actions with word collections'''
+    """Действия с коллекциями."""
 
     lookup_field = 'slug'
     http_method_names = ('get', 'post', 'head', 'patch', 'delete')
