@@ -1,6 +1,6 @@
 databases:
   - name: linguista_db
-    databaseName: linguista_db_uwxs
+    databaseName: linguista_db_0f5z
     user: linguista_db_user
 
 services:
