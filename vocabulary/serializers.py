@@ -353,7 +353,7 @@ class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = (
-            'id', 'author', 'title', 'description', 'words', 'created',
-            'modified'
+            'id', 'slug', 'author', 'title', 'description', 'words',
+            'created', 'modified'
         )
-        read_only_fields = ('id', 'author', 'created', 'modified')
+        read_only_fields = ('id', 'slug', 'author', 'created', 'modified')
