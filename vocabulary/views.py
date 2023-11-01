@@ -528,6 +528,16 @@ class WordViewSet(viewsets.ModelViewSet):
 
 
 @extend_schema(tags=['types'])
+@extend_schema_view(
+    list=extend_schema(
+        summary=(
+            'Просмотр списка всех возможных типов и частей речи слов и фраз'
+        ),
+        responses={
+            status.HTTP_200_OK: TypeSerializer,
+        },
+    )
+)
 class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """Вьюсет для просмотра всех возможных типов слов и фраз."""
 
