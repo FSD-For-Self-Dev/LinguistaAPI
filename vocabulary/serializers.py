@@ -339,6 +339,7 @@ class TypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Type
         fields = (
+            'id',
             'name',
             'slug',
             'sorting',
