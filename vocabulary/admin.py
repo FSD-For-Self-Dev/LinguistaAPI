@@ -49,6 +49,7 @@ class WordDefinitionsInline(admin.TabularInline):
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
     list_display = ('pk', 'text', 'author')
+    list_display_links = ('text',)
     search_fields = ('text', 'author')
     list_filter = ('author',)
     inlines = (
