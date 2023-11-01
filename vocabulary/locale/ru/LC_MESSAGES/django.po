@@ -202,7 +202,7 @@ msgstr "Слово"
 
 #: .\models.py:396 .\models.py:397
 msgid "Words in collections"
-msgstr "Слова коллекции"
+msgstr "Слова коллекций"
 
 #: .\models.py:407
 #, python-brace-format
