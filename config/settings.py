@@ -96,7 +96,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # }
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgres://linguista_db_user:8JKllVIbb35uQfgrVKHByaWiMlQdSgKU@dpg-ckjd1cgmccbs7392lv00-a/linguista_db_uwxs',
+        default='postgres://linguista_db_user:DteBP8CeA0kOqYznc9arxoqJ0QR7ouae@dpg-cl12dd2s1bgc73e0u8f0-a/linguista_db_0f5z',
         conn_max_age=600
     )
 }
@@ -210,8 +210,8 @@ SPECTACULAR_SETTINGS = {
 
 LANGUAGE_CODE = 'ru-ru'
 LANGUAGES = (
-    ('en', _('English')),
     ('ru', _('Russian')),
+    ('en', _('English')),
 )
 
 TIME_ZONE = 'UTC'
