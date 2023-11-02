@@ -107,9 +107,9 @@ class Type(models.Model):
 
 class Word(CreatedModel, ModifiedModel):
     ACTIVITY = [
-        ('Inactive', _('Inactive')),
-        ('Active', _('Active')),
-        ('Mastered', _('Mastered'))
+        ('INACTIVE', _('Inactive')),
+        ('ACTIVE', _('Active')),
+        ('MASTERED', _('Mastered'))
     ]
 
     language = models.ForeignKey(
