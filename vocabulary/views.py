@@ -527,12 +527,9 @@ class WordViewSet(viewsets.ModelViewSet):
 class FavoriteViewSet(viewsets.ModelViewSet):
     """Вьюсет для отображения избранных слов"""
     serializer_class = FavoriteSerializer
-    http_method_names = ['get', 'post', 'put', 'delete']
+    http_method_names = ['get', 'post', 'delete']
     permission_classes = [IsAuthenticated]
     pagination_class = LimitPagination
-    filter_backends = [
-        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
-    ]
 
     def get_queryset(self):
         user = self.request.user
@@ -540,5 +537,3 @@ class FavoriteViewSet(viewsets.ModelViewSet):
             favorite = FavoriteWord.objects.filter(user=user)
             return favorite
         return None
-
-

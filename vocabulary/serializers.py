@@ -299,9 +299,10 @@ class WordSerializer(WordShortSerializer):
 class FavoriteSerializer(serializers.ModelSerializer):
     """Сериализатор для избранных слов"""
     word = serializers.SlugRelatedField(
-        queryset=FavoriteWord.objects.all(), slug_field='text'
+        queryset=Word.objects.all(), slug_field='text'
     )
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = FavoriteWord
-        fields = ('word',)
+        fields = ('word', 'user')
