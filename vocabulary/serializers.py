@@ -113,6 +113,15 @@ class WordRelatedSerializer(serializers.ModelSerializer):
         fields = ('id', 'text', 'author')
 
 
+class ReadWriteSerializerMethodField(serializers.SerializerMethodField):
+    def __init__(self, method_name=None, **kwargs):
+        self.method_name = method_name
+        kwargs['source'] = '*'
+        super(serializers.SerializerMethodField, self).__init__(**kwargs)
+    def to_internal_value(self, data):
+        return {self.field_name: data}
+
+
 class WordShortSerializer(serializers.ModelSerializer):
     """Сериализатор для множественного добавления слов (а также синонимов,
     антонимов, форм и похожих слов), а также для чтения в короткой форме."""
@@ -129,9 +138,9 @@ class WordShortSerializer(serializers.ModelSerializer):
     )
     translations_count = serializers.IntegerField(read_only=True)
     translations = TranslationSerializer(many=True, required=False)
-    favorite = serializers.BooleanField(
-        source='get_favorite',
-        read_only=True
+    favorite = ReadWriteSerializerMethodField(
+        method_name='get_favorite',
+        default={'favorite': False}
     )
     collections = RelatedSerializerField(
         queryset=Collection.objects.all(), many=True, required=False,
@@ -179,11 +188,8 @@ class WordShortSerializer(serializers.ModelSerializer):
         return notes
 
     def get_favorite(self, obj):
-        request = self.context.get('request')
-        is_favorite = FavoriteWord.objects.filter(
-            word=obj, user=request.user
-        ).exists()
-        return is_favorite
+        user = self.context['request'].user
+        return FavoriteWord.objects.filter(word=obj, user=user).exists()
 
     @transaction.atomic
     def create(self, validated_data):
@@ -192,8 +198,14 @@ class WordShortSerializer(serializers.ModelSerializer):
         notes = validated_data.pop('note', [])
         collections = validated_data.pop('collections', [])
         tags = validated_data.pop('tags', [])
+        favorite = validated_data.pop('favorite', None)
 
         word = Word.objects.create(**validated_data)
+
+        if favorite:
+            FavoriteWord.objects.create(
+                user=self.context['request'].user, word=word
+            )
 
         word.collections.set(collections)
         word.tags.set(tags)
