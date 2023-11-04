@@ -27,9 +27,9 @@ from .permissions import (
     IsAuthorOrReadOnly,
 )
 from .serializers import (
-    CollectionSerializer, DefinitionSerializer, TranslationSerializer,
-    TypeSerializer, UsageExampleSerializer, WordSerializer,
-    WordShortSerializer,
+    CollectionSerializer, CollectionShortSerializer, DefinitionSerializer,
+    TranslationSerializer, TypeSerializer, UsageExampleSerializer,
+    WordSerializer, WordShortSerializer,
 )
 
 User = get_user_model()
@@ -177,7 +177,8 @@ class WordViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             return user.vocabulary.annotate(
                 translations_count=Count('translations', distinct=True),
-                examples_count=Count('examples', distinct=True)
+                examples_count=Count('examples', distinct=True),
+                collections_count=Count('collections', distinct=True)
             )
         return None
 
@@ -610,6 +611,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         match self.action:
+            case 'list':
+                return CollectionShortSerializer
             case _:
                 return CollectionSerializer
 
