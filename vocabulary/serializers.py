@@ -275,10 +275,10 @@ class WordSerializer(WordShortSerializer):
         related_objs_list = [
             related_model_cls(
                 **{
-                    related_field: related_data,
-                    'word': word
+                    'word': word,
+                    related_field: obj
                 }
-            ) for related_data in objs_list
+            ) for obj in objs_list
         ]
         related_model_cls.objects.bulk_create(related_objs_list)
 
