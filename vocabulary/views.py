@@ -4,29 +4,32 @@ import random
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count
+
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
-    extend_schema, extend_schema_view, OpenApiParameter, OpenApiTypes
+    OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view,
 )
-from rest_framework import filters, status, viewsets, mixins
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
+
 from .filters import WordFilter
 from .models import (
-    Definition, Translation, UsageExample, WordDefinitions,
-    WordTranslations, WordUsageExamples, Type
+    Definition, Translation, Type, UsageExample, WordDefinitions,
+    WordTranslations, WordUsageExamples,
 )
 from .permissions import (
-    CanAddDefinitionPermission, IsAuthorOrReadOnly,
-    CanAddUsageExamplePermission
+    CanAddDefinitionPermission, CanAddUsageExamplePermission,
+    IsAuthorOrReadOnly,
 )
 from .serializers import (
-    DefinitionSerializer, TranslationSerializer, UsageExampleSerializer,
-    WordSerializer, WordShortSerializer, TypeSerializer, CollectionSerializer
+    CollectionSerializer, DefinitionSerializer, TranslationSerializer,
+    TypeSerializer, UsageExampleSerializer, WordSerializer,
+    WordShortSerializer,
 )
 
 User = get_user_model()
@@ -122,6 +125,7 @@ User = get_user_model()
     ),
     create=extend_schema(
         summary='Добавление нового слова в свой словарь',
+        request=WordSerializer,
         responses={
             status.HTTP_201_CREATED: WordSerializer,
         },
