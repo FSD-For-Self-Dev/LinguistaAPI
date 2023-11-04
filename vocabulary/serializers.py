@@ -6,6 +6,8 @@ from django.utils.translation import gettext as _
 
 from rest_framework import serializers
 
+from users.serializers import UserSerializer
+
 from .constants import (
     MAX_ANTONYMS_AMOUNT, MAX_DEFINITIONS_AMOUNT, MAX_EXAMPLES_AMOUNT,
     MAX_FORMS_AMOUNT, MAX_NOTES_AMOUNT, MAX_SIMILARS_AMOUNT,
@@ -78,7 +80,9 @@ class NoteSerializer(serializers.ModelSerializer):
 
 
 class TranslationSerializer(serializers.ModelSerializer):
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = UserSerializer(
+        many=False, default=serializers.CurrentUserDefault()
+    )
 
     class Meta:
         model = Translation
@@ -87,7 +91,9 @@ class TranslationSerializer(serializers.ModelSerializer):
 
 
 class UsageExampleSerializer(serializers.ModelSerializer):
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = UserSerializer(
+        many=False, default=serializers.CurrentUserDefault()
+    )
 
     class Meta:
         model = UsageExample
@@ -96,7 +102,9 @@ class UsageExampleSerializer(serializers.ModelSerializer):
 
 
 class DefinitionSerializer(serializers.ModelSerializer):
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = UserSerializer(
+        many=False, default=serializers.CurrentUserDefault()
+    )
 
     class Meta:
         model = Definition
@@ -105,7 +113,9 @@ class DefinitionSerializer(serializers.ModelSerializer):
 
 
 class CollectionShortSerializer(serializers.ModelSerializer):
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = UserSerializer(
+        many=False, default=serializers.CurrentUserDefault()
+    )
     words_count = serializers.SerializerMethodField()
     last_3_words = serializers.SerializerMethodField()
 
@@ -143,7 +153,9 @@ class WordRelatedSerializer(serializers.ModelSerializer):
     """Сериализатор для короткой демонстрации word-related объектов
     (синонимы, антонимы, похожие слова и формы)."""
 
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = UserSerializer(
+        many=False, default=serializers.CurrentUserDefault()
+    )
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name',
         default=WordSameLanguageDefault()
@@ -176,7 +188,9 @@ class WordShortSerializer(serializers.ModelSerializer):
         method_name='get_favorite',
         default=False
     )
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = UserSerializer(
+        many=False, default=serializers.CurrentUserDefault()
+    )
 
     class Meta:
         model = Word
@@ -394,8 +408,10 @@ class TypeSerializer(serializers.ModelSerializer):
 
 
 class CollectionSerializer(serializers.ModelSerializer):
-    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    words = WordShortSerializer(many=True)
+    author = UserSerializer(
+        many=False, default=serializers.CurrentUserDefault()
+    )
+    words = WordShortSerializer(many=True, required=False)
 
     class Meta:
         model = Collection
