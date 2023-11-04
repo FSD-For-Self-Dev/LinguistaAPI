@@ -2,18 +2,20 @@
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.utils.translation import gettext as _
+
 from rest_framework import serializers
 
 from .constants import (
     MAX_ANTONYMS_AMOUNT, MAX_DEFINITIONS_AMOUNT, MAX_EXAMPLES_AMOUNT,
     MAX_FORMS_AMOUNT, MAX_NOTES_AMOUNT, MAX_SIMILARS_AMOUNT,
     MAX_SYNONYMS_AMOUNT, MAX_TAGS_AMOUNT, MAX_TRANSLATIONS_AMOUNT,
-    MAX_TYPES_AMOUNT
+    MAX_TYPES_AMOUNT,
 )
 from .models import (
     Antonym, Collection, Definition, FavoriteWord, Form, Language, Note,
     Similar, Synonym, Tag, Translation, Type, UsageExample, Word,
-    WordDefinitions, WordTranslations, WordUsageExamples
+    WordDefinitions, WordTranslations, WordUsageExamples,
 )
 
 User = get_user_model()
@@ -23,7 +25,8 @@ class NoteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Note
-        fields = ('text',)
+        fields = ('text', 'created')
+        read_only_fields = ('created',)
 
 
 class TranslationSerializer(serializers.ModelSerializer):
@@ -55,32 +58,23 @@ class DefinitionSerializer(serializers.ModelSerializer):
 
 class ShortCollectionSerializer(serializers.ModelSerializer):
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
-    words = serializers.SlugRelatedField(
-        slug_field='text', read_only=True, many=True
-    )
     words_count = serializers.SerializerMethodField()
+    last_3_words = serializers.SerializerMethodField()
 
     class Meta:
         model = Collection
         fields = (
-            'id', 'author', 'title', 'words_count', 'words', 'created',
+            'id', 'author', 'title', 'words_count', 'created', 'last_3_words',
             'modified'
         )
 
     def get_words_count(self, obj):
         return obj.words.count()
 
-
-class CustomRelatedField(serializers.PrimaryKeyRelatedField):
-    """
-    Кастомное поле для использования в сериализаторе слов.
-
-    Позволяет при записи передавать id объектов,
-    а при чтении выводить name.
-    """
-
-    def to_representation(self, value):
-        return value.name
+    def get_last_3_words(self, obj):
+        return obj.words.order_by('-wordsincollections__created').values_list(
+            'text', flat=True
+        )[:3]
 
 
 class RelatedSerializerField(serializers.PrimaryKeyRelatedField):
@@ -102,24 +96,59 @@ class RelatedSerializerField(serializers.PrimaryKeyRelatedField):
         ).data
 
 
+class WordSameLanguageDefault:
+    requires_context = True
+
+    def __call__(self, serializer_field):
+        request_data = serializer_field.context['request'].data
+        return Language.objects.get(name=request_data['language'])
+
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
+
+
 class WordRelatedSerializer(serializers.ModelSerializer):
     """Сериализатор для короткой демонстрации word-related объектов
     (синонимы, антонимы, похожие слова и формы)."""
 
     author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    language = serializers.SlugRelatedField(
+        queryset=Language.objects.all(), slug_field='name',
+        default=WordSameLanguageDefault()
+    )
 
     class Meta:
         model = Word
-        fields = ('id', 'text', 'author')
+        fields = ('id', 'language', 'text', 'author')
 
 
-class ReadWriteSerializerMethodField(serializers.SerializerMethodField):
+class ReadWriteSerializerMethodField(serializers.BooleanField,
+                                     serializers.SerializerMethodField):
+    """Поле для чтения и записи полей вне модели."""
+
     def __init__(self, method_name=None, **kwargs):
         self.method_name = method_name
         kwargs['source'] = '*'
         super(serializers.SerializerMethodField, self).__init__(**kwargs)
+
     def to_internal_value(self, data):
         return {self.field_name: data}
+
+
+class CreatableSlugRelatedField(serializers.SlugRelatedField):
+    """
+    Поле для получения объекта по слагу или создания объекта с таким слагом, 
+    если его нет.
+    """
+
+    def to_internal_value(self, data):
+        try:
+            obj, created = self.get_queryset().get_or_create(
+                **{self.slug_field: data}
+            )
+            return obj
+        except (TypeError, ValueError):
+            self.fail('invalid')
 
 
 class WordShortSerializer(serializers.ModelSerializer):
@@ -129,18 +158,20 @@ class WordShortSerializer(serializers.ModelSerializer):
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name', required=True
     )
-    types = CustomRelatedField(
-        queryset=Type.objects.all(), many=True, required=False, default=[1]
+    types = serializers.SlugRelatedField(
+        slug_field='name', queryset=Type.objects.all(), many=True,
+        required=False
     )
-    notes = NoteSerializer(source='note', many=True, required=False)
-    tags = CustomRelatedField(
-        queryset=Tag.objects.all(), many=True, required=False
+    tags = CreatableSlugRelatedField(
+        slug_field='name', queryset=Tag.objects.all(), many=True,
+        required=False
     )
+    notes = NoteSerializer(many=True, required=False)
     translations_count = serializers.IntegerField(read_only=True)
     translations = TranslationSerializer(many=True, required=False)
     favorite = ReadWriteSerializerMethodField(
         method_name='get_favorite',
-        default={'favorite': False}
+        default=False
     )
     collections = RelatedSerializerField(
         queryset=Collection.objects.all(), many=True, required=False,
@@ -194,8 +225,8 @@ class WordShortSerializer(serializers.ModelSerializer):
     @transaction.atomic
     def create(self, validated_data):
         translations = validated_data.pop('translations', [])
-        word_types = validated_data.pop('types')
-        notes = validated_data.pop('note', [])
+        word_types = validated_data.pop('types', [])
+        notes = validated_data.pop('notes', [])
         collections = validated_data.pop('collections', [])
         tags = validated_data.pop('tags', [])
         favorite = validated_data.pop('favorite', None)
@@ -297,10 +328,7 @@ class WordSerializer(WordShortSerializer):
     def create_links_for_related_objs(self, cls, objs, word):
         """Метод для создания связей между симметричными объектами слов."""
         for obj in objs:
-            obj_word = Word.objects.get(
-                text=obj.get('text'),
-                author=self.context['request'].user
-            )
+            obj_word, created = Word.objects.get_or_create(**obj)
             cls.objects.create(
                 to_word=word,
                 from_word=obj_word,
