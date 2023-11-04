@@ -128,8 +128,7 @@ class Word(CreatedModel, ModifiedModel):
                 regex=REGEX_WORD_MASK,
                 message='Acceptable characters: Latin letters (A-Z, a-z), '
                         'Cyrillic letters (А-Я, а-я), Hyphen, '
-                        'Exclamation point, Question mark. Make sure your '
-                        'word does not start or end with a space.'
+                        'Exclamation point, Question mark, Dot, Comma, Colon.'
             )
         )
     )
