@@ -6,10 +6,10 @@ from django.db import models
 from django.utils.translation import gettext as _
 
 from core.models import (
-    AuthorModel, CreatedModel, ModifiedModel,
-    UserRelatedModel
+    AuthorModel, CreatedModel, ModifiedModel, UserRelatedModel,
 )
 from languages.models import Language
+
 from .constants import REGEX_WORD_MASK
 from .utils import slugify_text_author_fields
 
@@ -59,6 +59,12 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         get_latest_by = ['created', 'modified']
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='unique_user_collection'
+            )
+        ]
 
     def words_count(self) -> int:
         return self.words.count()
@@ -149,7 +155,8 @@ class Word(CreatedModel, ModifiedModel):
     types = models.ManyToManyField(
         'Type',
         verbose_name=_('Type'),
-        related_name='words'
+        related_name='words',
+        blank=True
     )
     activity = models.CharField(
         _('Activity status'),
@@ -165,6 +172,7 @@ class Word(CreatedModel, ModifiedModel):
     tags = models.ManyToManyField(
         'Tag',
         verbose_name=_('Word tags'),
+        related_name='words',
         blank=True
     )
     synonyms = models.ManyToManyField(
@@ -220,11 +228,6 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Usage Example'),
         blank=True
     )
-    # favorites = models.ManyToManyField(
-    #     User,
-    #     through='FavoriteWord',
-    #     blank=True
-    # )
     # pronunciation_voice = ...
 
     class Meta:
@@ -417,8 +420,8 @@ class WordsInCollections(WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'Word `{self.word}` ({self.word.language.name}) was added to collection '
-            f'`{self.collection}` at {self.created:%Y-%m-%d}'
+            f'Word `{self.word}` ({self.word.language.name}) was added to '
+            f'collection `{self.collection}` at {self.created:%Y-%m-%d}'
         )
 
 
@@ -553,7 +556,13 @@ class WordUsageExamples(WordRelatedModel):
         )
 
 
-class Note(WordRelatedModel):
+class Note(CreatedModel, ModifiedModel):
+    word = models.ForeignKey(
+        'Word',
+        verbose_name=_('Word'),
+        on_delete=models.CASCADE,
+        related_name='notes'
+    )
     text = models.CharField(
         _('Note text'),
         max_length=4096
@@ -572,7 +581,13 @@ class Note(WordRelatedModel):
         )
 
 
-class ImageAssociation(WordRelatedModel):
+class ImageAssociation(CreatedModel, ModifiedModel):
+    word = models.ForeignKey(
+        'Word',
+        verbose_name=_('Word'),
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
     image = models.ImageField(
         _('Image'),
         upload_to='words/associations/images',
