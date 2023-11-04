@@ -106,10 +106,13 @@ class Type(models.Model):
 
 
 class Word(CreatedModel, ModifiedModel):
+    INACTIVE = 'I'
+    ACTIVE = 'A'
+    MASTERED = 'M'
     ACTIVITY = [
-        ('INACTIVE', _('Inactive')),
-        ('ACTIVE', _('Active')),
-        ('MASTERED', _('Mastered'))
+        (INACTIVE, _('Inactive')),
+        (ACTIVE, _('Active')),
+        (MASTERED, _('Mastered'))
     ]
 
     language = models.ForeignKey(
@@ -153,7 +156,7 @@ class Word(CreatedModel, ModifiedModel):
         max_length=8,
         choices=ACTIVITY,
         blank=False,
-        default='INACTIVE'
+        default=INACTIVE
     )
     is_problematic = models.BooleanField(
         _('Is the word problematic for you'),
@@ -217,6 +220,11 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Usage Example'),
         blank=True
     )
+    # favorites = models.ManyToManyField(
+    #     User,
+    #     through='FavoriteWord',
+    #     blank=True
+    # )
     # pronunciation_voice = ...
 
     class Meta:
