@@ -11,7 +11,7 @@ from core.models import (
 from languages.models import Language
 
 from .constants import REGEX_WORD_MASK
-from .utils import slugify_text_author_fields
+from .utils import slugify_text_author_fields, slugify_title_author_fields
 
 User = get_user_model()
 
@@ -66,11 +66,15 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
             )
         ]
 
-    def words_count(self) -> int:
-        return self.words.count()
-
     def __str__(self) -> str:
         return _(f'{self.title} ({self.words.count()} words)')
+
+    def words_count(self) -> int:
+        return self.words.count()  #*
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify_title_author_fields(self)
+        super(Collection, self).save(*args, **kwargs)
 
 
 class Type(models.Model):
@@ -249,7 +253,7 @@ class Word(CreatedModel, ModifiedModel):
         self.slug = slugify_text_author_fields(self)
         super(Word, self).save(*args, **kwargs)
         default_type_pk = Type.get_default_pk()
-        self.types.add(default_type_pk)
+        self.types.add(default_type_pk)  #*
 
 
 class WordSelfRelatedModel(CreatedModel):
