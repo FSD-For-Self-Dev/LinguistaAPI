@@ -3,6 +3,7 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
+from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
 from core.models import (
@@ -142,6 +143,7 @@ class Word(CreatedModel, ModifiedModel):
                 message='Acceptable characters: Latin letters (A-Z, a-z), '
                         'Cyrillic letters (А-Я, а-я), Hyphen, '
                         'Exclamation point, Question mark, Dot, Comma, Colon.'
+                        'Make sure word begin with a letter.'
             )
         )
     )
@@ -212,7 +214,7 @@ class Word(CreatedModel, ModifiedModel):
         blank=True
     )
     translations = models.ManyToManyField(
-        'Translation',
+        'WordTranslation',
         through='WordTranslations',
         related_name='translation_for',
         verbose_name=_('Translations'),
@@ -222,7 +224,7 @@ class Word(CreatedModel, ModifiedModel):
         'Definition',
         through='WordDefinitions',
         related_name='definition_for',
-        verbose_name=_('Translations'),
+        verbose_name=_('Definitions'),
         blank=True
     )
     examples = models.ManyToManyField(
@@ -334,7 +336,52 @@ class Antonym(WordSelfRelatedModel, AuthorModel):
         ]
 
 
-class Form(WordSelfRelatedModel, AuthorModel):
+class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
+    name = models.CharField(
+        _('Group name'),
+        max_length=64,
+        blank=False
+    )
+    slug = models.SlugField(
+        _('Slug'),
+        null=True,
+        unique=True
+    )
+    language = models.ForeignKey(
+        Language,
+        verbose_name=_('Language'),
+        on_delete=models.SET_DEFAULT,
+        related_name='forms_groups',
+        default=Language.get_default_pk
+    )
+
+    class Meta:
+        verbose_name = _('Forms group')
+        verbose_name_plural = _('Forms groups')
+        ordering = ('-created', 'name')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'author', 'language'],
+                name='unique_group_name'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.name}'
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.name, self.author, self.language.name)
+        super(FormsGroup, self).save(*args, **kwargs)
+
+
+class Form(WordSelfRelatedModel, AuthorModel, ModifiedModel):
+    forms_group = models.ForeignKey(
+        FormsGroup,
+        verbose_name=_('Forms group'),
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='words'
+    )
 
     class Meta:
         verbose_name = _('Form')
@@ -360,7 +407,7 @@ class Similar(WordSelfRelatedModel, AuthorModel):
         ]
 
 
-class Translation(CreatedModel, ModifiedModel, AuthorModel):
+class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Translation'),
         max_length=4096,
@@ -431,7 +478,7 @@ class WordsInCollections(WordRelatedModel):
 
 class WordTranslations(WordRelatedModel):
     translation = models.ForeignKey(
-        'Translation',
+        'WordTranslation',
         verbose_name=_('Translation'),
         on_delete=models.CASCADE,
         related_name='%(class)s'
