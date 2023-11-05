@@ -12,5 +12,5 @@ MAX_ANTONYMS_AMOUNT = 16
 MAX_SIMILARS_AMOUNT = 16
 
 REGEX_WORD_MASK = (
-    r'^[A-Za-zА-Яа-я\-\!\?\.\,\:\ ]+$'
+    r'^[A-Za-zА-Яа-я]+[\-\!\?\.\,\:\ ]*$'
 )
