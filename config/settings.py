@@ -213,6 +213,9 @@ LANGUAGES = (
     ('ru', _('Russian')),
     ('en', _('English')),
 )
+LOCALE_PATHS = (
+    os.path.join(BASE_DIR, 'locale'),
+)
 
 TIME_ZONE = 'UTC'
 
