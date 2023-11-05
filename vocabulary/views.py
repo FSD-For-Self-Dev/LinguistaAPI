@@ -19,7 +19,7 @@ from core.pagination import LimitPagination
 
 from .filters import WordFilter
 from .models import (
-    Definition, Translation, Type, UsageExample, WordDefinitions,
+    Definition, FormsGroup, WordTranslation, Type, UsageExample, WordDefinitions,
     WordTranslations, WordUsageExamples,
 )
 from .permissions import (
@@ -28,8 +28,8 @@ from .permissions import (
 )
 from .serializers import (
     CollectionSerializer, CollectionShortSerializer, DefinitionSerializer,
-    TranslationSerializer, TypeSerializer, UsageExampleSerializer,
-    WordSerializer, WordShortSerializer,
+    FormsGroupSerializer, TranslationSerializer, TypeSerializer,
+    UsageExampleSerializer, WordSerializer, WordShortSerializer,
 )
 
 User = get_user_model()
@@ -187,7 +187,7 @@ class WordViewSet(viewsets.ModelViewSet):
             case 'list'|'random':
                 return WordShortSerializer
             case 'translations'|'translations_detail':
-                return Translation
+                return TranslationSerializer
             case 'definitions'|'definitions_detail':
                 return DefinitionSerializer
             case 'examples'|'examples_detail':
@@ -292,7 +292,7 @@ class WordViewSet(viewsets.ModelViewSet):
             translation = word.translations.get(
                 pk=kwargs.get('translation_id')
             )
-        except Translation.DoesNotExist:
+        except WordTranslation.DoesNotExist:
             raise NotFound(detail="The translation not found")
 
         match request.method:
@@ -560,6 +560,42 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     search_fields = (
         'name',
     )
+
+
+@extend_schema(tags=['forms-groups'])
+@extend_schema_view(
+    list=extend_schema(
+        summary=(
+            'Просмотр списка всех групп форм пользователя'
+        ),
+        responses={
+            status.HTTP_200_OK: FormsGroupSerializer,
+        },
+    )
+)
+class FormsGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Просмотр списка всех групп форм пользователя."""
+
+    queryset = FormsGroup.objects.all()
+    serializer_class = FormsGroupSerializer
+    lookup_field = 'slug'
+    http_method_names = ('get',)
+    pagination_class = None
+    permission_classes = (
+        IsAuthenticated,
+    )
+    filter_backends = (
+        filters.SearchFilter,
+    )  # добавить фильтр по языку
+    search_fields = (
+        'name',
+    )
+
+    def get_queryset(self):
+        user = self.request.user
+        return user.formsgroups.annotate(
+            words_count=Count('words', distinct=True)
+        )
 
 
 @extend_schema(tags=['collections'])
