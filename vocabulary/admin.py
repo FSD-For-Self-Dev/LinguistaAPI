@@ -6,9 +6,9 @@ from modeltranslation.admin import TranslationAdmin
 
 from .models import (
     Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
-    ImageAssociation, Note, Similar, Synonym, Tag, Translation, Type,
+    ImageAssociation, Note, Similar, Synonym, Tag, WordTranslation, Type,
     UsageExample, Word, WordDefinitions, WordsInCollections, WordTranslations,
-    WordUsageExamples,
+    WordUsageExamples, FormsGroup
 )
 
 
@@ -75,7 +75,14 @@ class CollectionAdmin(admin.ModelAdmin):
     list_display_links = ('title',)
 
 
-admin.site.register(Translation)
+@admin.register(FormsGroup)
+class FormsGroupAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('name', 'author', 'language')}
+    list_display = ('id', 'name', 'author', 'language')
+    list_display_links = ('name',)
+
+
+admin.site.register(WordTranslation)
 admin.site.register(WordTranslations)
 admin.site.register(UsageExample)
 admin.site.register(WordUsageExamples)
