@@ -15,6 +15,7 @@ class UserAdmin(admin.ModelAdmin):
         'is_active',
         'is_staff',
         'date_joined',
+        'words_in_vocabulary',
     )
     list_filter = (
         'username',

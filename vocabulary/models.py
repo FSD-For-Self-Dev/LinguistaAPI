@@ -36,6 +36,11 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         _('Collection title'),
         max_length=256
     )
+    slug = models.SlugField(
+        _('Slug'),
+        null=True,
+        unique=True
+    )
     description = models.TextField(
         _('Description'),
         max_length=512,
@@ -54,6 +59,9 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         get_latest_by = ['created', 'modified']
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
+
+    def words_count(self) -> int:
+        return self.words.count()
 
     def __str__(self) -> str:
         return _(f'{self.title} ({self.words.count()} words)')
@@ -120,8 +128,7 @@ class Word(CreatedModel, ModifiedModel):
                 regex=REGEX_WORD_MASK,
                 message='Acceptable characters: Latin letters (A-Z, a-z), '
                         'Cyrillic letters (А-Я, а-я), Hyphen, '
-                        'Exclamation point, Question mark. Make sure your '
-                        'word does not start or end with a space.'
+                        'Exclamation point, Question mark, Dot, Comma, Colon.'
             )
         )
     )
@@ -193,7 +200,8 @@ class Word(CreatedModel, ModifiedModel):
         'Translation',
         through='WordTranslations',
         related_name='translation_for',
-        verbose_name=_('Translations')
+        verbose_name=_('Translations'),
+        blank=True
     )
     definitions = models.ManyToManyField(
         'Definition',
@@ -343,6 +351,13 @@ class Translation(CreatedModel, ModifiedModel, AuthorModel):
         max_length=4096,
         help_text=_('A translation of a word or phrase'),
     )
+    language = models.ForeignKey(
+        Language,
+        verbose_name=_('Language'),
+        on_delete=models.SET_DEFAULT,
+        related_name='words_translations',
+        default=Language.get_default_pk
+    )
 
     class Meta:
         ordering = ['-created']
@@ -394,8 +409,8 @@ class WordsInCollections(WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'Word `{self.word}` was added to collection `{self.collection}` '
-            f'at {self.created}'
+            f'Word `{self.word}` ({self.word.language.name}) was added to collection '
+            f'`{self.collection}` at {self.created:%Y-%m-%d}'
         )
 
 
@@ -421,8 +436,9 @@ class WordTranslations(WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'`{self.word}` is translated as `{self.translation}` '
-            f'(translation was added at {self.created})'
+            f'`{self.word}` ({self.word.language.name}) is translated as '
+            f'`{self.translation}` ({self.translation.language.name}) '
+            f'(translation was added at {self.created:%Y-%m-%d})'
         )
 
 
@@ -472,8 +488,9 @@ class WordDefinitions(WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'`{self.word}` means `{self.definition}` '
-            f'(definition was added at {self.created})'
+            f'`{self.word}` ({self.word.language.name}) means '
+            f'`{self.definition}` (definition was added at '
+            f'{self.created:%Y-%m-%d})'
         )
 
 
@@ -524,7 +541,7 @@ class WordUsageExamples(WordRelatedModel):
     def __str__(self) -> str:
         return _(
             f'Usage example of `{self.word}`: {self.example} '
-            f'(example was added at {self.created})'
+            f'(example was added at {self.created:%Y-%m-%d})'
         )
 
 
@@ -543,7 +560,7 @@ class Note(WordRelatedModel):
     def __str__(self) -> str:
         return _(
             f'Note to the word `{self.word}`: {self.text} '
-            f'(note was added at {self.created})'
+            f'(note was added at {self.created:%Y-%m-%d})'
         )
 
 
@@ -588,7 +605,7 @@ class FavoriteWord(UserRelatedModel):
     def __str__(self) -> str:
         return _(
             f'The word `{self.word}` was added to favorites by '
-            f'{self.user} at {self.created}'
+            f'{self.user} at {self.created:%Y-%m-%d}'
         )
 
 
@@ -609,5 +626,5 @@ class FavoriteCollection(UserRelatedModel):
     def __str__(self) -> str:
         return _(
             f'The collection `{self.collection}` was added to favorites by '
-            f'{self.user} at {self.created}'
+            f'{self.user} at {self.created:%Y-%m-%d}'
         )

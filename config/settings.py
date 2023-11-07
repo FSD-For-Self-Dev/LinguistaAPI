@@ -1,9 +1,13 @@
 ''' Project settings '''
 
 import os
-import dj_database_url
+
 from datetime import timedelta
 from pathlib import Path
+
+from django.utils.translation import gettext_lazy as _
+
+import dj_database_url
 
 from dotenv import load_dotenv
 
@@ -22,6 +26,7 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 INSTALLED_APPS = [
+    'modeltranslation',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +56,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -90,7 +96,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # }
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgres://linguista_db_user:8JKllVIbb35uQfgrVKHByaWiMlQdSgKU@dpg-ckjd1cgmccbs7392lv00-a/linguista_db_uwxs',
+        default='postgres://linguista_db_user:wzudfb2ZKibV4sxTrn895zHWzTVdvPQz@dpg-cl30tu2uuipc7384loog-a/linguista_db_n9cq',
         conn_max_age=600
     )
 }
@@ -203,6 +209,10 @@ SPECTACULAR_SETTINGS = {
 }
 
 LANGUAGE_CODE = 'ru-ru'
+LANGUAGES = (
+    ('ru', _('Russian')),
+    ('en', _('English')),
+)
 
 TIME_ZONE = 'UTC'
 

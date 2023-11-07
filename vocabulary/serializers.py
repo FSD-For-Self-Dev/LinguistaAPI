@@ -8,7 +8,7 @@ from .constants import (
     MAX_ANTONYMS_AMOUNT, MAX_DEFINITIONS_AMOUNT, MAX_EXAMPLES_AMOUNT,
     MAX_FORMS_AMOUNT, MAX_NOTES_AMOUNT, MAX_SIMILARS_AMOUNT,
     MAX_SYNONYMS_AMOUNT, MAX_TAGS_AMOUNT, MAX_TRANSLATIONS_AMOUNT,
-    MAX_TYPES_AMOUNT, MIN_TRANSLATIONS_AMOUNT
+    MAX_TYPES_AMOUNT
 )
 from .models import (
     Antonym, Collection, Definition, FavoriteWord, Form, Language, Note,
@@ -128,7 +128,7 @@ class WordShortSerializer(serializers.ModelSerializer):
         queryset=Tag.objects.all(), many=True, required=False
     )
     translations_count = serializers.IntegerField(read_only=True)
-    translations = TranslationSerializer(many=True)
+    translations = TranslationSerializer(many=True, required=False)
     favorite = serializers.BooleanField(
         source='get_favorite',
         read_only=True
@@ -165,11 +165,6 @@ class WordShortSerializer(serializers.ModelSerializer):
         return types
 
     def validate_translations(self, translations):
-        if not translations or len(translations) == 0:
-            raise serializers.ValidationError(
-                f'The word must have at least '
-                f'{MIN_TRANSLATIONS_AMOUNT} translation'
-            )
         self.max_amount_validate(
             translations, MAX_TRANSLATIONS_AMOUNT, 'translations'
         )
@@ -192,7 +187,7 @@ class WordShortSerializer(serializers.ModelSerializer):
 
     @transaction.atomic
     def create(self, validated_data):
-        translations = validated_data.pop('translations')
+        translations = validated_data.pop('translations', [])
         word_types = validated_data.pop('types')
         notes = validated_data.pop('note', [])
         collections = validated_data.pop('collections', [])
@@ -307,10 +302,10 @@ class WordSerializer(WordShortSerializer):
         related_objs_list = [
             related_model_cls(
                 **{
-                    related_field: related_data,
-                    'word': word
+                    'word': word,
+                    related_field: obj
                 }
-            ) for related_data in objs_list
+            ) for obj in objs_list
         ]
         related_model_cls.objects.bulk_create(related_objs_list)
 
@@ -395,3 +390,29 @@ class WordSerializer(WordShortSerializer):
         self.create_links_for_related_objs(Similar, similars, word)
 
         return word
+
+
+class TypeSerializer(serializers.ModelSerializer):
+    """Сериализатор для просмотра всех возможных типов слов и фраз."""
+
+    class Meta:
+        model = Type
+        fields = (
+            'id',
+            'name',
+            'slug',
+            'sorting',
+        )
+        read_only_fields = fields
+
+
+class CollectionSerializer(serializers.ModelSerializer):
+    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
+
+    class Meta:
+        model = Collection
+        fields = (
+            'id', 'slug', 'author', 'title', 'description', 'words',
+            'created', 'modified'
+        )
+        read_only_fields = ('id', 'slug', 'author', 'created', 'modified')
