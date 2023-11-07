@@ -213,31 +213,35 @@ class WordShortSerializer(serializers.ModelSerializer):
         return word
 
     @transaction.atomic
-    def update(self, validated_data):
+    def update(self, instance, validated_data):
         translations = validated_data.pop('translations')
         word_types = validated_data.pop('types')
         notes = validated_data.pop('note', [])
         collections = validated_data.pop('collections', [])
         tags = validated_data.pop('tags', [])
 
-        word = Word.objects.create(**validated_data)
+        instance.collections.clear()
+        instance.tags.clear()
+        instance.types.clear()
+        instance.translations.clear()
+        instance.notes.clear()
 
-        word.collections.set(collections)
-        word.tags.set(tags)
-        word.types.set(word_types)
+        instance.collections.set(collections)
+        instance.tags.set(tags)
+        instance.types.set(word_types)
 
         for translation in translations:
             current_translation, created = (
                 Translation.objects.get_or_create(**translation)
             )
             WordTranslations.objects.create(
-                word=word, translation=current_translation
+                word=instance, translation=current_translation
             )
 
-        note_objs = [Note(word=word, **data) for data in notes]
+        note_objs = [Note(word=instance, **data) for data in notes]
         Note.objects.bulk_create(note_objs)
 
-        return word
+        return super().update(instance, validated_data)
 
 
 class WordSerializer(WordShortSerializer):
@@ -368,28 +372,33 @@ class WordSerializer(WordShortSerializer):
         forms = validated_data.pop('forms', [])
         similars = validated_data.pop('similars', [])
 
-        word = super().create(validated_data)
+        instance.examples.clear()
+        instance.definitions.clear()
+        instance.synonyms.clear()
+        instance.antonyms.clear()
+        instance.forms.clear()
+        instance.similars.clear()
 
         self.bulk_create_objects(
             examples,
             UsageExample,
             WordUsageExamples,
             'example',
-            word
+            instance
         )
         self.bulk_create_objects(
             definitions,
             Definition,
             WordDefinitions,
             'definition',
-            word
+            instance
         )
-        self.create_links_for_related_objs(Synonym, synonyms, word)
-        self.create_links_for_related_objs(Antonym, antonyms, word)
-        self.create_links_for_related_objs(Form, forms, word)
-        self.create_links_for_related_objs(Similar, similars, word)
+        self.create_links_for_related_objs(Synonym, synonyms, instance)
+        self.create_links_for_related_objs(Antonym, antonyms, instance)
+        self.create_links_for_related_objs(Form, forms, instance)
+        self.create_links_for_related_objs(Similar, similars, instance)
 
-        return word
+        return super().update(instance, validated_data)
 
 
 class TypeSerializer(serializers.ModelSerializer):
