@@ -77,8 +77,8 @@ class CollectionAdmin(admin.ModelAdmin):
 
 @admin.register(FormsGroup)
 class FormsGroupAdmin(admin.ModelAdmin):
-    prepopulated_fields = {'slug': ('name', 'author', 'language')}
-    list_display = ('id', 'name', 'author', 'language')
+    prepopulated_fields = {'slug': ('name', 'author')}
+    list_display = ('id', 'name', 'author')
     list_display_links = ('name',)
 
 

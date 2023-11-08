@@ -347,13 +347,6 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         null=True,
         unique=True
     )
-    language = models.ForeignKey(
-        Language,
-        verbose_name=_('Language'),
-        on_delete=models.SET_DEFAULT,
-        related_name='forms_groups',
-        default=Language.get_default_pk
-    )
 
     class Meta:
         verbose_name = _('Forms group')
@@ -361,7 +354,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         ordering = ('-created', 'name')
         constraints = [
             models.UniqueConstraint(
-                fields=['name', 'author', 'language'],
+                fields=['name', 'author'],
                 name='unique_group_name'
             )
         ]
@@ -370,7 +363,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         return f'{self.name}'
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.name, self.author, self.language.name)
+        self.slug = slugify([self.name, self.author])
         super(FormsGroup, self).save(*args, **kwargs)
 
 
