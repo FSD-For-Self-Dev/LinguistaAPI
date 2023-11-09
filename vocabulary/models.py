@@ -12,7 +12,7 @@ from core.models import (
 from languages.models import Language
 
 from .constants import REGEX_WORD_MASK
-from .utils import slugify_text_author_fields, slugify_title_author_fields
+from .utils import slugify_text_author_fields
 
 User = get_user_model()
 
@@ -74,7 +74,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         return self.words.count()  #*
 
     def save(self, *args, **kwargs):
-        self.slug = slugify_title_author_fields(self)
+        self.slug = slugify_text_author_fields(self, self.title)
         super(Collection, self).save(*args, **kwargs)
 
 
@@ -252,10 +252,10 @@ class Word(CreatedModel, ModifiedModel):
         return self.text
 
     def save(self, *args, **kwargs):
-        self.slug = slugify_text_author_fields(self)
+        self.slug = slugify_text_author_fields(self, self.text)
         super(Word, self).save(*args, **kwargs)
         default_type_pk = Type.get_default_pk()
-        self.types.add(default_type_pk)  #*
+        self.types.add(default_type_pk)  # *
 
 
 class WordSelfRelatedModel(CreatedModel):
@@ -364,6 +364,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
 
     def save(self, *args, **kwargs):
         self.slug = slugify([self.name, self.author])
+        self.name = self.name.capitalize()
         super(FormsGroup, self).save(*args, **kwargs)
 
 
