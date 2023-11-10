@@ -14,6 +14,12 @@ class CollectionFilter(df.FilterSet):
 
     class Meta:
         model = Collection
+        fields = {
+            'created': [
+                'exact', 'gt', 'lt', 'year', 'year__gt', 'year__lt',
+                'month', 'month__gt', 'month__lt'
+            ],
+        }
 
 
 class CustomFilterList(df.Filter):
