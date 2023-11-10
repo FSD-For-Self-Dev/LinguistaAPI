@@ -8,13 +8,16 @@ from .models import (
     Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
     ImageAssociation, Note, Similar, Synonym, Tag, WordTranslation, Type,
     UsageExample, Word, WordDefinitions, WordsInCollections, WordTranslations,
-    WordUsageExamples, FormsGroup
+    WordUsageExamples, FormsGroup, WordsFormGroups
 )
 
 
 class WordTranslationInline(admin.TabularInline):
     model = WordTranslations
-    min_num = 1
+
+
+class WordWordsFormGroupsInline(admin.TabularInline):
+    model = WordsFormGroups
 
 
 class SynonymInline(admin.TabularInline):
@@ -53,6 +56,7 @@ class WordAdmin(admin.ModelAdmin):
     search_fields = ('text', 'author')
     list_filter = ('author',)
     inlines = (
+        WordWordsFormGroupsInline,
         WordTranslationInline, WordUsageExamplesInline,
         WordDefinitionsInline,
         SynonymInline,
@@ -98,3 +102,4 @@ admin.site.register(Note)
 admin.site.register(ImageAssociation)
 admin.site.register(FavoriteWord)
 admin.site.register(FavoriteCollection)
+admin.site.register(WordsFormGroups)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2023-11-05 12:23+0300\n"
+"POT-Creation-Date: 2023-11-10 12:32+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -40,7 +40,7 @@ msgstr "Теги"
 msgid "Collection title"
 msgstr "Название коллекции"
 
-#: .\models.py:41 .\models.py:88 .\models.py:150 .\models.py:345
+#: .\models.py:41 .\models.py:88 .\models.py:151 .\models.py:353
 msgid "Slug"
 msgstr "Слаг"
 
@@ -52,7 +52,7 @@ msgstr "Описание"
 msgid "Words in collection"
 msgstr "Слова, добавленные в коллекцию"
 
-#: .\models.py:61 .\models.py:454 .\models.py:688
+#: .\models.py:61 .\models.py:484 .\models.py:718
 msgid "Collection"
 msgstr "Коллекция"
 
@@ -80,7 +80,7 @@ msgstr "увеличьте, чтобы поднять в списке"
 msgid "Noun"
 msgstr "Существительное"
 
-#: .\models.py:112 .\models.py:162
+#: .\models.py:112 .\models.py:163
 msgid "Type"
 msgstr "Тип"
 
@@ -100,278 +100,295 @@ msgstr "Активное"
 msgid "Mastered"
 msgstr "Усвоенное"
 
-#: .\models.py:131 .\models.py:351 .\models.py:417
+#: .\models.py:131 .\models.py:419
 msgid "Language"
 msgstr "Язык"
 
-#: .\models.py:137 .\models.py:241
+#: .\models.py:137 .\models.py:249
 msgid "Word or phrase"
 msgstr "Слово или фраза"
 
-#: .\models.py:156
+#: .\models.py:157
 msgid "Author"
 msgstr "Автор"
 
-#: .\models.py:167
+#: .\models.py:168
 msgid "Activity status"
 msgstr "Статус активности"
 
-#: .\models.py:174
+#: .\models.py:175
 msgid "Is the word problematic for you"
 msgstr "Проблемно ли для вас это слово"
 
-#: .\models.py:179
+#: .\models.py:180
 msgid "Word tags"
 msgstr "Теги слов"
 
-#: .\models.py:187 .\models.py:315 .\models.py:316
+#: .\models.py:188 .\models.py:323 .\models.py:324
 msgid "Synonyms"
 msgstr "Синонимы"
 
-#: .\models.py:188
+#: .\models.py:189
 msgid "Words with similar meanings"
 msgstr "Слова с похожим значением"
 
-#: .\models.py:195 .\models.py:329
+#: .\models.py:196 .\models.py:337
 msgid "Antonyms"
 msgstr "Антонимы"
 
-#: .\models.py:196
+#: .\models.py:197
 msgid "Words with opposite meanings"
 msgstr "Слова с обратным значением"
 
-#: .\models.py:203 .\models.py:387
+#: .\models.py:204 .\models.py:389
 msgid "Forms"
 msgstr "Формы"
 
-#: .\models.py:204
+#: .\models.py:205
 msgid "Word forms"
 msgstr "Формы слов"
 
-#: .\models.py:211 .\models.py:400
+#: .\models.py:212 .\models.py:402
 msgid "Similars"
 msgstr "Похожие"
 
-#: .\models.py:212
+#: .\models.py:213
 msgid "Words with similar pronunciation or spelling"
 msgstr "Слова с похожим произношением или написанием"
 
-#: .\models.py:219 .\models.py:226 .\models.py:427
+#: .\models.py:220 .\models.py:429
 msgid "Translations"
 msgstr "Переводы"
 
-#: .\models.py:233
-msgid "Usage Example"
-msgstr "Примеры использования"
+#: .\models.py:227 .\models.py:552
+msgid "Definitions"
+msgstr "Определения"
 
-#: .\models.py:242
+#: .\models.py:234 .\models.py:590 .\models.py:603 .\models.py:615
+msgid "Usage example"
+msgstr "Пример использования"
+
+#: .\models.py:250
 msgid "Words and phrases"
 msgstr "Слова и фразы"
 
-#: .\models.py:290
+#: .\models.py:298
 msgid "Difference"
 msgstr "Разница в использовании"
 
-#: .\models.py:291
+#: .\models.py:299
 #, python-format
 msgid "Difference between these %(class)ss"
 msgstr "Разница между %(class)ss"
 
-#: .\models.py:328
+#: .\models.py:336
 msgid "Antonym"
 msgstr "Антоним"
 
-#: .\models.py:340
+#: .\models.py:348
 #, fuzzy
 #| msgid "Type name"
 msgid "Group name"
 msgstr "Название группы"
 
-#: .\models.py:358 .\models.py:379
+#: .\models.py:361
+#, fuzzy
+#| msgid "Word forms"
+msgid "Words in forms group"
+msgstr "Слова в группе форм"
+
+#: .\models.py:366 .\models.py:456
 #, fuzzy
 #| msgid "Forms"
 msgid "Forms group"
 msgstr "Группа форм"
 
-#: .\models.py:359
+#: .\models.py:367
 msgid "Forms groups"
 msgstr "Группы форм"
 
-#: .\models.py:386
+#: .\models.py:388
 msgid "Form"
 msgstr "Форма"
 
-#: .\models.py:399
+#: .\models.py:401
 msgid "Similar"
 msgstr "Похожее"
 
-#: .\models.py:411 .\models.py:426 .\models.py:481
+#: .\models.py:413 .\models.py:428 .\models.py:511
 msgid "Translation"
 msgstr "Перевод"
 
-#: .\models.py:413
+#: .\models.py:415
 msgid "A translation of a word or phrase"
 msgstr "Перевод слова или фразы на другой язык"
 
-#: .\models.py:442 .\models.py:612 .\models.py:637 .\models.py:667
+#: .\models.py:444 .\models.py:642 .\models.py:667 .\models.py:697
 msgid "Word"
 msgstr "Слово"
 
-#: .\models.py:462 .\models.py:463
+#: .\models.py:465 .\models.py:466
+#, fuzzy
+#| msgid "Word forms"
+msgid "Words forms group"
+msgstr "Группа форм слова"
+
+#: .\models.py:476
+#, fuzzy, python-brace-format
+#| msgid "Word `{self.word}` was added to collection `{self.collection}` "
+msgid "Word `{self.word}` ({self.word.language.name}) is in "
+msgstr "Слово `{self.word}` ({self.word.language.name}) в "
+
+#: .\models.py:492 .\models.py:493
 msgid "Words in collections"
 msgstr "Слова, добавленные в коллекции"
 
-#: .\models.py:473
+#: .\models.py:503
 #, fuzzy, python-brace-format
 #| msgid "Word `{self.word}` was added to collection `{self.collection}` "
 msgid "Word `{self.word}` ({self.word.language.name}) was added to "
 msgstr "Слово `{self.word}` ({self.word.language.name}) добавлено в коллекцию "
 
-#: .\models.py:489
+#: .\models.py:519
 msgid "Word translation"
 msgstr "Перевод слова"
 
-#: .\models.py:490
+#: .\models.py:520
 msgid "Word translations"
 msgstr "Переводы слов"
 
-#: .\models.py:500
+#: .\models.py:530
 #, python-brace-format
 msgid "`{self.word}` ({self.word.language.name}) is translated as "
 msgstr "`{self.word}` ({self.word.language.name}) переводится как "
 
-#: .\models.py:508 .\models.py:521 .\models.py:533
+#: .\models.py:538 .\models.py:551 .\models.py:563
 msgid "Definition"
 msgstr "Определение"
 
-#: .\models.py:510
+#: .\models.py:540
 msgid "A definition of a word or phrase"
 msgstr "Определение слова или фразы"
 
-#: .\models.py:513
+#: .\models.py:543
 msgid "A translation of the definition"
 msgstr "Перевод определения"
 
-#: .\models.py:522
-msgid "Definitions"
-msgstr "Определения"
-
-#: .\models.py:526 .\models.py:578
+#: .\models.py:556 .\models.py:608
 #, python-brace-format
 msgid "{self.text} ({self.translation})"
 msgstr "{self.text} ({self.translation})"
 
-#: .\models.py:541
+#: .\models.py:571
 msgid "Word definition"
 msgstr "Определение слова"
 
-#: .\models.py:542
+#: .\models.py:572
 msgid "Word definitions"
 msgstr "Определения слов"
 
-#: .\models.py:552
+#: .\models.py:582
 #, python-brace-format
 msgid "`{self.word}` ({self.word.language.name}) means "
 msgstr "`{self.word}` ({self.word.language.name}) означает "
 
-#: .\models.py:560 .\models.py:573 .\models.py:585
-msgid "Usage example"
-msgstr "Пример использования"
-
-#: .\models.py:562
+#: .\models.py:592
 msgid "An usage example of a word or phrase"
 msgstr "Пример использования слова или фразы"
 
-#: .\models.py:565
+#: .\models.py:595
 msgid "A translation of the example"
 msgstr "Перевод примера"
 
-#: .\models.py:574
+#: .\models.py:604
 msgid "Usage examples"
 msgstr "Примеры использования"
 
-#: .\models.py:593
+#: .\models.py:623
 msgid "Word usage example"
 msgstr "Пример использования слова"
 
-#: .\models.py:594
+#: .\models.py:624
 msgid "Word usage examples"
 msgstr "Примеры использования слов"
 
-#: .\models.py:604
+#: .\models.py:634
 #, python-brace-format
 msgid "Usage example of `{self.word}`: {self.example} "
 msgstr "Пример использования слова `{self.word}`: {self.example} "
 
-#: .\models.py:617
+#: .\models.py:647
 msgid "Note text"
 msgstr "Текст заметки"
 
-#: .\models.py:624
+#: .\models.py:654
 msgid "Note"
 msgstr "Заметка"
 
-#: .\models.py:625
+#: .\models.py:655
 msgid "Notes"
 msgstr "Заметки"
 
-#: .\models.py:629
+#: .\models.py:659
 #, python-brace-format
 msgid "Note to the word `{self.word}`: {self.text} "
 msgstr "Заметка к слову `{self.word}`: {self.text} "
 
-#: .\models.py:642
+#: .\models.py:672
 msgid "Image"
 msgstr "Картинка"
 
-#: .\models.py:646
+#: .\models.py:676
 msgid "Image association"
 msgstr "Ассоциация-картинка"
 
-#: .\models.py:649
+#: .\models.py:679
 msgid "Image name"
 msgstr "Название для картинки"
 
-#: .\models.py:655
+#: .\models.py:685
 msgid "Association image"
 msgstr "Ассоциация-картинка"
 
-#: .\models.py:656
+#: .\models.py:686
 msgid "Association images"
 msgstr "Ассоциации-картинки"
 
-#: .\models.py:660
+#: .\models.py:690
 #, python-brace-format
 msgid "Image `{self.name}` for `{self.word}`"
 msgstr "Картинка `{self.name}` слова `{self.word}`"
 
-#: .\models.py:661
+#: .\models.py:691
 #, python-brace-format
 msgid "Image for `{self.word}`"
 msgstr "Картинка слова `{self.word}`"
 
-#: .\models.py:675
+#: .\models.py:705
 msgid "Favorite word"
 msgstr "Избранное слова"
 
-#: .\models.py:676
+#: .\models.py:706
 msgid "Favorite words"
 msgstr "Избранные слова"
 
-#: .\models.py:680
+#: .\models.py:710
 #, python-brace-format
 msgid "The word `{self.word}` was added to favorites by "
 msgstr "Слово `{self.word}` было добавлено в избранное "
 
-#: .\models.py:696
+#: .\models.py:726
 msgid "Favorite collection"
 msgstr "Избранная коллекция"
 
-#: .\models.py:697
+#: .\models.py:727
 msgid "Favorite collections"
 msgstr "Избранные коллекции"
 
-#: .\models.py:701
+#: .\models.py:731
 #, python-brace-format
 msgid "The collection `{self.collection}` was added to favorites by "
 msgstr "Коллекция `{self.collection}` была добавлена в избранное "
+
+#~ msgid "Usage Example"
+#~ msgstr "Примеры использования"

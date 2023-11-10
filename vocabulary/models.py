@@ -231,9 +231,16 @@ class Word(CreatedModel, ModifiedModel):
         'UsageExample',
         through='WordUsageExamples',
         related_name='usage_example_for',
-        verbose_name=_('Usage Example'),
+        verbose_name=_('Usage example'),
         blank=True
     )
+    # forms_groups = models.ManyToManyField(
+    #     'FormsGroup',
+    #     through='WordsFormGroups',
+    #     related_name='forms_groups',
+    #     verbose_name=_('Forms groups'),
+    #     blank=True
+    # )
     # pronunciation_voice = ...
 
     class Meta:
@@ -347,6 +354,13 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         null=True,
         unique=True
     )
+    words = models.ManyToManyField(
+        'Word',
+        through='WordsFormGroups',
+        related_name='forms_groups',
+        verbose_name=_('Words in forms group'),
+        blank=True
+    )
 
     class Meta:
         verbose_name = _('Forms group')
@@ -368,14 +382,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         super(FormsGroup, self).save(*args, **kwargs)
 
 
-class Form(WordSelfRelatedModel, AuthorModel, ModifiedModel):
-    forms_group = models.ForeignKey(
-        FormsGroup,
-        verbose_name=_('Forms group'),
-        null=True,
-        on_delete=models.SET_NULL,
-        related_name='words'
-    )
+class Form(WordSelfRelatedModel, AuthorModel):
 
     class Meta:
         verbose_name = _('Form')
@@ -441,6 +448,34 @@ class WordRelatedModel(CreatedModel):
 
     class Meta:
         abstract = True
+
+
+class WordsFormGroups(WordRelatedModel):
+    forms_group = models.ForeignKey(
+        FormsGroup,
+        verbose_name=_('Forms group'),
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='%(class)s'
+    )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
+        verbose_name = _('Words forms group')
+        verbose_name_plural = _('Words forms group')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['word', 'forms_group'],
+                name='unique_word_forms_group'
+            )
+        ]
+
+    def __str__(self) -> str:
+        return _(
+            f'Word `{self.word}` ({self.word.language.name}) is in '
+            f'`{self.forms_group}` form'
+        )
 
 
 class WordsInCollections(WordRelatedModel):
