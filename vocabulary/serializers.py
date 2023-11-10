@@ -325,7 +325,10 @@ class WordShortSerializer(serializers.ModelSerializer):
 
         for translation in translations:
             current_translation, created = (
-                WordTranslation.objects.get_or_create(**translation)
+                WordTranslation.objects.get_or_create(
+                    author=context_user,
+                    **translation
+                )
             )
             WordTranslations.objects.create(
                 word=word, translation=current_translation
