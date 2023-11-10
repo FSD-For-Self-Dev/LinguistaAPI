@@ -1,7 +1,7 @@
 """Фильтры приложения vocabulary."""
 
 import django_filters as df
-from .models import Collection
+from .models import Collection, Word
 
 
 class CollectionFilter(df.FilterSet):
