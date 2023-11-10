@@ -1,21 +1,31 @@
 databases:
-  - name: postgres
-    databaseName: postgres_db_hdvk
-    user: postgres_user
+  - name: linguista_db
+    databaseName: linguista_db_06pk
+    user: linguista_db_user
 
 services:
   - type: web
-    name: linguista
-    runtime: python
-    buildCommand: "./build.sh"
-    startCommand: "gunicorn config.wsgi:application"
-    autoDeploy: false
+    name: linguista_docker
+    runtime: docker
+    repo: https://github.com/FSD-For-Self-Dev/LinguistaAPI.git
+    branch: develop
     envVars:
+      - fromGroup: conc-settings
       - key: DATABASE_URL
         fromDatabase:
-          name: postgres
+          name: linguista_db
           property: connectionString
-      - key: SECRET_KEY
+
+envVarGroups:
+  - name: conc-settings
+    envVars:
+      - key: CONCURRENCY
+        value: 2
+      - key: SECRET
         generateValue: true
-      - key: WEB_CONCURRENCY
-        value: 4
+      - key: DEBUG
+        value: false
+  - name: stripe
+    envVars:
+      - key: STRIPE_API_URL
+        value: https://api.stripe.com/v2
