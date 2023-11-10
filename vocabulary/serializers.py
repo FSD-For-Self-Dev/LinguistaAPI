@@ -93,7 +93,10 @@ class WordSameLanguageDefault:
 
     def __call__(self, serializer_field):
         request_data = serializer_field.context['request'].data
-        return Language.objects.get(name=request_data['language'])
+        try:
+            return Language.objects.get(name=request_data['language'])
+        except KeyError:
+            return None
 
     def __repr__(self):
         return '%s()' % self.__class__.__name__
@@ -171,6 +174,24 @@ class CollectionShortSerializer(AddAuthorInCreateSerializer):
         )[:3]
 
 
+class FormsGroupSerializer(AddAuthorInCreateSerializer):
+    author = serializers.SlugRelatedField(
+        many=False, slug_field='username', read_only=True
+    )
+
+    class Meta:
+        model = FormsGroup
+        fields = ('id', 'slug', 'name', 'author')
+        read_only_fields = ('id', 'slug', 'author')
+
+    def validate_name(self, name):
+        if name.capitalize() == 'Infinitive':
+            raise serializers.ValidationError(
+                'The forms group `Infinitive` already exists.'
+            )
+        return name
+
+
 class WordRelatedSerializer(AddAuthorInCreateSerializer):
     """Сериализатор для короткой демонстрации word-related объектов
     (синонимы, антонимы, похожие слова и формы)."""
@@ -186,33 +207,6 @@ class WordRelatedSerializer(AddAuthorInCreateSerializer):
     class Meta:
         model = Word
         fields = ('id', 'language', 'text', 'author')
-
-
-class FormsGroupSerializer(AddAuthorInCreateSerializer):
-    author = serializers.SlugRelatedField(
-        many=False, slug_field='username', read_only=True
-    )
-    language = serializers.SlugRelatedField(
-        queryset=Language.objects.all(), slug_field='name',
-        default=WordSameLanguageDefault()
-    )
-
-    class Meta:
-        model = FormsGroup
-        fields = ('id', 'language', 'name', 'author')
-        read_only_fields = ('id', 'author')
-
-
-class FormSerializer(AddAuthorInCreateSerializer):
-    author = serializers.SlugRelatedField(
-        many=False, slug_field='username', read_only=True
-    )
-    language = serializers.HiddenField(default=WordSameLanguageDefault())
-
-    class Meta:
-        model = Form
-        fields = ('id', 'language', 'text', 'author', 'form_group')
-        read_only_fields = ('id', 'author')
 
 
 class WordShortSerializer(serializers.ModelSerializer):
@@ -393,7 +387,10 @@ class WordSerializer(WordShortSerializer):
     def create_links_for_related_objs(self, cls, objs, word):
         """Метод для создания связей между симметричными объектами слов."""
         for obj in objs:
-            obj_word, created = Word.objects.get_or_create(**obj)
+            obj_word, created = Word.objects.get_or_create(
+                author=self.context['request'].user,
+                **obj
+            )
             cls.objects.create(
                 to_word=word,
                 from_word=obj_word,
