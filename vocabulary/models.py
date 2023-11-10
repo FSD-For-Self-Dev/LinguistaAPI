@@ -3,13 +3,14 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
+from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
 from core.models import (
-    AuthorModel, CreatedModel, ModifiedModel,
-    UserRelatedModel
+    AuthorModel, CreatedModel, ModifiedModel, UserRelatedModel,
 )
 from languages.models import Language
+
 from .constants import REGEX_WORD_MASK
 from .utils import slugify_text_author_fields
 
@@ -36,13 +37,11 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         _('Collection title'),
         max_length=256
     )
-
     slug = models.SlugField(
         _('Slug'),
         null=True,
         unique=True
     )
-
     description = models.TextField(
         _('Description'),
         max_length=512,
@@ -61,12 +60,22 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         get_latest_by = ['created', 'modified']
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
-
-    def words_count(self) -> int:
-        return self.words.count()
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'author'],
+                name='unique_user_collection'
+            )
+        ]
 
     def __str__(self) -> str:
         return _(f'{self.title} ({self.words.count()} words)')
+
+    def words_count(self) -> int:
+        return self.words.count()  #*
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify_text_author_fields(self, self.title)
+        super(Collection, self).save(*args, **kwargs)
 
 
 class Type(models.Model):
@@ -108,10 +117,13 @@ class Type(models.Model):
 
 
 class Word(CreatedModel, ModifiedModel):
+    INACTIVE = 'I'
+    ACTIVE = 'A'
+    MASTERED = 'M'
     ACTIVITY = [
-        ('INACTIVE', _('Inactive')),
-        ('ACTIVE', _('Active')),
-        ('MASTERED', _('Mastered'))
+        (INACTIVE, _('Inactive')),
+        (ACTIVE, _('Active')),
+        (MASTERED, _('Mastered'))
     ]
 
     language = models.ForeignKey(
@@ -130,8 +142,8 @@ class Word(CreatedModel, ModifiedModel):
                 regex=REGEX_WORD_MASK,
                 message='Acceptable characters: Latin letters (A-Z, a-z), '
                         'Cyrillic letters (А-Я, а-я), Hyphen, '
-                        'Exclamation point, Question mark. Make sure your '
-                        'word does not start or end with a space.'
+                        'Exclamation point, Question mark, Dot, Comma, Colon.'
+                        'Make sure word begin with a letter.'
             )
         )
     )
@@ -149,14 +161,15 @@ class Word(CreatedModel, ModifiedModel):
     types = models.ManyToManyField(
         'Type',
         verbose_name=_('Type'),
-        related_name='words'
+        related_name='words',
+        blank=True
     )
     activity = models.CharField(
         _('Activity status'),
         max_length=8,
         choices=ACTIVITY,
         blank=False,
-        default='INACTIVE'
+        default=INACTIVE
     )
     is_problematic = models.BooleanField(
         _('Is the word problematic for you'),
@@ -165,6 +178,7 @@ class Word(CreatedModel, ModifiedModel):
     tags = models.ManyToManyField(
         'Tag',
         verbose_name=_('Word tags'),
+        related_name='words',
         blank=True
     )
     synonyms = models.ManyToManyField(
@@ -200,7 +214,7 @@ class Word(CreatedModel, ModifiedModel):
         blank=True
     )
     translations = models.ManyToManyField(
-        'Translation',
+        'WordTranslation',
         through='WordTranslations',
         related_name='translation_for',
         verbose_name=_('Translations'),
@@ -210,16 +224,23 @@ class Word(CreatedModel, ModifiedModel):
         'Definition',
         through='WordDefinitions',
         related_name='definition_for',
-        verbose_name=_('Translations'),
+        verbose_name=_('Definitions'),
         blank=True
     )
     examples = models.ManyToManyField(
         'UsageExample',
         through='WordUsageExamples',
         related_name='usage_example_for',
-        verbose_name=_('Usage Example'),
+        verbose_name=_('Usage example'),
         blank=True
     )
+    # forms_groups = models.ManyToManyField(
+    #     'FormsGroup',
+    #     through='WordsFormGroups',
+    #     related_name='forms_groups',
+    #     verbose_name=_('Forms groups'),
+    #     blank=True
+    # )
     # pronunciation_voice = ...
 
     class Meta:
@@ -238,10 +259,10 @@ class Word(CreatedModel, ModifiedModel):
         return self.text
 
     def save(self, *args, **kwargs):
-        self.slug = slugify_text_author_fields(self)
+        self.slug = slugify_text_author_fields(self, self.text)
         super(Word, self).save(*args, **kwargs)
         default_type_pk = Type.get_default_pk()
-        self.types.add(default_type_pk)
+        self.types.add(default_type_pk)  # *
 
 
 class WordSelfRelatedModel(CreatedModel):
@@ -322,6 +343,45 @@ class Antonym(WordSelfRelatedModel, AuthorModel):
         ]
 
 
+class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
+    name = models.CharField(
+        _('Group name'),
+        max_length=64,
+        blank=False
+    )
+    slug = models.SlugField(
+        _('Slug'),
+        null=True,
+        unique=True
+    )
+    words = models.ManyToManyField(
+        'Word',
+        through='WordsFormGroups',
+        related_name='forms_groups',
+        verbose_name=_('Words in forms group'),
+        blank=True
+    )
+
+    class Meta:
+        verbose_name = _('Forms group')
+        verbose_name_plural = _('Forms groups')
+        ordering = ('-created', 'name')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['name', 'author'],
+                name='unique_group_name'
+            )
+        ]
+
+    def __str__(self):
+        return f'{self.name}'
+
+    def save(self, *args, **kwargs):
+        self.slug = slugify([self.name, self.author])
+        self.name = self.name.capitalize()
+        super(FormsGroup, self).save(*args, **kwargs)
+
+
 class Form(WordSelfRelatedModel, AuthorModel):
 
     class Meta:
@@ -348,11 +408,18 @@ class Similar(WordSelfRelatedModel, AuthorModel):
         ]
 
 
-class Translation(CreatedModel, ModifiedModel, AuthorModel):
+class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Translation'),
         max_length=4096,
         help_text=_('A translation of a word or phrase'),
+    )
+    language = models.ForeignKey(
+        Language,
+        verbose_name=_('Language'),
+        on_delete=models.SET_DEFAULT,
+        related_name='words_translations',
+        default=Language.get_default_pk
     )
 
     class Meta:
@@ -383,6 +450,34 @@ class WordRelatedModel(CreatedModel):
         abstract = True
 
 
+class WordsFormGroups(WordRelatedModel):
+    forms_group = models.ForeignKey(
+        FormsGroup,
+        verbose_name=_('Forms group'),
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='%(class)s'
+    )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
+        verbose_name = _('Words forms group')
+        verbose_name_plural = _('Words forms group')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['word', 'forms_group'],
+                name='unique_word_forms_group'
+            )
+        ]
+
+    def __str__(self) -> str:
+        return _(
+            f'Word `{self.word}` ({self.word.language.name}) is in '
+            f'`{self.forms_group}` form'
+        )
+
+
 class WordsInCollections(WordRelatedModel):
     collection = models.ForeignKey(
         'Collection',
@@ -405,14 +500,14 @@ class WordsInCollections(WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'Word `{self.word}` was added to collection `{self.collection}` '
-            f'at {self.created}'
+            f'Word `{self.word}` ({self.word.language.name}) was added to '
+            f'collection `{self.collection}` at {self.created:%Y-%m-%d}'
         )
 
 
 class WordTranslations(WordRelatedModel):
     translation = models.ForeignKey(
-        'Translation',
+        'WordTranslation',
         verbose_name=_('Translation'),
         on_delete=models.CASCADE,
         related_name='%(class)s'
@@ -432,8 +527,9 @@ class WordTranslations(WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'`{self.word}` is translated as `{self.translation}` '
-            f'(translation was added at {self.created})'
+            f'`{self.word}` ({self.word.language.name}) is translated as '
+            f'`{self.translation}` ({self.translation.language.name}) '
+            f'(translation was added at {self.created:%Y-%m-%d})'
         )
 
 
@@ -483,8 +579,9 @@ class WordDefinitions(WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'`{self.word}` means `{self.definition}` '
-            f'(definition was added at {self.created})'
+            f'`{self.word}` ({self.word.language.name}) means '
+            f'`{self.definition}` (definition was added at '
+            f'{self.created:%Y-%m-%d})'
         )
 
 
@@ -535,11 +632,17 @@ class WordUsageExamples(WordRelatedModel):
     def __str__(self) -> str:
         return _(
             f'Usage example of `{self.word}`: {self.example} '
-            f'(example was added at {self.created})'
+            f'(example was added at {self.created:%Y-%m-%d})'
         )
 
 
-class Note(WordRelatedModel):
+class Note(CreatedModel, ModifiedModel):
+    word = models.ForeignKey(
+        'Word',
+        verbose_name=_('Word'),
+        on_delete=models.CASCADE,
+        related_name='notes'
+    )
     text = models.CharField(
         _('Note text'),
         max_length=4096
@@ -554,11 +657,17 @@ class Note(WordRelatedModel):
     def __str__(self) -> str:
         return _(
             f'Note to the word `{self.word}`: {self.text} '
-            f'(note was added at {self.created})'
+            f'(note was added at {self.created:%Y-%m-%d})'
         )
 
 
-class ImageAssociation(WordRelatedModel):
+class ImageAssociation(CreatedModel, ModifiedModel):
+    word = models.ForeignKey(
+        'Word',
+        verbose_name=_('Word'),
+        on_delete=models.CASCADE,
+        related_name='images'
+    )
     image = models.ImageField(
         _('Image'),
         upload_to='words/associations/images',
@@ -599,7 +708,7 @@ class FavoriteWord(UserRelatedModel):
     def __str__(self) -> str:
         return _(
             f'The word `{self.word}` was added to favorites by '
-            f'{self.user} at {self.created}'
+            f'{self.user} at {self.created:%Y-%m-%d}'
         )
 
 
@@ -620,5 +729,5 @@ class FavoriteCollection(UserRelatedModel):
     def __str__(self) -> str:
         return _(
             f'The collection `{self.collection}` was added to favorites by '
-            f'{self.user} at {self.created}'
+            f'{self.user} at {self.created:%Y-%m-%d}'
         )

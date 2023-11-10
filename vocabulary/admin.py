@@ -6,15 +6,18 @@ from modeltranslation.admin import TranslationAdmin
 
 from .models import (
     Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
-    ImageAssociation, Note, Similar, Synonym, Tag, Translation, Type,
+    ImageAssociation, Note, Similar, Synonym, Tag, WordTranslation, Type,
     UsageExample, Word, WordDefinitions, WordsInCollections, WordTranslations,
-    WordUsageExamples,
+    WordUsageExamples, FormsGroup, WordsFormGroups
 )
 
 
 class WordTranslationInline(admin.TabularInline):
     model = WordTranslations
-    min_num = 1
+
+
+class WordWordsFormGroupsInline(admin.TabularInline):
+    model = WordsFormGroups
 
 
 class SynonymInline(admin.TabularInline):
@@ -49,9 +52,11 @@ class WordDefinitionsInline(admin.TabularInline):
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
     list_display = ('pk', 'text', 'author')
+    list_display_links = ('text',)
     search_fields = ('text', 'author')
     list_filter = ('author',)
     inlines = (
+        WordWordsFormGroupsInline,
         WordTranslationInline, WordUsageExamplesInline,
         WordDefinitionsInline,
         SynonymInline,
@@ -70,11 +75,18 @@ class TypeAdmin(TranslationAdmin):
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title', 'author')}
-    list_display = ('id', 'title', 'author', 'slug', 'words_count')
+    list_display = ('id', 'title', 'author', 'words_count')
     list_display_links = ('title',)
 
 
-admin.site.register(Translation)
+@admin.register(FormsGroup)
+class FormsGroupAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('name', 'author')}
+    list_display = ('id', 'name', 'author')
+    list_display_links = ('name',)
+
+
+admin.site.register(WordTranslation)
 admin.site.register(WordTranslations)
 admin.site.register(UsageExample)
 admin.site.register(WordUsageExamples)
@@ -90,3 +102,4 @@ admin.site.register(Note)
 admin.site.register(ImageAssociation)
 admin.site.register(FavoriteWord)
 admin.site.register(FavoriteCollection)
+admin.site.register(WordsFormGroups)

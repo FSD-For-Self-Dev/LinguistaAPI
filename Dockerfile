@@ -13,7 +13,6 @@ RUN python manage.py makemigrations users
 RUN python manage.py makemigrations
 RUN python manage.py migrate
 RUN python manage.py loaddata data_dump.json
-RUN python manage.py update_translation_fields
 
 EXPOSE 80
 

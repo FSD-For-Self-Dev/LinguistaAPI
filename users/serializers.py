@@ -8,9 +8,7 @@ User = get_user_model()
 
 
 class UserSerializer(serializers.ModelSerializer):
-    '''Сериализатор модели пользователя.'''
-
-#     is_subscribed = serializers.SerializerMethodField()
+    """Сериализатор модели пользователя."""
 
     class Meta:
         model = User
@@ -18,11 +16,6 @@ class UserSerializer(serializers.ModelSerializer):
             'id',
             'username',
             'first_name',
+            'image',
         )
-
-#     def get_is_subscribed(self, obj):
-#         user = self.context['request'].user
-#         return (
-#             user.is_authenticated
-#             and Follow.objects.filter(user=user, following=obj).exists()
-#         )
+        read_only_fields = ('id',)
