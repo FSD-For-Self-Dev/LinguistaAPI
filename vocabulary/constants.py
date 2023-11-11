@@ -11,6 +11,12 @@ MAX_SYNONYMS_AMOUNT = 16
 MAX_ANTONYMS_AMOUNT = 16
 MAX_SIMILARS_AMOUNT = 16
 
-REGEX_WORD_MASK = (
+REGEX_TEXT_MASK = (
     r'^[A-Za-zА-Яа-я]+[\-\!\?\.\,\:\'\ ]*$'
+)
+REGEX_MESSAGE = (
+    'Acceptable characters: Latin letters (A-Z, a-z), '
+    'Cyrillic letters (А-Я, а-я), Hyphen, '
+    'Exclamation point, Question mark, Dot, Comma, Colon.'
+    'Make sure word begin with a letter.'
 )
