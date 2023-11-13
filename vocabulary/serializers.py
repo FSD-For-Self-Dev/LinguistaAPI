@@ -104,10 +104,16 @@ class CreatableSlugRelatedField(serializers.SlugRelatedField):
 
 
 class ReadableHiddenField(serializers.Field):
-    def __init__(self, slug_field=None, **kwargs):
+    def __init__(
+            self, slug_field=None, serializer_class=None, many=False, **kwargs
+        ):
         assert 'default' in kwargs, 'default is a required argument.'
-        assert slug_field is not None, 'slug_field argument is required.'
+        assert slug_field is not None or serializer_class is not None, (
+            'slug_field or serializer_class argument is required.'
+        )
         self.slug_field = slug_field
+        self.serializer_class = serializer_class
+        self.many = many
         super().__init__(**kwargs)
 
     def get_value(self, dictionary):
@@ -117,6 +123,10 @@ class ReadableHiddenField(serializers.Field):
         return data
 
     def to_representation(self, obj):
+        if self.serializer_class:
+            return self.serializer_class(
+                obj, many=self.many
+            ).data
         return getattr(obj, self.slug_field)
 
 
@@ -265,7 +275,10 @@ class WordShortSerializer(serializers.ModelSerializer):
         method_name='get_favorite',
         required=False
     )
-    author = UserSerializer(many=False, read_only=True)  # мб заменить на ReadableHiddenField
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(),
+        serializer_class=UserSerializer, many=False
+    )
 
     class Meta:
         model = Word
@@ -319,12 +332,13 @@ class WordShortSerializer(serializers.ModelSerializer):
         tags = validated_data.pop('tags', [])
         favorite = validated_data.pop('favorite', None)
 
-        context_user = self.context['request'].user
-
-        word = Word.objects.create(author=context_user, **validated_data)
+        word = Word.objects.create(**validated_data)
 
         if favorite:
-            FavoriteWord.objects.create(user=context_user, word=word)
+            FavoriteWord.objects.create(
+                user=self.context['request'].user,
+                word=word
+            )
 
         word.tags.set(tags)
         word.types.set(word_types)
@@ -513,16 +527,11 @@ class TypeSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class AddAuthorInCreateSerializer(serializers.ModelSerializer):
-    def create(self, validated_data):
-        return self.Meta.model.objects.create(
-            author=self.context['request'].user,
-            **validated_data
-        )
-
-
-class CollectionSerializer(AddAuthorInCreateSerializer):  # заменить на ReadableHiddenField
-    author = UserSerializer(many=False, read_only=True)
+class CollectionSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(),
+        serializer_class=UserSerializer, many=False
+    )
     words = WordShortSerializer(many=True, required=False)
 
     class Meta:
