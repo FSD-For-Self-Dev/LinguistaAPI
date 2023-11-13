@@ -103,17 +103,21 @@ class CreatableSlugRelatedField(serializers.SlugRelatedField):
             self.fail('invalid')
 
 
-class AddAuthorInCreateSerializer(serializers.ModelSerializer):
-    """Абстрактная модель для добавления автора в методе create."""
+class ReadableHiddenField(serializers.Field):
+    def __init__(self, slug_field=None, **kwargs):
+        assert 'default' in kwargs, 'default is a required argument.'
+        assert slug_field is not None, 'slug_field argument is required.'
+        self.slug_field = slug_field
+        super().__init__(**kwargs)
 
-    class Meta:
-        abstract=True
+    def get_value(self, dictionary):
+        return serializers.empty
 
-    def create(self, validated_data):
-        return self.Meta.model.objects.create(
-            author=self.context['request'].user,
-            **validated_data
-        )
+    def to_internal_value(self, data):
+        return data
+
+    def to_representation(self, obj):
+        return getattr(obj, self.slug_field)
 
 
 class WordSameLanguageDefault:
@@ -138,9 +142,9 @@ class NoteSerializer(serializers.ModelSerializer):
         read_only_fields = ('created',)
 
 
-class TranslationSerializer(AddAuthorInCreateSerializer):
-    author = serializers.SlugRelatedField(
-        many=False, slug_field='username', read_only=True
+class TranslationSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
     )
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name',
@@ -154,20 +158,22 @@ class TranslationSerializer(AddAuthorInCreateSerializer):
         read_only_fields = ('id', 'author')
 
 
-class UsageExampleSerializer(AddAuthorInCreateSerializer):
-    author = serializers.SlugRelatedField(
-        many=False, slug_field='username', read_only=True
+class UsageExampleSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
     )
 
     class Meta:
         model = UsageExample
-        fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
+        fields = (
+            'id', 'author', 'text', 'translation', 'created', 'modified'
+        )
         read_only_fields = ('id', 'author', 'created', 'modified')
 
 
-class DefinitionSerializer(AddAuthorInCreateSerializer):
-    author = serializers.SlugRelatedField(
-        many=False, slug_field='username', read_only=True
+class DefinitionSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
     )
 
     class Meta:
@@ -176,9 +182,9 @@ class DefinitionSerializer(AddAuthorInCreateSerializer):
         read_only_fields = ('id', 'author', 'created', 'modified')
 
 
-class CollectionShortSerializer(AddAuthorInCreateSerializer):
-    author = serializers.SlugRelatedField(
-        many=False, slug_field='username', read_only=True
+class CollectionShortSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
     )
     words_count = serializers.SerializerMethodField()
     last_3_words = serializers.SerializerMethodField()
@@ -202,9 +208,9 @@ class CollectionShortSerializer(AddAuthorInCreateSerializer):
         )[:3]
 
 
-class FormsGroupSerializer(AddAuthorInCreateSerializer):
-    author = serializers.SlugRelatedField(
-        many=False, slug_field='username', read_only=True
+class FormsGroupSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
     )
 
     class Meta:
@@ -220,12 +226,12 @@ class FormsGroupSerializer(AddAuthorInCreateSerializer):
         return name
 
 
-class WordRelatedSerializer(AddAuthorInCreateSerializer):
+class WordRelatedSerializer(serializers.ModelSerializer):
     """Сериализатор для короткой демонстрации word-related объектов
     (синонимы, антонимы, похожие слова и формы)."""
 
-    author = serializers.SlugRelatedField(
-        many=False, slug_field='username', read_only=True
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
     )
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name',
@@ -259,7 +265,7 @@ class WordShortSerializer(serializers.ModelSerializer):
         method_name='get_favorite',
         required=False
     )
-    author = UserSerializer(many=False, read_only=True)
+    author = UserSerializer(many=False, read_only=True)  # мб заменить на ReadableHiddenField
 
     class Meta:
         model = Word
@@ -326,7 +332,6 @@ class WordShortSerializer(serializers.ModelSerializer):
         for translation in translations:
             current_translation, created = (
                 WordTranslation.objects.get_or_create(
-                    author=context_user,
                     **translation
                 )
             )
@@ -340,9 +345,9 @@ class WordShortSerializer(serializers.ModelSerializer):
         return word
 
 
-class FormSerializer(AddAuthorInCreateSerializer):
-    author = serializers.SlugRelatedField(
-        many=False, slug_field='username', read_only=True
+class FormSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
     )
     language = serializers.HiddenField(default=WordSameLanguageDefault())
     forms_groups = CreatableSlugRelatedField(
@@ -441,7 +446,7 @@ class WordSerializer(WordShortSerializer):
         for obj_data in objs:
             forms_groups = obj_data.pop('forms_groups', [])
             obj_word, created = Word.objects.get_or_create(
-                author=self.context['request'].user,
+                # author=self.context['request'].user,
                 **obj_data
             )
             obj_word.forms_groups.set(forms_groups)
@@ -508,7 +513,15 @@ class TypeSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class CollectionSerializer(AddAuthorInCreateSerializer):
+class AddAuthorInCreateSerializer(serializers.ModelSerializer):
+    def create(self, validated_data):
+        return self.Meta.model.objects.create(
+            author=self.context['request'].user,
+            **validated_data
+        )
+
+
+class CollectionSerializer(AddAuthorInCreateSerializer):  # заменить на ReadableHiddenField
     author = UserSerializer(many=False, read_only=True)
     words = WordShortSerializer(many=True, required=False)
 
