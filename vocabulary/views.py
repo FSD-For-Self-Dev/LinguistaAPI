@@ -8,6 +8,7 @@ from django.db.models import Count, Q
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view,
+    OpenApiExample
 )
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
@@ -17,7 +18,7 @@ from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 
-from .filters import WordFilter
+from .filters import WordFilter, CollectionFilter
 from .models import (
     Definition, FormsGroup, WordTranslation, Type, UsageExample, WordDefinitions,
     WordTranslations, WordUsageExamples,
@@ -649,6 +650,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     filter_backends = (
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     )
+    filterset_class = CollectionFilter
     ordering = ('-created',)
 
     def get_serializer_class(self):
@@ -660,6 +662,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return user.collections.annotate(
-            words_count=Count('words', distinct=True)
-        )
+        if user.is_authenticated:
+            return user.collections.annotate(
+                words_count=Count('words', distinct=True)
+            )
+        return None

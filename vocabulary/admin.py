@@ -53,7 +53,7 @@ class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
     list_display = ('pk', 'text', 'author')
     list_display_links = ('text',)
-    search_fields = ('text', 'author')
+    search_fields = ('text', 'author__username')
     list_filter = ('author',)
     inlines = (
         WordWordsFormGroupsInline,
