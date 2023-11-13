@@ -574,7 +574,7 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
     translation = models.CharField(
         _('A translation of the definition'),
         max_length=4096,
-        blank=True
+        blank=True,
     )
 
     class Meta:
@@ -633,7 +633,13 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
     translation = models.CharField(
         _('A translation of the example'),
         max_length=4096,
-        blank=True
+        blank=True,
+        validators=(
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            ),
+        )
     )
 
     class Meta:
