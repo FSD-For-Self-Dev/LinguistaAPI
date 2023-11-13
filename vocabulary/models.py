@@ -574,7 +574,7 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
     translation = models.CharField(
         _('A translation of the definition'),
         max_length=4096,
-        blank=True,
+        blank=True
     )
 
     class Meta:
