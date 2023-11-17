@@ -96,7 +96,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # }
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgres://linguista_db_user:KFFOeVGNPOgk8YgxbO5e2DTAH9adNVRW@dpg-cl3vlj9novjs73br0j50-a/linguista_db_gasm',
+        default='postgres://linguista_db_user:R6GisftSL9uuQcKU8ykbqf5MxAr3kVP7@dpg-cl72tuauuipc73f6d8t0-a/linguista_db_06pk',
         conn_max_age=600
     )
 }

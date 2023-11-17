@@ -4,11 +4,12 @@ import random
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Count, Q
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
     OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view,
+    OpenApiExample
 )
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
@@ -19,7 +20,7 @@ from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 
-from .filters import WordFilter
+from .filters import WordFilter, CollectionFilter
 from .models import (
     Definition, FormsGroup, WordTranslation, Type, UsageExample,
     WordDefinitions,
@@ -576,13 +577,15 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         },
     )
 )
-class FormsGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Просмотр списка всех групп форм пользователя."""
+class FormsGroupsViewSet(viewsets.ModelViewSet):
+    """
+    Просмотр списка всех групп форм пользователя и добавление новых групп.
+    """
 
     queryset = FormsGroup.objects.all()
     serializer_class = FormsGroupSerializer
     lookup_field = 'slug'
-    http_method_names = ('get',)
+    http_method_names = ('get', 'post', 'patch', 'delete')
     pagination_class = None
     permission_classes = (
         IsAuthenticated,
@@ -596,7 +599,11 @@ class FormsGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return user.formsgroups.annotate(
+        admin_user = User.objects.get(username='admin')
+        # добавить проверку наличия пользователя админа
+        return FormsGroup.objects.filter(
+            Q(author=user)|Q(author=admin_user)
+        ).annotate(
             words_count=Count('words', distinct=True)
         )
 
@@ -646,6 +653,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     filter_backends = (
         filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
     )
+    filterset_class = CollectionFilter
     ordering = ('-created',)
 
     def get_serializer_class(self):

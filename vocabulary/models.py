@@ -11,8 +11,8 @@ from core.models import (
 )
 from languages.models import Language
 
-from .constants import REGEX_WORD_MASK
-from .utils import slugify_text_author_fields, slugify_title_author_fields
+from .constants import REGEX_TEXT_MASK, REGEX_MESSAGE
+from .utils import slugify_text_author_fields
 
 User = get_user_model()
 
@@ -21,7 +21,14 @@ class Tag(models.Model):
     name = models.CharField(
         _('Tag name'),
         max_length=64,
-        unique=True
+        unique=True,
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            )
+        )
     )
 
     class Meta:
@@ -35,7 +42,14 @@ class Tag(models.Model):
 class Collection(CreatedModel, ModifiedModel, AuthorModel):
     title = models.CharField(
         _('Collection title'),
-        max_length=256
+        max_length=256,
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            )
+        )
     )
     slug = models.SlugField(
         _('Slug'),
@@ -74,7 +88,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         return self.words.count()  #*
 
     def save(self, *args, **kwargs):
-        self.slug = slugify_title_author_fields(self)
+        self.slug = slugify_text_author_fields(self, self.title)
         super(Collection, self).save(*args, **kwargs)
 
 
@@ -82,7 +96,14 @@ class Type(models.Model):
     name = models.CharField(
         _('Type name'),
         max_length=64,
-        unique=True
+        unique=True,
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            )
+        )
     )
     slug = models.SlugField(
         _('Slug'),
@@ -139,11 +160,8 @@ class Word(CreatedModel, ModifiedModel):
         validators=(
             MinLengthValidator(1),
             RegexValidator(
-                regex=REGEX_WORD_MASK,
-                message='Acceptable characters: Latin letters (A-Z, a-z), '
-                        'Cyrillic letters (А-Я, а-я), Hyphen, '
-                        'Exclamation point, Question mark, Dot, Comma, Colon.'
-                        'Make sure word begin with a letter.'
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
             )
         )
     )
@@ -231,7 +249,7 @@ class Word(CreatedModel, ModifiedModel):
         'UsageExample',
         through='WordUsageExamples',
         related_name='usage_example_for',
-        verbose_name=_('Usage Example'),
+        verbose_name=_('Usage example'),
         blank=True
     )
     # pronunciation_voice = ...
@@ -252,10 +270,10 @@ class Word(CreatedModel, ModifiedModel):
         return self.text
 
     def save(self, *args, **kwargs):
-        self.slug = slugify_text_author_fields(self)
+        self.slug = slugify_text_author_fields(self, self.text)
         super(Word, self).save(*args, **kwargs)
         default_type_pk = Type.get_default_pk()
-        self.types.add(default_type_pk)  #*
+        self.types.add(default_type_pk)  # *
 
 
 class WordSelfRelatedModel(CreatedModel):
@@ -340,19 +358,26 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
     name = models.CharField(
         _('Group name'),
         max_length=64,
-        blank=False
+        blank=False,
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            )
+        )
     )
     slug = models.SlugField(
         _('Slug'),
         null=True,
         unique=True
     )
-    language = models.ForeignKey(
-        Language,
-        verbose_name=_('Language'),
-        on_delete=models.SET_DEFAULT,
+    words = models.ManyToManyField(
+        'Word',
+        through='WordsFormGroups',
         related_name='forms_groups',
-        default=Language.get_default_pk
+        verbose_name=_('Words in forms group'),
+        blank=True
     )
 
     class Meta:
@@ -361,7 +386,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         ordering = ('-created', 'name')
         constraints = [
             models.UniqueConstraint(
-                fields=['name', 'author', 'language'],
+                fields=['name', 'author'],
                 name='unique_group_name'
             )
         ]
@@ -370,18 +395,12 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         return f'{self.name}'
 
     def save(self, *args, **kwargs):
-        self.slug = slugify(self.name, self.author, self.language.name)
+        self.slug = slugify([self.name, self.author])
+        self.name = self.name.capitalize()
         super(FormsGroup, self).save(*args, **kwargs)
 
 
-class Form(WordSelfRelatedModel, AuthorModel, ModifiedModel):
-    forms_group = models.ForeignKey(
-        FormsGroup,
-        verbose_name=_('Forms group'),
-        null=True,
-        on_delete=models.SET_NULL,
-        related_name='words'
-    )
+class Form(WordSelfRelatedModel, AuthorModel):
 
     class Meta:
         verbose_name = _('Form')
@@ -412,6 +431,13 @@ class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
         _('Translation'),
         max_length=4096,
         help_text=_('A translation of a word or phrase'),
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            )
+        )
     )
     language = models.ForeignKey(
         Language,
@@ -447,6 +473,34 @@ class WordRelatedModel(CreatedModel):
 
     class Meta:
         abstract = True
+
+
+class WordsFormGroups(WordRelatedModel):
+    forms_group = models.ForeignKey(
+        FormsGroup,
+        verbose_name=_('Forms group'),
+        null=True,
+        on_delete=models.SET_NULL,
+        related_name='%(class)s'
+    )
+
+    class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
+        verbose_name = _('Words forms group')
+        verbose_name_plural = _('Words forms group')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['word', 'forms_group'],
+                name='unique_word_forms_group'
+            )
+        ]
+
+    def __str__(self) -> str:
+        return _(
+            f'Word `{self.word}` ({self.word.language.name}) is in '
+            f'`{self.forms_group}` form'
+        )
 
 
 class WordsInCollections(WordRelatedModel):
@@ -508,7 +562,14 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Definition'),
         max_length=4096,
-        help_text=_('A definition of a word or phrase')
+        help_text=_('A definition of a word or phrase'),
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            )
+        )
     )
     translation = models.CharField(
         _('A translation of the definition'),
@@ -560,7 +621,14 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Usage example'),
         max_length=4096,
-        help_text=_('An usage example of a word or phrase')
+        help_text=_('An usage example of a word or phrase'),
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            )
+        )
     )
     translation = models.CharField(
         _('A translation of the example'),
@@ -649,7 +717,14 @@ class ImageAssociation(CreatedModel, ModifiedModel):
     name = models.CharField(
         _('Image name'),
         max_length=64,
-        blank=True
+        blank=True,
+        validators=(
+            MinLengthValidator(1),
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            )
+        )
     )
 
     class Meta:
