@@ -701,7 +701,9 @@ class CollectionViewSet(viewsets.ModelViewSet):
         """Получить список избранных коллекций."""
         favorites = Collection.objects.filter(
             favorite_for__user=request.user).order_by('-favorite_for__created')
-        serializer = CollectionShortSerializer(favorites, many=True)
+        serializer = CollectionShortSerializer(
+            favorites, many=True, context={'request': request}
+        )
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @favorites.mapping.post
