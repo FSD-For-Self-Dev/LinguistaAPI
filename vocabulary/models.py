@@ -633,7 +633,13 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
     translation = models.CharField(
         _('A translation of the example'),
         max_length=4096,
-        blank=True
+        blank=True,
+        validators=(
+            RegexValidator(
+                regex=REGEX_TEXT_MASK,
+                message=REGEX_MESSAGE
+            ),
+        )
     )
 
     class Meta:
