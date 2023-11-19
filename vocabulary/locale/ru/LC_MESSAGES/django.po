@@ -49,8 +49,8 @@ msgid "Description"
 msgstr "Описание"
 
 #: .\models.py:54
-msgid "Words in collection"
-msgstr "Слова, добавленные в коллекцию"
+msgid "Word in collection"
+msgstr "Слово, добавленное в коллекцию"
 
 #: .\models.py:61 .\models.py:484 .\models.py:718
 msgid "Collection"
@@ -241,7 +241,7 @@ msgstr "Слово `{self.word}` ({self.word.language.name}) в "
 
 #: .\models.py:492 .\models.py:493
 msgid "Words in collections"
-msgstr "Слова, добавленные в коллекции"
+msgstr "Слова, добавленные в коллекцию"
 
 #: .\models.py:503
 #, fuzzy, python-brace-format

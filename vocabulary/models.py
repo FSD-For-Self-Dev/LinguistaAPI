@@ -73,7 +73,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         'Word',
         through='WordsInCollections',
         related_name='collections',
-        verbose_name=_('Words in collection'),
+        verbose_name=_('Word in collection'),
         blank=True
     )
 
