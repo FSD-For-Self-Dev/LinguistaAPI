@@ -3,30 +3,37 @@
 import random
 
 from django.contrib.auth import get_user_model
-from django.db.models import Count
+from django.core.exceptions import ValidationError
+from django.db.models import Count, Q
+from django.utils.translation import gettext_lazy as _
+
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
-    extend_schema, extend_schema_view, OpenApiParameter, OpenApiTypes
+    OpenApiExample, OpenApiParameter, OpenApiTypes, extend_schema,
+    extend_schema_view,
 )
-from rest_framework import filters, status, viewsets
+from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from core.pagination import LimitPagination
-from .filters import WordFilter
+
+from .constants import MAX_EXAMPLES_AMOUNT
+from .filters import CollectionFilter, WordFilter
 from .models import (
-    Definition, Translation, UsageExample, WordDefinitions,
-    WordTranslations, WordUsageExamples, FavoriteWord, Word
+    Definition, FormsGroup, Type, UsageExample, WordDefinitions,
+    WordTranslation, WordTranslations, WordUsageExamples,
 )
 from .permissions import (
-    CanAddDefinitionPermission,
-    CanAddUsageExamplePermission
+    CanAddDefinitionPermission, CanAddUsageExamplePermission,
+    IsAuthorOrReadOnly,
 )
 from .serializers import (
-    DefinitionSerializer, TranslationSerializer, UsageExampleSerializer,
-    WordSerializer, WordShortSerializer, FavoriteSerializer
+    CollectionSerializer, CollectionShortSerializer, DefinitionSerializer,
+    FormsGroupSerializer, TranslationSerializer, TypeSerializer,
+    UsageExampleSerializer, WordSerializer, WordShortSerializer,
 )
 
 User = get_user_model()
@@ -122,6 +129,7 @@ User = get_user_model()
     ),
     create=extend_schema(
         summary='Добавление нового слова в свой словарь',
+        request=WordSerializer,
         responses={
             status.HTTP_201_CREATED: WordSerializer,
         },
@@ -173,16 +181,21 @@ class WordViewSet(viewsets.ModelViewSet):
         if user.is_authenticated:
             return user.vocabulary.annotate(
                 translations_count=Count('translations', distinct=True),
-                examples_count=Count('examples', distinct=True)
+                examples_count=Count('examples', distinct=True),
+                collections_count=Count('collections', distinct=True)
             )
         return None
 
     def get_serializer_class(self):
         match self.action:
-            case 'list':
+            case 'list'|'random':
                 return WordShortSerializer
-            case 'random':
-                return WordShortSerializer
+            case 'translations'|'translations_detail':
+                return TranslationSerializer
+            case 'definitions'|'definitions_detail':
+                return DefinitionSerializer
+            case 'examples'|'examples_detail':
+                return UsageExampleSerializer
             case _:
                 return WordSerializer
 
@@ -276,14 +289,14 @@ class WordViewSet(viewsets.ModelViewSet):
         url_name="word's translations detail",
         serializer_class=TranslationSerializer
     )
-    def translation_detail(self, request, *args, **kwargs):
+    def translations_detail(self, request, *args, **kwargs):
         """Получить, редактировать или удалить перевод слова."""
         word = self.get_object()
         try:
             translation = word.translations.get(
                 pk=kwargs.get('translation_id')
             )
-        except Translation.DoesNotExist:
+        except WordTranslation.DoesNotExist:
             raise NotFound(detail="The translation not found")
 
         match request.method:
@@ -438,6 +451,15 @@ class WordViewSet(viewsets.ModelViewSet):
             case 'POST':
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
+                amount = len(_examples)
+                if amount >= MAX_EXAMPLES_AMOUNT:
+                    return Response(
+                        {'detail': _(
+                            f"The maximum amount of examples ({amount}) "
+                            "has already been reached."
+                        )},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
                 new_example = serializer.save(
                     **serializer.validated_data
                 )
@@ -523,17 +545,139 @@ class WordViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(word).data)
 
 
-@extend_schema(tags=['favorite'])
-class FavoriteViewSet(viewsets.ModelViewSet):
-    """Вьюсет для отображения избранных слов"""
-    serializer_class = FavoriteSerializer
-    http_method_names = ['get', 'post', 'delete']
-    permission_classes = [IsAuthenticated]
+@extend_schema(tags=['types'])
+@extend_schema_view(
+    list=extend_schema(
+        summary=(
+            'Просмотр списка всех возможных типов и частей речи слов и фраз'
+        ),
+        responses={
+            status.HTTP_200_OK: TypeSerializer,
+        },
+    )
+)
+class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Просмотр списка всех возможных типов слов и фраз."""
+
+    queryset = Type.objects.all()
+    serializer_class = TypeSerializer
+    lookup_field = 'slug'
+    http_method_names = ('get',)
+    pagination_class = None
+    permission_classes = (
+        AllowAny,
+    )
+    filter_backends = (
+        filters.SearchFilter,
+    )
+    search_fields = (
+        'name',
+    )
+
+
+@extend_schema(tags=['forms-groups'])
+@extend_schema_view(
+    list=extend_schema(
+        summary=(
+            'Просмотр списка всех групп форм пользователя'
+        ),
+        responses={
+            status.HTTP_200_OK: FormsGroupSerializer,
+        },
+    )
+)
+class FormsGroupsViewSet(viewsets.ModelViewSet):
+    """
+    Просмотр списка всех групп форм пользователя и добавление новых групп.
+    """
+
+    queryset = FormsGroup.objects.all()
+    serializer_class = FormsGroupSerializer
+    lookup_field = 'slug'
+    http_method_names = ('get', 'post', 'patch', 'delete')
+    pagination_class = None
+    permission_classes = (
+        IsAuthenticated,
+    )
+    filter_backends = (
+        filters.SearchFilter,
+    )  # добавить фильтр по языку
+    search_fields = (
+        'name',
+    )
+
+    def get_queryset(self):
+        user = self.request.user
+        admin_user = User.objects.get(username='admin')
+        # добавить проверку наличия пользователя админа
+        return FormsGroup.objects.filter(
+            Q(author=user)|Q(author=admin_user)
+        ).annotate(
+            words_count=Count('words', distinct=True)
+        )
+
+
+@extend_schema(tags=['collections'])
+@extend_schema_view(
+    list=extend_schema(
+        summary=(
+            'Просмотр списка всех коллекций пользователя'
+        ),
+        responses={
+            status.HTTP_200_OK: CollectionSerializer,
+        },
+    ),
+    create=extend_schema(
+        summary='Добавление новой коллекции',
+        responses={
+            status.HTTP_201_CREATED: CollectionSerializer,
+        },
+    ),
+    retrieve=extend_schema(
+        summary='Просмотр коллекции',
+        responses={
+            status.HTTP_200_OK: CollectionSerializer,
+        },
+    ),
+    partial_update=extend_schema(
+        summary='Редактирование коллекции',
+        responses={
+            status.HTTP_200_OK: CollectionSerializer,
+        },
+    ),
+    destroy=extend_schema(
+        summary='Удаление коллекции',
+        responses={
+            status.HTTP_204_NO_CONTENT: None,
+        },
+    )
+)
+class CollectionViewSet(viewsets.ModelViewSet):
+    """Действия с коллекциями."""
+
+    lookup_field = 'slug'
+    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
     pagination_class = LimitPagination
+    filter_backends = (
+        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
+    )
+    filterset_class = CollectionFilter
+    ordering = ('-created',)
+    ordering_fields = ('created', 'title')
+    search_fields = ('title',)
+
+    def get_serializer_class(self):
+        match self.action:
+            case 'list':
+                return CollectionShortSerializer
+            case _:
+                return CollectionSerializer
 
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
-            favorite = FavoriteWord.objects.filter(user=user)
-            return favorite
+            return user.collections.annotate(
+                words_count=Count('words', distinct=True)
+            )
         return None

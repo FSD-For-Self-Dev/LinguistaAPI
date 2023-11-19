@@ -2,17 +2,22 @@
 
 from django.contrib import admin
 
+from modeltranslation.admin import TranslationAdmin
+
 from .models import (
     Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
-    ImageAssociation, Note, Similar, Synonym, Tag, Translation, Type,
-    UsageExample, Word, WordDefinitions, WordTranslations, WordUsageExamples,
-    WordsInCollections
+    ImageAssociation, Note, Similar, Synonym, Tag, WordTranslation, Type,
+    UsageExample, Word, WordDefinitions, WordsInCollections, WordTranslations,
+    WordUsageExamples, FormsGroup, WordsFormGroups
 )
 
 
 class WordTranslationInline(admin.TabularInline):
     model = WordTranslations
-    min_num = 1
+
+
+class WordWordsFormGroupsInline(admin.TabularInline):
+    model = WordsFormGroups
 
 
 class SynonymInline(admin.TabularInline):
@@ -43,12 +48,15 @@ class WordDefinitionsInline(admin.TabularInline):
     model = WordDefinitions
 
 
+@admin.register(Word)
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
     list_display = ('pk', 'text', 'author')
-    search_fields = ('text', 'author')
+    list_display_links = ('text',)
+    search_fields = ('text', 'author__username')
     list_filter = ('author',)
     inlines = (
+        WordWordsFormGroupsInline,
         WordTranslationInline, WordUsageExamplesInline,
         WordDefinitionsInline,
         SynonymInline,
@@ -58,16 +66,33 @@ class WordAdmin(admin.ModelAdmin):
     )
 
 
-admin.site.register(Word, WordAdmin)
-admin.site.register(Translation)
+@admin.register(Type)
+class TypeAdmin(TranslationAdmin):
+    list_display = ('name', 'sorting') 
+    list_display_links = ('name',)
+
+
+@admin.register(Collection)
+class CollectionAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('title', 'author')}
+    list_display = ('id', 'title', 'author', 'words_count')
+    list_display_links = ('title',)
+
+
+@admin.register(FormsGroup)
+class FormsGroupAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('name', 'author')}
+    list_display = ('id', 'name', 'author')
+    list_display_links = ('name',)
+
+
+admin.site.register(WordTranslation)
 admin.site.register(WordTranslations)
 admin.site.register(UsageExample)
 admin.site.register(WordUsageExamples)
 admin.site.register(Definition)
 admin.site.register(WordDefinitions)
 admin.site.register(Tag)
-admin.site.register(Type)
-admin.site.register(Collection)
 admin.site.register(WordsInCollections)
 admin.site.register(Synonym)
 admin.site.register(Antonym)
@@ -77,3 +102,4 @@ admin.site.register(Note)
 admin.site.register(ImageAssociation)
 admin.site.register(FavoriteWord)
 admin.site.register(FavoriteCollection)
+admin.site.register(WordsFormGroups)

@@ -1,9 +1,13 @@
 ''' Project settings '''
 
 import os
-import dj_database_url
+
 from datetime import timedelta
 from pathlib import Path
+
+from django.utils.translation import gettext_lazy as _
+
+import dj_database_url
 
 from dotenv import load_dotenv
 
@@ -22,6 +26,7 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 INSTALLED_APPS = [
+    'modeltranslation',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -51,6 +56,7 @@ MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.locale.LocaleMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -89,11 +95,21 @@ DATABASES = {
     }
 }
 # DATABASES = {
-#     'default': dj_database_url.config(
-#         default='postgres://linguista_db_user:8JKllVIbb35uQfgrVKHByaWiMlQdSgKU@dpg-ckjd1cgmccbs7392lv00-a/linguista_db_uwxs',
-#         conn_max_age=600
-#     )
+#     'default': {
+#         'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+#         'NAME': os.getenv('DB_NAME', default='postgres'),
+#         'USER': os.getenv('DB_USER', default=''),
+#         'PASSWORD': os.getenv('DB_PASSWORD', default=''),
+#         'HOST': os.getenv('DB_HOST', default=''),
+#         'PORT': os.getenv('DB_PORT', default='')
+#     }
 # }
+DATABASES = {
+    'default': dj_database_url.config(
+        default='postgres://linguista_db_user:R6GisftSL9uuQcKU8ykbqf5MxAr3kVP7@dpg-cl72tuauuipc73f6d8t0-a/linguista_db_06pk',
+        conn_max_age=600
+    )
+}
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -203,6 +219,13 @@ SPECTACULAR_SETTINGS = {
 }
 
 LANGUAGE_CODE = 'ru-ru'
+LANGUAGES = (
+    ('ru', _('Russian')),
+    ('en', _('English')),
+)
+LOCALE_PATHS = (
+    os.path.join(BASE_DIR, 'locale'),
+)
 
 TIME_ZONE = 'UTC'
 
