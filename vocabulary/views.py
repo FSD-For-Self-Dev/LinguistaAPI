@@ -664,6 +664,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
     )
     filterset_class = CollectionFilter
     ordering = ('-created',)
+    ordering_fields = ('created', 'title')
+    search_fields = ('title',)
 
     def get_serializer_class(self):
         match self.action:
