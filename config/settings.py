@@ -86,23 +86,23 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
         'default': dj_database_url.config(
-            default=os.getenv('DATABASE_URL', default=''),
+            default='postgres://linguista_db_user:U7NnMnJF4xpbzBs5YkaaSpgkG7WmNKKp@dpg-cldqmn6f27hc73fcakfg-a/linguista_db_pzpz',
             conn_max_age=600
         )
     }
 
-# if DEBUG:
-#     print(DEBUG)
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-#             'NAME': os.getenv('DB_NAME', default='postgres'),
-#             'USER': os.getenv('DB_USER', default=''),
-#             'PASSWORD': os.getenv('DB_PASSWORD', default=''),
-#             'HOST': os.getenv('DB_HOST', default=''),
-#             'PORT': os.getenv('DB_PORT', default='')
-#         }
-#     }
+if DEBUG:
+    print(DEBUG)
+    DATABASES = {
+        'default': {
+            'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+            'NAME': os.getenv('DB_NAME', default='postgres'),
+            'USER': os.getenv('DB_USER', default=''),
+            'PASSWORD': os.getenv('DB_PASSWORD', default=''),
+            'HOST': os.getenv('DB_HOST', default=''),
+            'PORT': os.getenv('DB_PORT', default='')
+        }
+    }
 
 AUTH_USER_MODEL = 'users.User'
 
