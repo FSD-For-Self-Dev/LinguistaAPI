@@ -84,6 +84,13 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
+DATABASES = {
+        'default': dj_database_url.config(
+            default='postgres://linguista_db_user:U7NnMnJF4xpbzBs5YkaaSpgkG7WmNKKp@dpg-cldqmn6f27hc73fcakfg-a/linguista_db_pzpz',
+            conn_max_age=600
+        )
+    }
+
 if DEBUG:
     DATABASES = {
         'default': {
@@ -94,13 +101,6 @@ if DEBUG:
             'HOST': os.getenv('DB_HOST', default=''),
             'PORT': os.getenv('DB_PORT', default='')
         }
-    }
-else:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default='postgres://linguista_db_user:U7NnMnJF4xpbzBs5YkaaSpgkG7WmNKKp@dpg-cldqmn6f27hc73fcakfg-a/linguista_db_pzpz',
-            conn_max_age=600
-        )
     }
 
 AUTH_USER_MODEL = 'users.User'
