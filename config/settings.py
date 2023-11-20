@@ -98,7 +98,7 @@ if DEBUG:
 else:
     DATABASES = {
         'default': dj_database_url.config(
-            default='postgres://linguista_db_user:R6GisftSL9uuQcKU8ykbqf5MxAr3kVP7@dpg-cl72tuauuipc73f6d8t0-a/linguista_db_06pk',
+            default='postgres://linguista_db_user:U7NnMnJF4xpbzBs5YkaaSpgkG7WmNKKp@dpg-cldqmn6f27hc73fcakfg-a/linguista_db_pzpz',
             conn_max_age=600
         )
     }
