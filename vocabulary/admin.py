@@ -72,11 +72,18 @@ class TypeAdmin(TranslationAdmin):
     list_display_links = ('name',)
 
 
+class WordInLine(admin.TabularInline):
+    model = WordsInCollections
+
+
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title', 'author')}
     list_display = ('id', 'title', 'author', 'words_count')
     list_display_links = ('title',)
+    inlines = (
+        WordInLine,
+    )
 
 
 @admin.register(FormsGroup)
