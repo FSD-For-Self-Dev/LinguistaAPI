@@ -86,7 +86,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
         'default': dj_database_url.config(
-            default='postgres://linguista_db_user:U7NnMnJF4xpbzBs5YkaaSpgkG7WmNKKp@dpg-cldqmn6f27hc73fcakfg-a/linguista_db_pzpz',
+            default=os.getenv('DATABASE_URL', default=''),
             conn_max_age=600
         )
     }
