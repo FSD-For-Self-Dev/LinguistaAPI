@@ -72,7 +72,7 @@ class TestWordEndpoints:
         endpoint = self.endpoint + f'?search={search_value}'
         if expected_min_amount is None: expected_min_amount = 1
         if (
-            os.getenv('DB_NAME') == 'db.sqlite3' and 
+            os.getenv('DB_NAME') == 'db.sqlite3' and
             bool(re.search('[а-яА-Я]', search_value))
         ):
             warnings.warn(
@@ -270,7 +270,7 @@ class TestWordEndpoints:
         )
 
     # def test_create(self, api_client):
-    #     currency = baker.prepare(Currency) 
+    #     currency = baker.prepare(Currency)
     #     expected_json = {
     #         'name': currency.name,
     #         'code': currency.code,
@@ -311,7 +311,7 @@ class TestWordEndpoints:
     #         'code': currency.code,
     #         'name': currency.name,
     #         'symbol': currency.symbol
-    #     } 
+    #     }
     #     valid_field = currency_dict[field]
     #     url = f'{self.endpoint}{currency.id}/'
 

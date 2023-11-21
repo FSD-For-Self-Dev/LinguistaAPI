@@ -62,7 +62,7 @@ class RelatedSerializerField(serializers.PrimaryKeyRelatedField):
 
 class CreatableSlugRelatedField(serializers.SlugRelatedField):
     """
-    Поле для получения объекта по слагу или создания объекта с таким слагом, 
+    Поле для получения объекта по слагу или создания объекта с таким слагом,
     если его нет.
     """
 
