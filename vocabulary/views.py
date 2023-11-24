@@ -660,23 +660,34 @@ class CollectionViewSet(viewsets.ModelViewSet):
         match self.action:
             case 'list':
                 return CollectionShortSerializer
+            case 'favorites':
+                return CollectionShortSerializer
+            case 'add_to_favorites':
+                return CollectionsListSerializer
             case _:
                 return CollectionSerializer
 
     def get_queryset(self):
         user = self.request.user
-        return user.collections.annotate(
-            words_count=Count('words', distinct=True)
-        )
+        match self.action:
+            case 'favorites':
+                return Collection.objects.filter(
+                    favorite_for__user=user).order_by('-favorite_for__created'
+                )
+            case _:
+                return user.collections.annotate(
+                    words_count=Count('words', distinct=True)
+                )
 
     @action(detail=True, methods=['post'],
             permission_classes=[IsAuthenticated])
     def favorite(self, request, slug):
         """Добавить коллекцию в избранное."""
-        collection = get_object_or_404(Collection, slug=slug)
+        collection = self.get_object()
         _, created = FavoriteCollection.objects.get_or_create(
             user=request.user,
-            collection=collection)
+            collection=collection
+        )
         if not created:
             return Response({'detail': 'Эта коллекция уже в избранном.'},
                             status=status.HTTP_409_CONFLICT)
@@ -685,9 +696,10 @@ class CollectionViewSet(viewsets.ModelViewSet):
     @favorite.mapping.delete
     def remove_from_favorite(self, request, slug):
         """Удалить коллекцию из избранного."""
-        collection = get_object_or_404(Collection, slug=slug)
+        collection = self.get_object()
         deleted, _ = FavoriteCollection.objects.filter(
-            collection=collection, user=request.user).delete()
+            collection=collection, user=request.user).delete(
+        )
         if deleted:
             return Response({"favorite": False},
                             status=status.HTTP_204_NO_CONTENT)
@@ -699,35 +711,29 @@ class CollectionViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def favorites(self, request):
         """Получить список избранных коллекций."""
-        favorites = Collection.objects.filter(
-            favorite_for__user=request.user).order_by('-favorite_for__created')
-        serializer = CollectionShortSerializer(
-            favorites, many=True, context={'request': request}
-        )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return self.list(request)
 
     @favorites.mapping.post
     def add_to_favorites(self, request):
         """Добавить список коллекций в избранное."""
-        slugs = request.data.get('slugs')
-        if not slugs:
-            return Response({'detail': 'Пустой список слагов.'},
-                            status=status.HTTP_400_BAD_REQUEST)
-
-        collections = Collection.objects.filter(slug__in=slugs)
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        collections = serializer.validated_data.get('collections')
         created_favorites = []
         with transaction.atomic():
             for collection in collections:
                 obj, created = FavoriteCollection.objects.get_or_create(
-                    user=request.user, collection=collection)
+                    user=request.user, collection=collection
+                )
                 if created:
                     created_favorites.append(
-                        collection.title)
+                        collection.title
+                    )
 
         if not created_favorites:
             return Response(
                 {'detail': 'Все коллекции уже в избранном.'},
-                status=status.HTTP_400_BAD_REQUEST)
+                    status=status.HTTP_409_CONFLICT)
 
         return Response({'created': len(created_favorites),
                          'added_to_favorites': created_favorites},

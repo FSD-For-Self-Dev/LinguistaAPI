@@ -549,3 +549,10 @@ class CollectionSerializer(CollectionShortSerializer):
             'created', 'modified', 'words'
         )
         read_only_fields = ('id', 'slug', 'author', 'created', 'modified')
+
+
+class CollectionsListSerializer(serializers.Serializer):
+    collections = serializers.SlugRelatedField(
+        slug_field='slug', many=True, queryset=Collection.objects.all(),
+        read_only=False, required=True
+    )
