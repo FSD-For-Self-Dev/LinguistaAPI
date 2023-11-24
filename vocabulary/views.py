@@ -34,6 +34,7 @@ from .serializers import (
     CollectionSerializer, CollectionShortSerializer, DefinitionSerializer,
     FormsGroupSerializer, TranslationSerializer, TypeSerializer,
     UsageExampleSerializer, WordSerializer, WordShortSerializer,
+    CollectionsListSerializer,
 )
 
 User = get_user_model()
