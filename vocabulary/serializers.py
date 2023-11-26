@@ -17,9 +17,10 @@ from .constants import (
     MAX_TYPES_AMOUNT,
 )
 from .models import (
-    Antonym, Collection, Definition, FavoriteWord, Form, FormsGroup, Language,
-    Note, Similar, Synonym, Tag, Type, UsageExample, Word, WordDefinitions,
-    WordTranslation, WordTranslations, WordUsageExamples,
+    Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
+    FormsGroup, Language, Note, Similar, Synonym, Tag, Type, UsageExample,
+    Word, WordDefinitions, WordTranslation, WordTranslations,
+    WordUsageExamples,
 )
 
 User = get_user_model()
@@ -198,12 +199,15 @@ class CollectionShortSerializer(serializers.ModelSerializer):
     )
     words_count = serializers.SerializerMethodField()
     last_3_words = serializers.SerializerMethodField()
+    favorite = serializers.SerializerMethodField(
+        method_name='get_favorite'
+    )
 
     class Meta:
         model = Collection
         fields = (
             'id', 'slug', 'author', 'title', 'words_count', 'last_3_words',
-            'created', 'modified'
+            'favorite', 'created', 'modified'
         )
         read_only_fields = (
             'id', 'slug', 'words_count', 'created', 'modified'
@@ -216,6 +220,13 @@ class CollectionShortSerializer(serializers.ModelSerializer):
         return obj.words.order_by('-wordsincollections__created').values_list(
             'text', flat=True
         )[:3]
+
+    @extend_schema_field(serializers.BooleanField)
+    def get_favorite(self, obj):  # метод повторяется
+        user = self.context['request'].user
+        return FavoriteCollection.objects.filter(
+            collection=obj, user=user
+        ).exists()
 
 
 class FormsGroupSerializer(serializers.ModelSerializer):
@@ -459,10 +470,7 @@ class WordSerializer(WordShortSerializer):
         """Метод для создания связей между симметричными объектами слов."""
         for obj_data in objs:
             forms_groups = obj_data.pop('forms_groups', [])
-            obj_word, created = Word.objects.get_or_create(
-                # author=self.context['request'].user,
-                **obj_data
-            )
+            obj_word, created = Word.objects.get_or_create(**obj_data)
             obj_word.forms_groups.set(forms_groups)
             cls.objects.create(
                 to_word=word,
@@ -527,7 +535,7 @@ class TypeSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class CollectionSerializer(serializers.ModelSerializer):
+class CollectionSerializer(CollectionShortSerializer):
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         serializer_class=UserSerializer, many=False
@@ -537,7 +545,14 @@ class CollectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Collection
         fields = (
-            'id', 'slug', 'author', 'title', 'description', 'created',
-            'modified', 'words'
+            'id', 'slug', 'author', 'title', 'description', 'favorite',
+            'created', 'modified', 'words'
         )
         read_only_fields = ('id', 'slug', 'author', 'created', 'modified')
+
+
+class CollectionsListSerializer(serializers.Serializer):
+    collections = serializers.SlugRelatedField(
+        slug_field='slug', many=True, queryset=Collection.objects.all(),
+        read_only=False, required=True
+    )

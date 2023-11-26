@@ -3,6 +3,7 @@
 import random
 
 from django.contrib.auth import get_user_model
+from django.db import transaction
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
@@ -15,6 +16,7 @@ from drf_spectacular.utils import (
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import NotFound
+from rest_framework.generics import get_object_or_404
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -23,8 +25,9 @@ from core.pagination import LimitPagination
 from .constants import MAX_EXAMPLES_AMOUNT
 from .filters import CollectionFilter, WordFilter
 from .models import (
-    Definition, FormsGroup, Type, UsageExample, WordDefinitions,
-    WordTranslation, WordTranslations, WordUsageExamples,
+    Definition, FormsGroup, WordTranslation, Type, UsageExample,
+    WordDefinitions, WordTranslations, WordUsageExamples,
+    Collection, FavoriteCollection,
 )
 from .permissions import (
     CanAddDefinitionPermission, CanAddUsageExamplePermission,
@@ -34,6 +37,7 @@ from .serializers import (
     CollectionSerializer, CollectionShortSerializer, DefinitionSerializer,
     FormsGroupSerializer, TranslationSerializer, TypeSerializer,
     UsageExampleSerializer, WordSerializer, WordShortSerializer,
+    CollectionsListSerializer,
 )
 
 User = get_user_model()
@@ -47,82 +51,82 @@ User = get_user_model()
             status.HTTP_200_OK: WordShortSerializer,
         },
         description=(
-            'Просмотреть список своих слов с пагинацией и применением '
-            'фильтров, сортировки и поиска. Нужна авторизация.'
+                'Просмотреть список своих слов с пагинацией и применением '
+                'фильтров, сортировки и поиска. Нужна авторизация.'
         ),
         parameters=[
             OpenApiParameter(
                 "created", OpenApiTypes.DATETIME, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по дате добавления. Включая сравнение больше и '
-                    'меньше: created__gt и created__lt.'
+                        'Фильтр по дате добавления. Включая сравнение больше и '
+                        'меньше: created__gt и created__lt.'
                 )
             ),
             OpenApiParameter(
                 "created__year", OpenApiTypes.INT, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по году добавления. Включая сравнение больше и '
-                    'меньше: created__year__gt и created__year__lt.'
+                        'Фильтр по году добавления. Включая сравнение больше и '
+                        'меньше: created__year__gt и created__year__lt.'
                 )
             ),
             OpenApiParameter(
                 "created__month", OpenApiTypes.INT, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по месяцу добавления. Включая сравнение больше и '
-                    'меньше: created__month__gt и created__month__lt.'
+                        'Фильтр по месяцу добавления. Включая сравнение больше и '
+                        'меньше: created__month__gt и created__month__lt.'
                 )
             ),
             OpenApiParameter(
                 "language", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по языку. Принимает isocode языка.'
+                        'Фильтр по языку. Принимает isocode языка.'
                 )
             ),
             OpenApiParameter(
                 "is_problematic", OpenApiTypes.BOOL, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по метке "проблемное".'
+                        'Фильтр по метке "проблемное".'
                 )
             ),
             OpenApiParameter(
                 "tags", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по тегам. Принимает name тегов через запятую, '
-                    'если несколько.'
+                        'Фильтр по тегам. Принимает name тегов через запятую, '
+                        'если несколько.'
                 )
             ),
             OpenApiParameter(
                 "activity", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по статусу активности. Принимает варианты '
-                    'INACTIVE, ACTIVE, MASTERED.'
+                        'Фильтр по статусу активности. Принимает варианты '
+                        'INACTIVE, ACTIVE, MASTERED.'
                 )
             ),
             OpenApiParameter(
                 "types", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по типам. Принимает slug типов через запятую, '
-                    'если несколько.'
+                        'Фильтр по типам. Принимает slug типов через запятую, '
+                        'если несколько.'
                 )
             ),
             OpenApiParameter(
                 "first_letter", OpenApiTypes.STR, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по первой букве слова.'
+                        'Фильтр по первой букве слова.'
                 )
             ),
             OpenApiParameter(
                 "translations_count", OpenApiTypes.INT, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по кол-ву переводов. Включая сравнение больше и '
-                    'меньше: translations_count__gt и translations_count__lt.'
+                        'Фильтр по кол-ву переводов. Включая сравнение больше и '
+                        'меньше: translations_count__gt и translations_count__lt.'
                 )
             ),
             OpenApiParameter(
                 "examples_count", OpenApiTypes.INT, OpenApiParameter.QUERY,
                 description=(
-                    'Фильтр по кол-ву примеров. Включая сравнение больше и '
-                    'меньше: examples_count__gt и examples_count__lt.'
+                        'Фильтр по кол-ву примеров. Включая сравнение больше и '
+                        'меньше: examples_count__gt и examples_count__lt.'
                 )
             ),
         ],
@@ -188,13 +192,13 @@ class WordViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         match self.action:
-            case 'list'|'random':
+            case 'list' | 'random':
                 return WordShortSerializer
-            case 'translations'|'translations_detail':
+            case 'translations' | 'translations_detail':
                 return TranslationSerializer
-            case 'definitions'|'definitions_detail':
+            case 'definitions' | 'definitions_detail':
                 return DefinitionSerializer
-            case 'examples'|'examples_detail':
+            case 'examples' | 'examples_detail':
                 return UsageExampleSerializer
             case _:
                 return WordSerializer
@@ -549,7 +553,7 @@ class WordViewSet(viewsets.ModelViewSet):
 @extend_schema_view(
     list=extend_schema(
         summary=(
-            'Просмотр списка всех возможных типов и частей речи слов и фраз'
+                'Просмотр списка всех возможных типов и частей речи слов и фраз'
         ),
         responses={
             status.HTTP_200_OK: TypeSerializer,
@@ -579,7 +583,7 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 @extend_schema_view(
     list=extend_schema(
         summary=(
-            'Просмотр списка всех групп форм пользователя'
+                'Просмотр списка всех групп форм пользователя'
         ),
         responses={
             status.HTTP_200_OK: FormsGroupSerializer,
@@ -621,7 +625,7 @@ class FormsGroupsViewSet(viewsets.ModelViewSet):
 @extend_schema_view(
     list=extend_schema(
         summary=(
-            'Просмотр списка всех коллекций пользователя'
+                'Просмотр списка всех коллекций пользователя'
         ),
         responses={
             status.HTTP_200_OK: CollectionSerializer,
@@ -669,15 +673,87 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         match self.action:
-            case 'list':
+            case 'list' | 'favorites':
                 return CollectionShortSerializer
+            case 'add_to_favorites':
+                return CollectionsListSerializer
             case _:
                 return CollectionSerializer
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return user.collections.annotate(
-                words_count=Count('words', distinct=True)
-            )
-        return None
+        match self.action:
+            case 'favorites':
+                return Collection.objects.filter(
+                    favorite_for__user=user
+                ).order_by('-favorite_for__created')
+            case _:
+                return user.collections.annotate(
+                    words_count=Count('words', distinct=True)
+                )
+
+    @action(detail=True, methods=['post'],
+            permission_classes=[IsAuthenticated])
+    def favorite(self, request, slug):
+        """Добавить коллекцию в избранное."""
+        collection = self.get_object()
+        collection = self.get_object()
+        _, created = FavoriteCollection.objects.get_or_create(
+            user=request.user,
+            collection=collection
+        )
+        if not created:
+            return Response({'detail': 'Эта коллекция уже в избранном.'},
+                            status=status.HTTP_409_CONFLICT)
+        return Response({'favorite': True}, status=status.HTTP_201_CREATED)
+
+    @favorite.mapping.delete
+    def remove_from_favorite(self, request, slug):
+        """Удалить коллекцию из избранного."""
+        collection = self.get_object()
+        collection = self.get_object()
+        deleted, _ = FavoriteCollection.objects.filter(
+            collection=collection, user=request.user).delete(
+        )
+        if deleted:
+            return Response({"favorite": False},
+                            status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({'detail': 'Коллекции нет в избранном.'},
+                            status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=False, methods=['get'],
+            permission_classes=[IsAuthenticated])
+    def favorites(self, request):
+        """Получить список избранных коллекций."""
+        return self.list(request)
+        return self.list(request)
+
+    @favorites.mapping.post
+    def add_to_favorites(self, request):
+        """Добавить список коллекций в избранное."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        collections = serializer.validated_data.get('collections')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        collections = serializer.validated_data.get('collections')
+        created_favorites = []
+        with transaction.atomic():
+            for collection in collections:
+                obj, created = FavoriteCollection.objects.get_or_create(
+                    user=request.user, collection=collection
+                )
+                if created:
+                    created_favorites.append(
+                        collection.title
+                    )
+
+        if not created_favorites:
+            return Response(
+                {'detail': 'Все коллекции уже в избранном.'},
+                    status=status.HTTP_409_CONFLICT)
+
+        return Response({'created': len(created_favorites),
+                         'added_to_favorites': created_favorites},
+                        status=status.HTTP_201_CREATED)
