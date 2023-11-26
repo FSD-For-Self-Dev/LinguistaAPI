@@ -4,12 +4,14 @@ import random
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
+from django.utils.translation import gettext_lazy as _
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
-    OpenApiParameter, OpenApiTypes, extend_schema, extend_schema_view,
-    OpenApiExample
+    OpenApiExample, OpenApiParameter, OpenApiTypes, extend_schema,
+    extend_schema_view,
 )
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
@@ -20,11 +22,12 @@ from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 
-from .filters import WordFilter, CollectionFilter
+from .constants import MAX_EXAMPLES_AMOUNT
+from .filters import CollectionFilter, WordFilter
 from .models import (
     Definition, FormsGroup, WordTranslation, Type, UsageExample,
-    WordDefinitions,
-    WordTranslations, WordUsageExamples, Collection, FavoriteCollection,
+    WordDefinitions, WordTranslations, WordUsageExamples,
+    Collection, FavoriteCollection,
 )
 from .permissions import (
     CanAddDefinitionPermission, CanAddUsageExamplePermission,
@@ -452,6 +455,15 @@ class WordViewSet(viewsets.ModelViewSet):
             case 'POST':
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
+                amount = len(_examples)
+                if amount >= MAX_EXAMPLES_AMOUNT:
+                    return Response(
+                        {'detail': _(
+                            f"The maximum amount of examples ({amount}) "
+                            "has already been reached."
+                        )},
+                        status=status.HTTP_400_BAD_REQUEST
+                    )
                 new_example = serializer.save(
                     **serializer.validated_data
                 )
@@ -656,6 +668,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
     )
     filterset_class = CollectionFilter
     ordering = ('-created',)
+    ordering_fields = ('created', 'title')
+    search_fields = ('title',)
 
     def get_serializer_class(self):
         match self.action:
