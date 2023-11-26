@@ -659,9 +659,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         match self.action:
-            case 'list':
-                return CollectionShortSerializer
-            case 'favorites':
+            case 'list' | 'favorites':
                 return CollectionShortSerializer
             case 'add_to_favorites':
                 return CollectionsListSerializer
@@ -673,8 +671,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
         match self.action:
             case 'favorites':
                 return Collection.objects.filter(
-                    favorite_for__user=user).order_by('-favorite_for__created'
-                )
+                    favorite_for__user=user
+                ).order_by('-favorite_for__created')
             case _:
                 return user.collections.annotate(
                     words_count=Count('words', distinct=True)
@@ -684,6 +682,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
             permission_classes=[IsAuthenticated])
     def favorite(self, request, slug):
         """Добавить коллекцию в избранное."""
+        collection = self.get_object()
         collection = self.get_object()
         _, created = FavoriteCollection.objects.get_or_create(
             user=request.user,
@@ -697,6 +696,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     @favorite.mapping.delete
     def remove_from_favorite(self, request, slug):
         """Удалить коллекцию из избранного."""
+        collection = self.get_object()
         collection = self.get_object()
         deleted, _ = FavoriteCollection.objects.filter(
             collection=collection, user=request.user).delete(
@@ -713,10 +713,14 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def favorites(self, request):
         """Получить список избранных коллекций."""
         return self.list(request)
+        return self.list(request)
 
     @favorites.mapping.post
     def add_to_favorites(self, request):
         """Добавить список коллекций в избранное."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        collections = serializer.validated_data.get('collections')
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         collections = serializer.validated_data.get('collections')
