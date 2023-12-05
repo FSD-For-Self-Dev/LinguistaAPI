@@ -28,9 +28,6 @@ pytest-django = "^4.4.0"
 pytest-pythonpath = "^0.7.3"
 factory-boy = "^3.3.0"
 django-cleanup = "^8.0.0"
-flake8 = "^6.1.0"
-black = "^23.11.0"
-isort = "^5.12.0"
 pre-commit = "^3.5.0"
 ruff="^0.1.6"
 
@@ -90,17 +87,3 @@ line-ending = "auto"
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "single"
-
-[tool.isort]
-profile = "django"
-combine_as_imports = true
-include_trailing_comma = true
-line_length = 88
-known_first_party = ["config"]
-known_django = "django"
-sections = ["FUTURE","STDLIB","DJANGO","THIRDPARTY","FIRSTPARTY","LOCALFOLDER"]
-balanced_wrapping = false
-force_single_line = false
-force_to_top = "django"
-lines_between_types = 1
-use_parentheses = true
