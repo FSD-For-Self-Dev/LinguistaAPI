@@ -85,11 +85,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
-        'default': dj_database_url.config(
-            default='postgres://linguista_db_user:U7NnMnJF4xpbzBs5YkaaSpgkG7WmNKKp@dpg-cldqmn6f27hc73fcakfg-a/linguista_db_pzpz',
-            conn_max_age=600
-        )
-    }
+    'default': dj_database_url.config(
+        default='postgres://linguista_db_user:U7NnMnJF4xpbzBs5YkaaSpgkG7WmNKKp@dpg-cldqmn6f27hc73fcakfg-a/linguista_db_pzpz',
+        conn_max_age=600,
+    )
+}
 
 if DEBUG:
     DATABASES = {
@@ -99,7 +99,7 @@ if DEBUG:
             'USER': os.getenv('DB_USER', default=''),
             'PASSWORD': os.getenv('DB_PASSWORD', default=''),
             'HOST': os.getenv('DB_HOST', default=''),
-            'PORT': os.getenv('DB_PORT', default='')
+            'PORT': os.getenv('DB_PORT', default=''),
         }
     }
 
@@ -134,21 +134,16 @@ REST_AUTH = {
     'PASSWORD_RESET_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetSerializer',
     'PASSWORD_RESET_CONFIRM_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetConfirmSerializer',
     'PASSWORD_CHANGE_SERIALIZER': 'dj_rest_auth.serializers.PasswordChangeSerializer',
-
     'REGISTER_SERIALIZER': 'dj_rest_auth.registration.serializers.RegisterSerializer',
     'EMAIL_REQUIRED': False,
-
     'REGISTER_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
-
     'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
     'TOKEN_CREATOR': 'dj_rest_auth.utils.default_create_token',
-
     'PASSWORD_RESET_USE_SITES_DOMAIN': False,
     'OLD_PASSWORD_FIELD_ENABLED': False,
     'LOGOUT_ON_PASSWORD_CHANGE': False,
     'SESSION_LOGIN': True,
     'USE_JWT': False,
-
     'JWT_AUTH_COOKIE': None,
     'JWT_AUTH_REFRESH_COOKIE': None,
     'JWT_AUTH_REFRESH_COOKIE_PATH': '/',
@@ -164,20 +159,15 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
-
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
-
     'DEFAULT_PAGINATION_CLASS': 'core.pagination.LimitPagination',
     'PAGE_SIZE': 2,
-
-    'DATETIME_FORMAT': "%Y-%m-%d %H:%M",
-
+    'DATETIME_FORMAT': '%Y-%m-%d %H:%M',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
@@ -194,7 +184,6 @@ CORS_URLS_REGEX = r'^/api/.*$'
 
 SIMPLE_JWT = {
     # Срок жизни токена
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=45),
     'ACCESS_TOKEN_LIFETIME': timedelta(days=3),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
@@ -215,9 +204,7 @@ LANGUAGES = (
     ('ru', _('Russian')),
     ('en', _('English')),
 )
-LOCALE_PATHS = (
-    os.path.join(BASE_DIR, 'locale'),
-)
+LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'),)
 
 TIME_ZONE = 'UTC'
 
