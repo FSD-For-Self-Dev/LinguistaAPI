@@ -3,13 +3,15 @@
 import random
 
 from django.contrib.auth import get_user_model
-from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
-    OpenApiExample, OpenApiParameter, OpenApiTypes, extend_schema,
+    OpenApiParameter,
+    OpenApiTypes,
+    extend_schema,
     extend_schema_view,
 )
 from rest_framework import filters, mixins, status, viewsets
@@ -23,17 +25,33 @@ from core.pagination import LimitPagination
 from .constants import MAX_EXAMPLES_AMOUNT
 from .filters import CollectionFilter, WordFilter
 from .models import (
-    Definition, FormsGroup, Type, UsageExample, WordDefinitions,
-    WordTranslation, WordTranslations, WordUsageExamples,
+    Collection,
+    Definition,
+    FavoriteCollection,
+    FormsGroup,
+    Type,
+    UsageExample,
+    WordDefinitions,
+    WordTranslation,
+    WordTranslations,
+    WordUsageExamples,
 )
 from .permissions import (
-    CanAddDefinitionPermission, CanAddUsageExamplePermission,
+    CanAddDefinitionPermission,
+    CanAddUsageExamplePermission,
     IsAuthorOrReadOnly,
 )
 from .serializers import (
-    CollectionSerializer, CollectionShortSerializer, DefinitionSerializer,
-    FormsGroupSerializer, TranslationSerializer, TypeSerializer,
-    UsageExampleSerializer, WordSerializer, WordShortSerializer,
+    CollectionSerializer,
+    CollectionShortSerializer,
+    CollectionsListSerializer,
+    DefinitionSerializer,
+    FormsGroupSerializer,
+    TranslationSerializer,
+    TypeSerializer,
+    UsageExampleSerializer,
+    WordSerializer,
+    WordShortSerializer,
 )
 
 User = get_user_model()
@@ -52,78 +70,94 @@ User = get_user_model()
         ),
         parameters=[
             OpenApiParameter(
-                "created", OpenApiTypes.DATETIME, OpenApiParameter.QUERY,
+                'created',
+                OpenApiTypes.DATETIME,
+                OpenApiParameter.QUERY,
                 description=(
                     'Фильтр по дате добавления. Включая сравнение больше и '
                     'меньше: created__gt и created__lt.'
-                )
+                ),
             ),
             OpenApiParameter(
-                "created__year", OpenApiTypes.INT, OpenApiParameter.QUERY,
+                'created__year',
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
                 description=(
                     'Фильтр по году добавления. Включая сравнение больше и '
                     'меньше: created__year__gt и created__year__lt.'
-                )
+                ),
             ),
             OpenApiParameter(
-                "created__month", OpenApiTypes.INT, OpenApiParameter.QUERY,
+                'created__month',
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
                 description=(
                     'Фильтр по месяцу добавления. Включая сравнение больше и '
                     'меньше: created__month__gt и created__month__lt.'
-                )
+                ),
             ),
             OpenApiParameter(
-                "language", OpenApiTypes.STR, OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по языку. Принимает isocode языка.'
-                )
+                'language',
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description=('Фильтр по языку. Принимает isocode языка.'),
             ),
             OpenApiParameter(
-                "is_problematic", OpenApiTypes.BOOL, OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по метке "проблемное".'
-                )
+                'is_problematic',
+                OpenApiTypes.BOOL,
+                OpenApiParameter.QUERY,
+                description=('Фильтр по метке "проблемное".'),
             ),
             OpenApiParameter(
-                "tags", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                'tags',
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
                 description=(
                     'Фильтр по тегам. Принимает name тегов через запятую, '
                     'если несколько.'
-                )
+                ),
             ),
             OpenApiParameter(
-                "activity", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                'activity',
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
                 description=(
                     'Фильтр по статусу активности. Принимает варианты '
                     'INACTIVE, ACTIVE, MASTERED.'
-                )
+                ),
             ),
             OpenApiParameter(
-                "types", OpenApiTypes.STR, OpenApiParameter.QUERY,
+                'types',
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
                 description=(
                     'Фильтр по типам. Принимает slug типов через запятую, '
                     'если несколько.'
-                )
+                ),
             ),
             OpenApiParameter(
-                "first_letter", OpenApiTypes.STR, OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по первой букве слова.'
-                )
+                'first_letter',
+                OpenApiTypes.STR,
+                OpenApiParameter.QUERY,
+                description=('Фильтр по первой букве слова.'),
             ),
             OpenApiParameter(
-                "translations_count", OpenApiTypes.INT, OpenApiParameter.QUERY,
+                'translations_count',
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
                 description=(
                     'Фильтр по кол-ву переводов. Включая сравнение больше и '
                     'меньше: translations_count__gt и translations_count__lt.'
-                )
+                ),
             ),
             OpenApiParameter(
-                "examples_count", OpenApiTypes.INT, OpenApiParameter.QUERY,
+                'examples_count',
+                OpenApiTypes.INT,
+                OpenApiParameter.QUERY,
                 description=(
                     'Фильтр по кол-ву примеров. Включая сравнение больше и '
                     'меньше: examples_count__gt и examples_count__lt.'
-                )
+                ),
             ),
         ],
     ),
@@ -151,7 +185,7 @@ User = get_user_model()
         responses={
             status.HTTP_204_NO_CONTENT: None,
         },
-    )
+    ),
 )
 class WordViewSet(viewsets.ModelViewSet):
     """Действия со словами из своего словаря."""
@@ -161,15 +195,19 @@ class WordViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
     filter_backends = (
-        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
+        filters.SearchFilter,
+        filters.OrderingFilter,
+        DjangoFilterBackend,
     )
     filterset_class = WordFilter
     ordering = ('-created',)
     ordering_fields = ('created', 'text', 'translations_count')
     search_fields = (
-        'text', 'translations__text',
-        'tags__name', 'definitions__text',
-        'definitions__translation'
+        'text',
+        'translations__text',
+        'tags__name',
+        'definitions__text',
+        'definitions__translation',
     )
 
     def get_queryset(self):
@@ -182,19 +220,19 @@ class WordViewSet(viewsets.ModelViewSet):
             return user.vocabulary.annotate(
                 translations_count=Count('translations', distinct=True),
                 examples_count=Count('examples', distinct=True),
-                collections_count=Count('collections', distinct=True)
+                collections_count=Count('collections', distinct=True),
             )
         return None
 
     def get_serializer_class(self):
         match self.action:
-            case 'list'|'random':
+            case 'list' | 'random':
                 return WordShortSerializer
-            case 'translations'|'translations_detail':
+            case 'translations' | 'translations_detail':
                 return TranslationSerializer
-            case 'definitions'|'definitions_detail':
+            case 'definitions' | 'definitions_detail':
                 return DefinitionSerializer
-            case 'examples'|'examples_detail':
+            case 'examples' | 'examples_detail':
                 return UsageExampleSerializer
             case _:
                 return WordSerializer
@@ -205,9 +243,7 @@ class WordViewSet(viewsets.ModelViewSet):
         """Получить случайное слово из словаря."""
         queryset = self.filter_queryset(self.get_queryset())
         word = random.choice(queryset) if queryset else None
-        serializer = self.get_serializer(
-            word, context={'request': request}
-        )
+        serializer = self.get_serializer(word, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     @extend_schema(
@@ -215,7 +251,7 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_200_OK: TranslationSerializer,
         },
-        methods=['get']
+        methods=['get'],
     )
     @extend_schema(
         summary='Добавление нового перевода к слову',
@@ -223,13 +259,13 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_201_CREATED: TranslationSerializer,
         },
-        methods=['post']
+        methods=['post'],
     )
     @action(
         methods=['get', 'post'],
         detail=True,
         serializer_class=TranslationSerializer,
-        permission_classes=[IsAuthenticated]
+        permission_classes=[IsAuthenticated],
     )
     def translations(self, request, *args, **kwargs):
         """Получить все переводы слова или добавить новый перевод."""
@@ -247,17 +283,12 @@ class WordViewSet(viewsets.ModelViewSet):
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
 
-                new_translation = serializer.save(
-                    author_id=request.user.id
-                )
+                new_translation = serializer.save(author_id=request.user.id)
 
-                WordTranslations.objects.create(
-                    translation=new_translation,
-                    word=word
-                )
+                WordTranslations.objects.create(translation=new_translation, word=word)
                 return Response(
                     self.get_serializer(new_translation).data,
-                    status=status.HTTP_201_CREATED
+                    status=status.HTTP_201_CREATED,
                 )
 
     @extend_schema(
@@ -265,7 +296,7 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_200_OK: TranslationSerializer,
         },
-        methods=['get']
+        methods=['get'],
     )
     @extend_schema(
         summary='Редактирование перевода слова',
@@ -273,38 +304,34 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_200_OK: TranslationSerializer,
         },
-        methods=['patch']
+        methods=['patch'],
     )
     @extend_schema(
         summary='Удаление перевода слова',
         responses={
             status.HTTP_204_NO_CONTENT: None,
         },
-        methods=['delete']
+        methods=['delete'],
     )
     @action(
         detail=True,
         methods=['patch', 'delete'],
         url_path=r'translations/(?P<translation_id>\d+)',
         url_name="word's translations detail",
-        serializer_class=TranslationSerializer
+        serializer_class=TranslationSerializer,
     )
     def translations_detail(self, request, *args, **kwargs):
         """Получить, редактировать или удалить перевод слова."""
         word = self.get_object()
         try:
-            translation = word.translations.get(
-                pk=kwargs.get('translation_id')
-            )
+            translation = word.translations.get(pk=kwargs.get('translation_id'))
         except WordTranslation.DoesNotExist:
-            raise NotFound(detail="The translation not found")
+            raise NotFound(detail='The translation not found')
 
         match request.method:
             case 'PATCH':
                 serializer = self.get_serializer(
-                    instance=translation,
-                    data=request.data,
-                    partial=True
+                    instance=translation, data=request.data, partial=True
                 )
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
@@ -315,17 +342,14 @@ class WordViewSet(viewsets.ModelViewSet):
                 serializer = TranslationSerializer(
                     translations, many=True, context={'request': request}
                 )
-                return Response(
-                    serializer.data,
-                    status=status.HTTP_204_NO_CONTENT
-                )
+                return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(
         summary='Просмотр списка всех определений слова',
         responses={
             status.HTTP_200_OK: DefinitionSerializer,
         },
-        methods=['get']
+        methods=['get'],
     )
     @extend_schema(
         summary='Добавление нового определения к слову',
@@ -333,13 +357,13 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_201_CREATED: DefinitionSerializer,
         },
-        methods=['post']
+        methods=['post'],
     )
     @action(
         methods=['get', 'post'],
         detail=True,
         serializer_class=DefinitionSerializer,
-        permission_classes=[IsAuthenticated, CanAddDefinitionPermission]
+        permission_classes=[IsAuthenticated, CanAddDefinitionPermission],
     )
     def definitions(self, request, *args, **kwargs):
         """Получить все определения слова или добавить новое определение."""
@@ -349,19 +373,15 @@ class WordViewSet(viewsets.ModelViewSet):
         match request.method:
             case 'GET':
                 return Response(
-                    self.get_serializer(defs, many=True).data,
-                    status=status.HTTP_200_OK
+                    self.get_serializer(defs, many=True).data, status=status.HTTP_200_OK
                 )
             case 'POST':
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
-                new_def = serializer.save(
-                    **serializer.validated_data
-                )
+                new_def = serializer.save(**serializer.validated_data)
                 WordDefinitions.objects.create(definition=new_def, word=word)
                 return Response(
-                    self.get_serializer(new_def).data,
-                    status=status.HTTP_201_CREATED
+                    self.get_serializer(new_def).data, status=status.HTTP_201_CREATED
                 )
 
     @extend_schema(
@@ -369,7 +389,7 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_200_OK: DefinitionSerializer,
         },
-        methods=['get']
+        methods=['get'],
     )
     @extend_schema(
         summary='Редактирование определения слова',
@@ -377,21 +397,21 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_200_OK: DefinitionSerializer,
         },
-        methods=['patch']
+        methods=['patch'],
     )
     @extend_schema(
         summary='Удаление определения слова',
         responses={
             status.HTTP_204_NO_CONTENT: None,
         },
-        methods=['delete']
+        methods=['delete'],
     )
     @action(
         detail=True,
         methods=['get', 'patch', 'delete'],
         url_path=r'definitions/(?P<definition_id>\d+)',
         url_name="word's definition detail",
-        serializer_class=DefinitionSerializer
+        serializer_class=DefinitionSerializer,
     )
     def definitions_detail(self, request, *args, **kwargs):
         """Получить, редактировать или удалить определение слова."""
@@ -406,9 +426,7 @@ class WordViewSet(viewsets.ModelViewSet):
                 return Response(self.get_serializer(definition).data)
             case 'PATCH':
                 serializer = self.get_serializer(
-                    instance=definition,
-                    data=request.data,
-                    partial=True
+                    instance=definition, data=request.data, partial=True
                 )
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
@@ -422,7 +440,7 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_200_OK: UsageExampleSerializer,
         },
-        methods=['get']
+        methods=['get'],
     )
     @extend_schema(
         summary='Добавление нового примера использования к слову',
@@ -430,13 +448,13 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_201_CREATED: UsageExampleSerializer,
         },
-        methods=['post']
+        methods=['post'],
     )
     @action(
         methods=['get', 'post'],
         detail=True,
         serializer_class=UsageExampleSerializer,
-        permission_classes=[IsAuthenticated, CanAddUsageExamplePermission]
+        permission_classes=[IsAuthenticated, CanAddUsageExamplePermission],
     )
     def examples(self, request, *args, **kwargs):
         """Получить все примеры слова или добавить новый пример."""
@@ -446,7 +464,7 @@ class WordViewSet(viewsets.ModelViewSet):
             case 'GET':
                 return Response(
                     self.get_serializer(_examples, many=True).data,
-                    status=status.HTTP_200_OK
+                    status=status.HTTP_200_OK,
                 )
             case 'POST':
                 serializer = self.get_serializer(data=request.data)
@@ -454,22 +472,19 @@ class WordViewSet(viewsets.ModelViewSet):
                 amount = len(_examples)
                 if amount >= MAX_EXAMPLES_AMOUNT:
                     return Response(
-                        {'detail': _(
-                            f"The maximum amount of examples ({amount}) "
-                            "has already been reached."
-                        )},
-                        status=status.HTTP_400_BAD_REQUEST
+                        {
+                            'detail': _(
+                                f'The maximum amount of examples ({amount}) '
+                                'has already been reached.'
+                            )
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
                     )
-                new_example = serializer.save(
-                    **serializer.validated_data
-                )
-                WordUsageExamples.objects.create(
-                    example=new_example,
-                    word=word
-                )
+                new_example = serializer.save(**serializer.validated_data)
+                WordUsageExamples.objects.create(example=new_example, word=word)
                 return Response(
                     self.get_serializer(new_example).data,
-                    status=status.HTTP_201_CREATED
+                    status=status.HTTP_201_CREATED,
                 )
 
     @extend_schema(
@@ -477,7 +492,7 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_200_OK: UsageExampleSerializer,
         },
-        methods=['get']
+        methods=['get'],
     )
     @extend_schema(
         summary='Редактирование примера использования слова',
@@ -485,21 +500,21 @@ class WordViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_200_OK: UsageExampleSerializer,
         },
-        methods=['patch']
+        methods=['patch'],
     )
     @extend_schema(
         summary='Удаление примера использования слова',
         responses={
             status.HTTP_204_NO_CONTENT: None,
         },
-        methods=['delete']
+        methods=['delete'],
     )
     @action(
         detail=True,
         methods=['get', 'patch', 'delete'],
         url_path=r'examples/(?P<example_id>\d+)',
         url_name="word's usage example detail",
-        serializer_class=UsageExampleSerializer
+        serializer_class=UsageExampleSerializer,
     )
     def examples_detail(self, request, *args, **kwargs):
         """Получить, редактировать или удалить пример использования слова."""
@@ -513,9 +528,7 @@ class WordViewSet(viewsets.ModelViewSet):
                 return Response(self.get_serializer(_example).data)
             case 'PATCH':
                 serializer = self.get_serializer(
-                    instance=_example,
-                    data=request.data,
-                    partial=True
+                    instance=_example, data=request.data, partial=True
                 )
                 serializer.is_valid(raise_exception=True)
                 serializer.save()
@@ -529,13 +542,13 @@ class WordViewSet(viewsets.ModelViewSet):
         request=None,
         responses={
             status.HTTP_200_OK: WordSerializer,
-        }
+        },
     )
     @action(
         detail=True,
         methods=['post'],
         url_path='problematic-toggle',
-        serializer_class=WordShortSerializer
+        serializer_class=WordShortSerializer,
     )
     def problematic(self, request, *args, **kwargs):
         """Изменить значение метки is_problematic слова."""
@@ -548,9 +561,7 @@ class WordViewSet(viewsets.ModelViewSet):
 @extend_schema(tags=['types'])
 @extend_schema_view(
     list=extend_schema(
-        summary=(
-            'Просмотр списка всех возможных типов и частей речи слов и фраз'
-        ),
+        summary=('Просмотр списка всех возможных типов и частей речи слов и фраз'),
         responses={
             status.HTTP_200_OK: TypeSerializer,
         },
@@ -564,23 +575,15 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     lookup_field = 'slug'
     http_method_names = ('get',)
     pagination_class = None
-    permission_classes = (
-        AllowAny,
-    )
-    filter_backends = (
-        filters.SearchFilter,
-    )
-    search_fields = (
-        'name',
-    )
+    permission_classes = (AllowAny,)
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
 
 
 @extend_schema(tags=['forms-groups'])
 @extend_schema_view(
     list=extend_schema(
-        summary=(
-            'Просмотр списка всех групп форм пользователя'
-        ),
+        summary=('Просмотр списка всех групп форм пользователя'),
         responses={
             status.HTTP_200_OK: FormsGroupSerializer,
         },
@@ -596,33 +599,23 @@ class FormsGroupsViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
     http_method_names = ('get', 'post', 'patch', 'delete')
     pagination_class = None
-    permission_classes = (
-        IsAuthenticated,
-    )
-    filter_backends = (
-        filters.SearchFilter,
-    )  # добавить фильтр по языку
-    search_fields = (
-        'name',
-    )
+    permission_classes = (IsAuthenticated,)
+    filter_backends = (filters.SearchFilter,)  # добавить фильтр по языку
+    search_fields = ('name',)
 
     def get_queryset(self):
         user = self.request.user
         admin_user = User.objects.get(username='admin')
         # добавить проверку наличия пользователя админа
         return FormsGroup.objects.filter(
-            Q(author=user)|Q(author=admin_user)
-        ).annotate(
-            words_count=Count('words', distinct=True)
-        )
+            Q(author=user) | Q(author=admin_user)
+        ).annotate(words_count=Count('words', distinct=True))
 
 
 @extend_schema(tags=['collections'])
 @extend_schema_view(
     list=extend_schema(
-        summary=(
-            'Просмотр списка всех коллекций пользователя'
-        ),
+        summary=('Просмотр списка всех коллекций пользователя'),
         responses={
             status.HTTP_200_OK: CollectionSerializer,
         },
@@ -650,7 +643,7 @@ class FormsGroupsViewSet(viewsets.ModelViewSet):
         responses={
             status.HTTP_204_NO_CONTENT: None,
         },
-    )
+    ),
 )
 class CollectionViewSet(viewsets.ModelViewSet):
     """Действия с коллекциями."""
@@ -660,7 +653,9 @@ class CollectionViewSet(viewsets.ModelViewSet):
     permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
     pagination_class = LimitPagination
     filter_backends = (
-        filters.SearchFilter, filters.OrderingFilter, DjangoFilterBackend
+        filters.SearchFilter,
+        filters.OrderingFilter,
+        DjangoFilterBackend,
     )
     filterset_class = CollectionFilter
     ordering = ('-created',)
@@ -669,15 +664,90 @@ class CollectionViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         match self.action:
-            case 'list':
+            case 'list' | 'favorites':
                 return CollectionShortSerializer
+            case 'add_to_favorites':
+                return CollectionsListSerializer
             case _:
                 return CollectionSerializer
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_authenticated:
-            return user.collections.annotate(
-                words_count=Count('words', distinct=True)
+        match self.action:
+            case 'favorites':
+                return Collection.objects.filter(favorite_for__user=user).order_by(
+                    '-favorite_for__created'
+                )
+            case _:
+                return user.collections.annotate(
+                    words_count=Count('words', distinct=True)
+                )
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def favorite(self, request, slug):
+        """Добавить коллекцию в избранное."""
+        collection = self.get_object()
+        collection = self.get_object()
+        _, created = FavoriteCollection.objects.get_or_create(
+            user=request.user, collection=collection
+        )
+        if not created:
+            return Response(
+                {'detail': 'Эта коллекция уже в избранном.'},
+                status=status.HTTP_409_CONFLICT,
             )
-        return None
+        return Response({'favorite': True}, status=status.HTTP_201_CREATED)
+
+    @favorite.mapping.delete
+    def remove_from_favorite(self, request, slug):
+        """Удалить коллекцию из избранного."""
+        collection = self.get_object()
+        collection = self.get_object()
+        deleted, _ = FavoriteCollection.objects.filter(
+            collection=collection, user=request.user
+        ).delete()
+        if deleted:
+            return Response({'favorite': False}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response(
+                {'detail': 'Коллекции нет в избранном.'},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def favorites(self, request):
+        """Получить список избранных коллекций."""
+        return self.list(request)
+        return self.list(request)
+
+    @favorites.mapping.post
+    def add_to_favorites(self, request):
+        """Добавить список коллекций в избранное."""
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        collections = serializer.validated_data.get('collections')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        collections = serializer.validated_data.get('collections')
+        created_favorites = []
+        with transaction.atomic():
+            for collection in collections:
+                obj, created = FavoriteCollection.objects.get_or_create(
+                    user=request.user, collection=collection
+                )
+                if created:
+                    created_favorites.append(collection.title)
+
+        if not created_favorites:
+            return Response(
+                {'detail': 'Все коллекции уже в избранном.'},
+                status=status.HTTP_409_CONFLICT,
+            )
+
+        return Response(
+            {
+                'created': len(created_favorites),
+                'added_to_favorites': created_favorites,
+            },
+            status=status.HTTP_201_CREATED,
+        )

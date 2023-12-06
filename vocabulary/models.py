@@ -6,19 +6,29 @@ from django.db import models
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
-from core.models import (
-    AuthorModel, CreatedModel, ModifiedModel, UserRelatedModel,
-)
+from core.models import AuthorModel, CreatedModel, ModifiedModel, UserRelatedModel
 from languages.models import Language
 
 from .constants import (
-    MAX_COLLECTION_DESCRIPTION_LENGTH, MAX_COLLECTION_NAME_LENGTH,
-    MAX_DEFINITION_LENGTH, MAX_EXAMPLE_LENGTH, MAX_FORMSGROUP_NAME_LENGTH,
-    MAX_IMAGE_NAME_LENGTH, MAX_NOTE_LENGTH, MAX_TAG_LENGTH,
-    MAX_TRANSLATION_LENGTH, MAX_WORD_LENGTH, MIN_COLLECTION_NAME_LENGTH,
-    MIN_DEFINITION_LENGTH, MIN_EXAMPLE_LENGTH, MIN_FORMSGROUP_NAME_LENGTH,
-    MIN_NOTE_LENGTH, MIN_TAG_LENGTH, MIN_TRANSLATION_LENGTH, MIN_WORD_LENGTH,
-    REGEX_MESSAGE, REGEX_TEXT_MASK,
+    MAX_COLLECTION_DESCRIPTION_LENGTH,
+    MAX_COLLECTION_NAME_LENGTH,
+    MAX_DEFINITION_LENGTH,
+    MAX_EXAMPLE_LENGTH,
+    MAX_FORMSGROUP_NAME_LENGTH,
+    MAX_IMAGE_NAME_LENGTH,
+    MAX_NOTE_LENGTH,
+    MAX_TAG_LENGTH,
+    MAX_TRANSLATION_LENGTH,
+    MAX_WORD_LENGTH,
+    MIN_COLLECTION_NAME_LENGTH,
+    MIN_DEFINITION_LENGTH,
+    MIN_EXAMPLE_LENGTH,
+    MIN_FORMSGROUP_NAME_LENGTH,
+    MIN_TAG_LENGTH,
+    MIN_TRANSLATION_LENGTH,
+    MIN_WORD_LENGTH,
+    REGEX_MESSAGE,
+    REGEX_TEXT_MASK,
 )
 from .utils import slugify_text_author_fields
 
@@ -32,11 +42,8 @@ class Tag(models.Model):
         unique=True,
         validators=(
             MinLengthValidator(MIN_TAG_LENGTH),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            )
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
 
     class Meta:
@@ -53,28 +60,19 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         max_length=MAX_COLLECTION_NAME_LENGTH,
         validators=(
             MinLengthValidator(MIN_COLLECTION_NAME_LENGTH),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            )
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
-    slug = models.SlugField(
-        _('Slug'),
-        null=True,
-        unique=True
-    )
+    slug = models.SlugField(_('Slug'), null=True, unique=True)
     description = models.TextField(
-        _('Description'),
-        max_length=MAX_COLLECTION_DESCRIPTION_LENGTH,
-        blank=True
+        _('Description'), max_length=MAX_COLLECTION_DESCRIPTION_LENGTH, blank=True
     )
     words = models.ManyToManyField(
         'Word',
         through='WordsInCollections',
         related_name='collections',
         verbose_name=_('Word in collection'),
-        blank=True
+        blank=True,
     )
 
     class Meta:
@@ -84,8 +82,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Collections')
         constraints = [
             models.UniqueConstraint(
-                fields=['title', 'author'],
-                name='unique_user_collection'
+                fields=['title', 'author'], name='unique_user_collection'
             )
         ]
 
@@ -93,7 +90,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         return _(f'{self.title} ({self.words.count()} words)')
 
     def words_count(self) -> int:
-        return self.words.count()  #*
+        return self.words.count()  # *
 
     def save(self, *args, **kwargs):
         self.slug = slugify_text_author_fields(self, self.title)
@@ -107,33 +104,23 @@ class Type(models.Model):
         unique=True,
         validators=(
             MinLengthValidator(1),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            )
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
-    slug = models.SlugField(
-        _('Slug'),
-        max_length=64,
-        unique=True
-    )
+    slug = models.SlugField(_('Slug'), max_length=64, unique=True)
     sorting = models.PositiveIntegerField(
         _('Sorting order'),
         blank=False,
         null=False,
         default=0,
-        help_text=_('increase to show at top of the list')
+        help_text=_('increase to show at top of the list'),
     )
 
     @classmethod
     def get_default_pk(cls):
         word_type, created = cls.objects.get_or_create(
             slug='noun',
-            defaults={
-                'name': _('Noun'),
-                'sorting': 3
-            },
+            defaults={'name': _('Noun'), 'sorting': 3},
         )
         return word_type.pk
 
@@ -152,7 +139,7 @@ class Word(CreatedModel, ModifiedModel):
     ACTIVITY = [
         (INACTIVE, _('Inactive')),
         (ACTIVE, _('Active')),
-        (MASTERED, _('Mastered'))
+        (MASTERED, _('Mastered')),
     ]
 
     language = models.ForeignKey(
@@ -160,52 +147,38 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name=_('Language'),
         on_delete=models.SET_DEFAULT,
         related_name='words',
-        default=Language.get_default_pk
+        default=Language.get_default_pk,
     )
     text = models.CharField(
         _('Word or phrase'),
         max_length=MAX_WORD_LENGTH,
         validators=(
             MinLengthValidator(MIN_WORD_LENGTH),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            )
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
-    slug = models.SlugField(
-        _('Slug'),
-        unique=True,
-        max_length=4096
-    )
+    slug = models.SlugField(_('Slug'), unique=True, max_length=4096)
     author = models.ForeignKey(
         User,
         verbose_name=_('Author'),
         on_delete=models.CASCADE,
-        related_name='vocabulary'
+        related_name='vocabulary',
     )
     types = models.ManyToManyField(
-        'Type',
-        verbose_name=_('Type'),
-        related_name='words',
-        blank=True
+        'Type', verbose_name=_('Type'), related_name='words', blank=True
     )
     activity = models.CharField(
         _('Activity status'),
         max_length=8,
         choices=ACTIVITY,
         blank=False,
-        default=INACTIVE
+        default=INACTIVE,
     )
     is_problematic = models.BooleanField(
-        _('Is the word problematic for you'),
-        default=False
+        _('Is the word problematic for you'), default=False
     )
     tags = models.ManyToManyField(
-        'Tag',
-        verbose_name=_('Word tags'),
-        related_name='words',
-        blank=True
+        'Tag', verbose_name=_('Word tags'), related_name='words', blank=True
     )
     synonyms = models.ManyToManyField(
         'self',
@@ -213,7 +186,7 @@ class Word(CreatedModel, ModifiedModel):
         symmetrical=True,
         verbose_name=_('Synonyms'),
         help_text=_('Words with similar meanings'),
-        blank=True
+        blank=True,
     )
     antonyms = models.ManyToManyField(
         'self',
@@ -221,7 +194,7 @@ class Word(CreatedModel, ModifiedModel):
         symmetrical=True,
         verbose_name=_('Antonyms'),
         help_text=_('Words with opposite meanings'),
-        blank=True
+        blank=True,
     )
     forms = models.ManyToManyField(
         'self',
@@ -229,7 +202,7 @@ class Word(CreatedModel, ModifiedModel):
         symmetrical=True,
         verbose_name=_('Forms'),
         help_text=_('Word forms'),
-        blank=True
+        blank=True,
     )
     similars = models.ManyToManyField(
         'self',
@@ -237,28 +210,28 @@ class Word(CreatedModel, ModifiedModel):
         symmetrical=True,
         verbose_name=_('Similars'),
         help_text=_('Words with similar pronunciation or spelling'),
-        blank=True
+        blank=True,
     )
     translations = models.ManyToManyField(
         'WordTranslation',
         through='WordTranslations',
         related_name='translation_for',
         verbose_name=_('Translations'),
-        blank=True
+        blank=True,
     )
     definitions = models.ManyToManyField(
         'Definition',
         through='WordDefinitions',
         related_name='definition_for',
         verbose_name=_('Definitions'),
-        blank=True
+        blank=True,
     )
     examples = models.ManyToManyField(
         'UsageExample',
         through='WordUsageExamples',
         related_name='usage_example_for',
         verbose_name=_('Usage example'),
-        blank=True
+        blank=True,
     )
     # pronunciation_voice = ...
 
@@ -269,8 +242,7 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name_plural = _('Words and phrases')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'],
-                name='unique_words_in_user_voc'
+                fields=['text', 'author'], name='unique_words_in_user_voc'
             )
         ]
 
@@ -286,14 +258,10 @@ class Word(CreatedModel, ModifiedModel):
 
 class WordSelfRelatedModel(CreatedModel):
     from_word = models.ForeignKey(
-        Word,
-        related_name='%(class)s_from_words',
-        on_delete=models.CASCADE
+        Word, related_name='%(class)s_from_words', on_delete=models.CASCADE
     )
     to_word = models.ForeignKey(
-        Word,
-        related_name='%(class)s_to_words',
-        on_delete=models.CASCADE
+        Word, related_name='%(class)s_to_words', on_delete=models.CASCADE
     )
 
     class Meta:
@@ -316,7 +284,7 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
         max_length=512,
         verbose_name=_('Difference'),
         help_text=_('Difference between these %(class)ss'),
-        blank=True
+        blank=True,
     )
 
     class Meta:
@@ -330,34 +298,32 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
                 '`{from_word}` is {classname} for `{to_word}`'
                 '(with a difference in: {difference})'
             ).format(
-                from_word=self.from_word, to_word=self.to_word,
-                difference=self.difference, classname=classname
+                from_word=self.from_word,
+                to_word=self.to_word,
+                difference=self.difference,
+                classname=classname,
             )
         return super().__str__()
 
 
 class Synonym(WordSelfRelatedWithDifferenceModel, AuthorModel):
-
     class Meta:
         verbose_name = _('Synonyms')
         verbose_name_plural = _('Synonyms')
         constraints = [
             models.UniqueConstraint(
-                fields=['from_word', 'to_word'],
-                name='unique_synonym_pair'
+                fields=['from_word', 'to_word'], name='unique_synonym_pair'
             )
         ]
 
 
 class Antonym(WordSelfRelatedModel, AuthorModel):
-
     class Meta:
         verbose_name = _('Antonym')
         verbose_name_plural = _('Antonyms')
         constraints = [
             models.UniqueConstraint(
-                fields=['from_word', 'to_word'],
-                name='unique_antonym_pair'
+                fields=['from_word', 'to_word'], name='unique_antonym_pair'
             )
         ]
 
@@ -369,23 +335,16 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         blank=False,
         validators=(
             MinLengthValidator(MIN_FORMSGROUP_NAME_LENGTH),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            )
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
-    slug = models.SlugField(
-        _('Slug'),
-        null=True,
-        unique=True
-    )
+    slug = models.SlugField(_('Slug'), null=True, unique=True)
     words = models.ManyToManyField(
         'Word',
         through='WordsFormGroups',
         related_name='forms_groups',
         verbose_name=_('Words in forms group'),
-        blank=True
+        blank=True,
     )
 
     class Meta:
@@ -393,10 +352,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         verbose_name_plural = _('Forms groups')
         ordering = ('-created', 'name')
         constraints = [
-            models.UniqueConstraint(
-                fields=['name', 'author'],
-                name='unique_group_name'
-            )
+            models.UniqueConstraint(fields=['name', 'author'], name='unique_group_name')
         ]
 
     def __str__(self):
@@ -409,27 +365,23 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
 
 
 class Form(WordSelfRelatedModel, AuthorModel):
-
     class Meta:
         verbose_name = _('Form')
         verbose_name_plural = _('Forms')
         constraints = [
             models.UniqueConstraint(
-                fields=['from_word', 'to_word'],
-                name='unique_forms'
+                fields=['from_word', 'to_word'], name='unique_forms'
             )
         ]
 
 
 class Similar(WordSelfRelatedModel, AuthorModel):
-
     class Meta:
         verbose_name = _('Similar')
         verbose_name_plural = _('Similars')
         constraints = [
             models.UniqueConstraint(
-                fields=['from_word', 'to_word'],
-                name='unique_similars'
+                fields=['from_word', 'to_word'], name='unique_similars'
             )
         ]
 
@@ -441,18 +393,15 @@ class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
         help_text=_('A translation of a word or phrase'),
         validators=(
             MinLengthValidator(MIN_TRANSLATION_LENGTH),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            )
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
     language = models.ForeignKey(
         Language,
         verbose_name=_('Language'),
         on_delete=models.SET_DEFAULT,
         related_name='words_translations',
-        default=Language.get_default_pk
+        default=Language.get_default_pk,
     )
 
     class Meta:
@@ -462,8 +411,7 @@ class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Translations')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'],
-                name='unique_word_translation_in_user_voc'
+                fields=['text', 'author'], name='unique_word_translation_in_user_voc'
             )
         ]
 
@@ -476,7 +424,7 @@ class WordRelatedModel(CreatedModel):
         'Word',
         verbose_name=_('Word'),
         on_delete=models.CASCADE,
-        related_name='%(class)s'
+        related_name='%(class)s',
     )
 
     class Meta:
@@ -489,7 +437,7 @@ class WordsFormGroups(WordRelatedModel):
         verbose_name=_('Forms group'),
         null=True,
         on_delete=models.SET_NULL,
-        related_name='%(class)s'
+        related_name='%(class)s',
     )
 
     class Meta:
@@ -499,8 +447,7 @@ class WordsFormGroups(WordRelatedModel):
         verbose_name_plural = _('Words forms group')
         constraints = [
             models.UniqueConstraint(
-                fields=['word', 'forms_group'],
-                name='unique_word_forms_group'
+                fields=['word', 'forms_group'], name='unique_word_forms_group'
             )
         ]
 
@@ -516,7 +463,7 @@ class WordsInCollections(WordRelatedModel):
         'Collection',
         verbose_name=_('Collection'),
         on_delete=models.CASCADE,
-        related_name='%(class)s'
+        related_name='%(class)s',
     )
 
     class Meta:
@@ -526,8 +473,7 @@ class WordsInCollections(WordRelatedModel):
         verbose_name_plural = _('Words in collections')
         constraints = [
             models.UniqueConstraint(
-                fields=['word', 'collection'],
-                name='unique_word_in_collection'
+                fields=['word', 'collection'], name='unique_word_in_collection'
             )
         ]
 
@@ -543,7 +489,7 @@ class WordTranslations(WordRelatedModel):
         'WordTranslation',
         verbose_name=_('Translation'),
         on_delete=models.CASCADE,
-        related_name='%(class)s'
+        related_name='%(class)s',
     )
 
     class Meta:
@@ -553,8 +499,7 @@ class WordTranslations(WordRelatedModel):
         verbose_name_plural = _('Word translations')
         constraints = [
             models.UniqueConstraint(
-                fields=['word', 'translation'],
-                name='unique_word_translation'
+                fields=['word', 'translation'], name='unique_word_translation'
             )
         ]
 
@@ -573,11 +518,8 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
         help_text=_('A definition of a word or phrase'),
         validators=(
             MinLengthValidator(MIN_DEFINITION_LENGTH),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            )
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
     translation = models.CharField(
         _('A translation of the definition'),
@@ -585,11 +527,8 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
         blank=True,
         validators=(
             MinLengthValidator(MIN_DEFINITION_LENGTH),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            ),
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
 
     class Meta:
@@ -599,8 +538,7 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Definitions')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'],
-                name='unique_definition_in_user_voc'
+                fields=['text', 'author'], name='unique_definition_in_user_voc'
             )
         ]
 
@@ -615,7 +553,7 @@ class WordDefinitions(WordRelatedModel):
         'Definition',
         verbose_name=_('Definition'),
         on_delete=models.CASCADE,
-        related_name='%(class)s'
+        related_name='%(class)s',
     )
 
     class Meta:
@@ -625,8 +563,7 @@ class WordDefinitions(WordRelatedModel):
         verbose_name_plural = _('Word definitions')
         constraints = [
             models.UniqueConstraint(
-                fields=['word', 'definition'],
-                name='unique_word_definition'
+                fields=['word', 'definition'], name='unique_word_definition'
             )
         ]
 
@@ -645,11 +582,8 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
         help_text=_('An usage example of a word or phrase'),
         validators=(
             MinLengthValidator(MIN_EXAMPLE_LENGTH),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            )
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
     translation = models.CharField(
         _('A translation of the example'),
@@ -657,11 +591,8 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
         blank=True,
         validators=(
             MinLengthValidator(MIN_EXAMPLE_LENGTH),
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            ),
-        )
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+        ),
     )
 
     class Meta:
@@ -671,8 +602,7 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Usage examples')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'],
-                name='unique_word_usage_example_in_user_voc'
+                fields=['text', 'author'], name='unique_word_usage_example_in_user_voc'
             )
         ]
 
@@ -687,7 +617,7 @@ class WordUsageExamples(WordRelatedModel):
         'UsageExample',
         verbose_name=_('Usage example'),
         on_delete=models.CASCADE,
-        related_name='%(class)s'
+        related_name='%(class)s',
     )
 
     class Meta:
@@ -697,8 +627,7 @@ class WordUsageExamples(WordRelatedModel):
         verbose_name_plural = _('Word usage examples')
         constraints = [
             models.UniqueConstraint(
-                fields=['word', 'example'],
-                name='unique_word_example'
+                fields=['word', 'example'], name='unique_word_example'
             )
         ]
 
@@ -711,16 +640,9 @@ class WordUsageExamples(WordRelatedModel):
 
 class Note(CreatedModel, ModifiedModel):
     word = models.ForeignKey(
-        'Word',
-        verbose_name=_('Word'),
-        on_delete=models.CASCADE,
-        related_name='notes'
+        'Word', verbose_name=_('Word'), on_delete=models.CASCADE, related_name='notes'
     )
-    text = models.CharField(
-        _('Note text'),
-        max_length=MAX_NOTE_LENGTH,
-        blank=False
-    )
+    text = models.CharField(_('Note text'), max_length=MAX_NOTE_LENGTH, blank=False)
 
     class Meta:
         ordering = ['-created']
@@ -737,10 +659,7 @@ class Note(CreatedModel, ModifiedModel):
 
 class ImageAssociation(CreatedModel, ModifiedModel):
     word = models.ForeignKey(
-        'Word',
-        verbose_name=_('Word'),
-        on_delete=models.CASCADE,
-        related_name='images'
+        'Word', verbose_name=_('Word'), on_delete=models.CASCADE, related_name='images'
     )
     image = models.ImageField(
         _('Image'),
@@ -753,12 +672,7 @@ class ImageAssociation(CreatedModel, ModifiedModel):
         _('Image name'),
         max_length=MAX_IMAGE_NAME_LENGTH,
         blank=True,
-        validators=(
-            RegexValidator(
-                regex=REGEX_TEXT_MASK,
-                message=REGEX_MESSAGE
-            ),
-        )
+        validators=(RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),),
     )
 
     class Meta:
@@ -776,7 +690,7 @@ class FavoriteWord(UserRelatedModel):
         'Word',
         verbose_name=_('Word'),
         on_delete=models.CASCADE,
-        related_name='favorite_for'
+        related_name='favorite_for',
     )
 
     class Meta:
@@ -797,7 +711,7 @@ class FavoriteCollection(UserRelatedModel):
         'Collection',
         verbose_name=_('Collection'),
         on_delete=models.CASCADE,
-        related_name='favorite_for'
+        related_name='favorite_for',
     )
 
     class Meta:

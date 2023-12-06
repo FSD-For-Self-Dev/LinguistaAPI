@@ -1,11 +1,10 @@
 """Маршруты приложения words."""
 
 from django.urls import include, path
+
 from rest_framework import routers
 
-from .views import (
-    WordViewSet, TypeViewSet, CollectionViewSet, FormsGroupsViewSet
-)
+from .views import CollectionViewSet, FormsGroupsViewSet, TypeViewSet, WordViewSet
 
 router = routers.DefaultRouter()
 
