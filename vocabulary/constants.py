@@ -11,9 +11,7 @@ MAX_SYNONYMS_AMOUNT = 16
 MAX_ANTONYMS_AMOUNT = 16
 MAX_SIMILARS_AMOUNT = 16
 
-REGEX_TEXT_MASK = (
-    r"^([A-Za-zА-Яа-я]+)([A-Za-zА-Яа-я-!?.,:' ]*)$"
-)
+REGEX_TEXT_MASK = r"^([A-Za-zА-Яа-я]+)([A-Za-zА-Яа-я-!?.,:' ]*)$"
 REGEX_MESSAGE = (
     'Acceptable characters: Latin letters (A-Z, a-z), '
     'Cyrillic letters (А-Я, а-я), Hyphen, '

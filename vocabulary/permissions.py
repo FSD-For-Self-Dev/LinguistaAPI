@@ -8,8 +8,7 @@ from core.constants import MAX_DEFINITIONS_AMOUNT, MAX_USAGE_EXAMPLES_AMOUNT
 
 class CanAddDefinitionPermission(BasePermission):
     message = (
-        f'You can add no more than '
-        f'{MAX_DEFINITIONS_AMOUNT} definitions to a word'
+        f'You can add no more than ' f'{MAX_DEFINITIONS_AMOUNT} definitions to a word'
     )
 
     def has_permission(self, request, view):
@@ -33,8 +32,7 @@ class CanAddUsageExamplePermission(BasePermission):
 
 
 class IsAuthorOrReadOnly(permissions.BasePermission):
-    message = f'Only author has permission to perform this action'
+    message = 'Only author has permission to perform this action'
 
     def has_object_permission(self, request, view, obj):
-        return (request.method in permissions.SAFE_METHODS
-                or obj.author == request.user)
+        return request.method in permissions.SAFE_METHODS or obj.author == request.user

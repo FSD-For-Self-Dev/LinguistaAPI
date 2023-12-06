@@ -5,10 +5,27 @@ from django.contrib import admin
 from modeltranslation.admin import TranslationAdmin
 
 from .models import (
-    Antonym, Collection, Definition, FavoriteCollection, FavoriteWord, Form,
-    ImageAssociation, Note, Similar, Synonym, Tag, WordTranslation, Type,
-    UsageExample, Word, WordDefinitions, WordsInCollections, WordTranslations,
-    WordUsageExamples, FormsGroup, WordsFormGroups
+    Antonym,
+    Collection,
+    Definition,
+    FavoriteCollection,
+    FavoriteWord,
+    Form,
+    FormsGroup,
+    ImageAssociation,
+    Note,
+    Similar,
+    Synonym,
+    Tag,
+    Type,
+    UsageExample,
+    Word,
+    WordDefinitions,
+    WordsFormGroups,
+    WordsInCollections,
+    WordTranslation,
+    WordTranslations,
+    WordUsageExamples,
 )
 
 
@@ -57,18 +74,19 @@ class WordAdmin(admin.ModelAdmin):
     list_filter = ('author',)
     inlines = (
         WordWordsFormGroupsInline,
-        WordTranslationInline, WordUsageExamplesInline,
+        WordTranslationInline,
+        WordUsageExamplesInline,
         WordDefinitionsInline,
         SynonymInline,
         AntonymInline,
         FormInline,
-        SimilarInline
+        SimilarInline,
     )
 
 
 @admin.register(Type)
 class TypeAdmin(TranslationAdmin):
-    list_display = ('name', 'sorting') 
+    list_display = ('name', 'sorting')
     list_display_links = ('name',)
 
 
@@ -81,9 +99,7 @@ class CollectionAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title', 'author')}
     list_display = ('id', 'title', 'author', 'words_count')
     list_display_links = ('title',)
-    inlines = (
-        WordInLine,
-    )
+    inlines = (WordInLine,)
 
 
 @admin.register(FormsGroup)
