@@ -21,13 +21,13 @@ drf-spectacular = "^0.26.3"
 python-dotenv = "^1.0.0"
 Pillow = "^10.0.1"
 django-modeltranslation = "^0.18.11"
+django-cleanup = "^8.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.0"
 pytest-django = "^4.4.0"
 pytest-pythonpath = "^0.7.3"
 factory-boy = "^3.3.0"
-django-cleanup = "^8.0.0"
 pre-commit = "^3.5.0"
 ruff="^0.1.6"
 
