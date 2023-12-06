@@ -10,7 +10,6 @@ COPY . .
 
 RUN python manage.py collectstatic --no-input
 RUN python manage.py migrate
-RUN python manage.py loaddata data_dump.json
 
 EXPOSE 80
 
