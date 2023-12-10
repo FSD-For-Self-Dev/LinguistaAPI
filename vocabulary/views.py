@@ -3,7 +3,7 @@
 import random
 
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import transaction, IntegrityError
 from django.db.models import Count, Q
 from django.utils.translation import gettext_lazy as _
 
@@ -35,6 +35,7 @@ from .models import (
     WordTranslation,
     WordTranslations,
     WordUsageExamples,
+    Synonym,
 )
 from .permissions import (
     CanAddDefinitionPermission,
@@ -52,6 +53,7 @@ from .serializers import (
     UsageExampleSerializer,
     WordSerializer,
     WordShortSerializer,
+    SynonymSerializer,
 )
 
 User = get_user_model()
@@ -234,6 +236,8 @@ class WordViewSet(viewsets.ModelViewSet):
                 return DefinitionSerializer
             case 'examples' | 'examples_detail':
                 return UsageExampleSerializer
+            case 'synonyms' | 'synonyms_detail':
+                return SynonymSerializer
             case _:
                 return WordSerializer
 
@@ -557,6 +561,71 @@ class WordViewSet(viewsets.ModelViewSet):
         word.save()
         return Response(self.get_serializer(word).data)
 
+    @action(
+        methods=['get', 'post'],
+        detail=True,
+        serializer_class=SynonymSerializer,
+        permission_classes=[IsAuthenticated],
+    )
+    def synonyms(self, request, *args, **kwargs):
+        """Получить все синонимы слова или добавить новый синоним."""
+        word = self.get_object()
+        synonyms = Synonym.objects.filter(to_word=word)
+
+        match request.method:
+            case 'GET':
+                serializer = SynonymSerializer(synonyms, many=True)
+                return Response(serializer.data, status=status.HTTP_200_OK)
+
+            case 'POST':
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+
+                try:
+                    serializer.save(author_id=request.user.id)
+                    return Response(
+                        serializer.data,
+                        status=status.HTTP_201_CREATED
+                    )
+                except IntegrityError:
+                    return Response(
+                        {'detail': 'Такой синоним уже существует.'},
+                        status=status.HTTP_409_CONFLICT
+                    )
+
+    @action(
+        detail=True,
+        methods=['patch', 'delete'],
+        url_path=r'synonyms/(?P<synonym_id>\d+)',
+        url_name="word's synonyms detail",
+        serializer_class=SynonymSerializer,
+    )
+    def synonyms_detail(self, request, *args, **kwargs):
+        """Получить, редактировать или удалить синоним слова."""
+        word = self.get_object()
+        try:
+            synonym = Synonym.objects.get(
+                pk=kwargs.get('synonym_id'))
+        except Synonym.DoesNotExist:
+            raise NotFound(detail='The synonym not found')
+
+        match request.method:
+            case 'PATCH':
+                serializer = self.get_serializer(
+                    instance=synonym, data=request.data, partial=True
+                )
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+                return Response(serializer.data)
+            case 'DELETE':
+                synonym.delete()
+                synonyms = Synonym.objects.filter(to_word=word)
+                serializer = SynonymSerializer(
+                    synonyms, many=True, context={'request': request}
+                )
+                return Response(serializer.data,
+                                status=status.HTTP_204_NO_CONTENT)
+
 
 @extend_schema(tags=['types'])
 @extend_schema_view(
@@ -702,7 +771,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def remove_from_favorite(self, request, slug):
         """Удалить коллекцию из избранного."""
         collection = self.get_object()
-        collection = self.get_object()
         deleted, _ = FavoriteCollection.objects.filter(
             collection=collection, user=request.user
         ).delete()
@@ -717,7 +785,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
         """Получить список избранных коллекций."""
-        return self.list(request)
         return self.list(request)
 
     @favorites.mapping.post

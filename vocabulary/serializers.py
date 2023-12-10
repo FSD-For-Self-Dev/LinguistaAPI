@@ -556,3 +556,14 @@ class CollectionsListSerializer(serializers.Serializer):
         slug_field='slug', many=True, queryset=Collection.objects.all(),
         read_only=False, required=True
     )
+
+
+class SynonymSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
+    )
+
+    class Meta:
+        model = Synonym
+        fields = ('id', 'from_word', 'to_word', 'difference', 'author')
+        read_only_fields = ('id', 'author')
