@@ -687,7 +687,6 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def favorite(self, request, slug):
         """Добавить коллекцию в избранное."""
         collection = self.get_object()
-        collection = self.get_object()
         _, created = FavoriteCollection.objects.get_or_create(
             user=request.user, collection=collection
         )
@@ -702,22 +701,19 @@ class CollectionViewSet(viewsets.ModelViewSet):
     def remove_from_favorite(self, request, slug):
         """Удалить коллекцию из избранного."""
         collection = self.get_object()
-        collection = self.get_object()
         deleted, _ = FavoriteCollection.objects.filter(
             collection=collection, user=request.user
         ).delete()
-        if deleted:
-            return Response({'favorite': False}, status=status.HTTP_204_NO_CONTENT)
-        else:
+        if not deleted:
             return Response(
                 {'detail': 'Коллекции нет в избранном.'},
                 status=status.HTTP_404_NOT_FOUND,
             )
+        return Response({'favorite': False}, status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
         """Получить список избранных коллекций."""
-        return self.list(request)
         return self.list(request)
 
     @favorites.mapping.post
@@ -726,10 +722,8 @@ class CollectionViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         collections = serializer.validated_data.get('collections')
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        collections = serializer.validated_data.get('collections')
         created_favorites = []
+
         with transaction.atomic():
             for collection in collections:
                 obj, created = FavoriteCollection.objects.get_or_create(
