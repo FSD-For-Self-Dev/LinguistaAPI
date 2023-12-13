@@ -9,8 +9,6 @@ from django.utils.translation import gettext_lazy as _
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
-    OpenApiParameter,
-    OpenApiTypes,
     extend_schema,
     extend_schema_view,
 )
@@ -57,136 +55,44 @@ from .serializers import (
 User = get_user_model()
 
 
-@extend_schema(tags=['vocabulary'])
-@extend_schema_view(
-    list=extend_schema(
-        summary='Просмотр списка слов из своего словаря',
-        responses={
-            status.HTTP_200_OK: WordShortSerializer,
-        },
-        description=(
-            'Просмотреть список своих слов с пагинацией и применением '
-            'фильтров, сортировки и поиска. Нужна авторизация.'
-        ),
-        parameters=[
-            OpenApiParameter(
-                'created',
-                OpenApiTypes.DATETIME,
-                OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по дате добавления. Включая сравнение больше и '
-                    'меньше: created__gt и created__lt.'
-                ),
-            ),
-            OpenApiParameter(
-                'created__year',
-                OpenApiTypes.INT,
-                OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по году добавления. Включая сравнение больше и '
-                    'меньше: created__year__gt и created__year__lt.'
-                ),
-            ),
-            OpenApiParameter(
-                'created__month',
-                OpenApiTypes.INT,
-                OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по месяцу добавления. Включая сравнение больше и '
-                    'меньше: created__month__gt и created__month__lt.'
-                ),
-            ),
-            OpenApiParameter(
-                'language',
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description=('Фильтр по языку. Принимает isocode языка.'),
-            ),
-            OpenApiParameter(
-                'is_problematic',
-                OpenApiTypes.BOOL,
-                OpenApiParameter.QUERY,
-                description=('Фильтр по метке "проблемное".'),
-            ),
-            OpenApiParameter(
-                'tags',
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по тегам. Принимает name тегов через запятую, '
-                    'если несколько.'
-                ),
-            ),
-            OpenApiParameter(
-                'activity',
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по статусу активности. Принимает варианты '
-                    'INACTIVE, ACTIVE, MASTERED.'
-                ),
-            ),
-            OpenApiParameter(
-                'types',
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по типам. Принимает slug типов через запятую, '
-                    'если несколько.'
-                ),
-            ),
-            OpenApiParameter(
-                'first_letter',
-                OpenApiTypes.STR,
-                OpenApiParameter.QUERY,
-                description=('Фильтр по первой букве слова.'),
-            ),
-            OpenApiParameter(
-                'translations_count',
-                OpenApiTypes.INT,
-                OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по кол-ву переводов. Включая сравнение больше и '
-                    'меньше: translations_count__gt и translations_count__lt.'
-                ),
-            ),
-            OpenApiParameter(
-                'examples_count',
-                OpenApiTypes.INT,
-                OpenApiParameter.QUERY,
-                description=(
-                    'Фильтр по кол-ву примеров. Включая сравнение больше и '
-                    'меньше: examples_count__gt и examples_count__lt.'
-                ),
-            ),
-        ],
-    ),
-    create=extend_schema(
-        summary='Добавление нового слова в свой словарь',
-        request=WordSerializer,
-        responses={
-            status.HTTP_201_CREATED: WordSerializer,
-        },
-    ),
-    retrieve=extend_schema(
-        summary='Просмотр профиля слова',
-        responses={
-            status.HTTP_200_OK: WordSerializer,
-        },
-    ),
-    partial_update=extend_schema(
-        summary='Редактирование слова из своего словаря',
-        responses={
-            status.HTTP_200_OK: WordSerializer,
-        },
-    ),
-    destroy=extend_schema(
-        summary='Удаление слова из своего словаря',
-        responses={
-            status.HTTP_204_NO_CONTENT: None,
-        },
-    ),
-)
+# @extend_schema(tags=['vocabulary'])
+# @extend_schema_view(
+#     # list=extend_schema(
+#     #     summary='Просмотр списка слов из своего словаря',
+#     #     responses={
+#     #         status.HTTP_200_OK: WordShortSerializer,
+#     #     },
+#     #     description=(
+#     #         'Просмотреть список своих слов с пагинацией и применением '
+#     #         'фильтров, сортировки и поиска. Нужна авторизация.'
+#     #     ),
+#     # ),
+#     create=extend_schema(
+#         summary='Добавление нового слова в свой словарь',
+#         request=WordSerializer,
+#         responses={
+#             status.HTTP_201_CREATED: WordSerializer,
+#         },
+#     ),
+#     retrieve=extend_schema(
+#         summary='Просмотр профиля слова',
+#         responses={
+#             status.HTTP_200_OK: WordSerializer,
+#         },
+#     ),
+#     partial_update=extend_schema(
+#         summary='Редактирование слова из своего словаря',
+#         responses={
+#             status.HTTP_200_OK: WordSerializer,
+#         },
+#     ),
+#     destroy=extend_schema(
+#         summary='Удаление слова из своего словаря',
+#         responses={
+#             status.HTTP_204_NO_CONTENT: None,
+#         },
+#     ),
+# )
 class WordViewSet(viewsets.ModelViewSet):
     """Действия со словами из своего словаря."""
 
