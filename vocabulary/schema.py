@@ -3,7 +3,18 @@
 from drf_spectacular.openapi import AutoSchema
 from rest_framework import status
 
-from .serializers import WordShortSerializer, WordSerializer, TranslationSerializer, DefinitionSerializer, UsageExampleSerializer, TypeSerializer, FormsGroupSerializer, CollectionSerializer, CollectionsListSerializer, CollectionShortSerializer
+from .serializers import (
+    WordShortSerializer,
+    WordSerializer,
+    TranslationSerializer,
+    DefinitionSerializer,
+    UsageExampleSerializer,
+    TypeSerializer,
+    FormsGroupSerializer,
+    CollectionSerializer,
+    CollectionsListSerializer,
+    CollectionShortSerializer,
+)
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiTypes,
@@ -251,7 +262,9 @@ data = {
     'TypeViewSet': {
         'tags': ['types'],
         'types_list': {
-            'summary': ('Просмотр списка всех возможных типов и частей речи слов и фраз'),
+            'summary': (
+                'Просмотр списка всех возможных типов и частей речи слов и фраз'
+            ),
             'responses': {
                 status.HTTP_200_OK: TypeSerializer,
             },
@@ -339,30 +352,40 @@ class CustomSchema(AutoSchema):
 
     def get_description(self):
         try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()]['description']
+            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
+                'description'
+            ]
         except KeyError:
             return None
 
     def get_summary(self):
         try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()]['summary']
+            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
+                'summary'
+            ]
         except KeyError:
             return None
-    
+
     def get_request_serializer(self):
         try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()]['request']
+            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
+                'request'
+            ]
         except KeyError:
             return None
 
     def get_responses(self):
         try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()]['responses']
+            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
+                'responses'
+            ]
         except KeyError:
             return None
 
     def get_override_parameters(self):
         try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()]['parameters']
+            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
+                'parameters'
+            ]
         except KeyError:
             return []
