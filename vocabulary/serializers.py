@@ -104,6 +104,7 @@ class CreatableSlugRelatedField(serializers.SlugRelatedField):
             self.fail('invalid')
 
 
+@extend_schema_field({"type": "string"})
 class ReadableHiddenField(serializers.Field):
     def __init__(
             self, slug_field=None, serializer_class=None, many=False, **kwargs
@@ -213,9 +214,11 @@ class CollectionShortSerializer(serializers.ModelSerializer):
             'id', 'slug', 'words_count', 'created', 'modified'
         )
 
+    @extend_schema_field({"type": "integer"})
     def get_words_count(self, obj):
         return obj.words.count()
 
+    @extend_schema_field({"type": "string"})
     def get_last_3_words(self, obj):
         return obj.words.order_by('-wordsincollections__created').values_list(
             'text', flat=True
