@@ -33,6 +33,7 @@ from .models import (
     WordTranslation,
     WordTranslations,
     WordUsageExamples,
+    Word,
 )
 from .permissions import (
     CanAddDefinitionPermission,
@@ -55,50 +56,20 @@ from .serializers import (
 User = get_user_model()
 
 
-# @extend_schema(tags=['vocabulary'])
-# @extend_schema_view(
-#     # list=extend_schema(
-#     #     summary='Просмотр списка слов из своего словаря',
-#     #     responses={
-#     #         status.HTTP_200_OK: WordShortSerializer,
-#     #     },
-#     #     description=(
-#     #         'Просмотреть список своих слов с пагинацией и применением '
-#     #         'фильтров, сортировки и поиска. Нужна авторизация.'
-#     #     ),
-#     # ),
-#     create=extend_schema(
-#         summary='Добавление нового слова в свой словарь',
-#         request=WordSerializer,
-#         responses={
-#             status.HTTP_201_CREATED: WordSerializer,
-#         },
-#     ),
-#     retrieve=extend_schema(
-#         summary='Просмотр профиля слова',
-#         responses={
-#             status.HTTP_200_OK: WordSerializer,
-#         },
-#     ),
-#     partial_update=extend_schema(
-#         summary='Редактирование слова из своего словаря',
-#         responses={
-#             status.HTTP_200_OK: WordSerializer,
-#         },
-#     ),
-#     destroy=extend_schema(
-#         summary='Удаление слова из своего словаря',
-#         responses={
-#             status.HTTP_204_NO_CONTENT: None,
-#         },
-#     ),
-# )
+@extend_schema_view(
+    list=extend_schema(operation_id='words_list'),
+    create=extend_schema(operation_id='word_create'),
+    retrieve=extend_schema(operation_id='word_retrieve'),
+    partial_update=extend_schema(operation_id='word_partial_update'),
+    destroy=extend_schema(operation_id='word_destroy'),
+)
 class WordViewSet(viewsets.ModelViewSet):
     """Действия со словами из своего словаря."""
 
     lookup_field = 'slug'
     http_method_names = ('get', 'post', 'head', 'patch', 'delete')
     permission_classes = (IsAuthenticated,)
+    queryset = Word.objects.none()
     pagination_class = LimitPagination
     filter_backends = (
         filters.SearchFilter,
@@ -143,7 +114,7 @@ class WordViewSet(viewsets.ModelViewSet):
             case _:
                 return WordSerializer
 
-    @extend_schema(summary='Получить случайное слово из своего словаря')
+    @extend_schema(operation_id='word_random')
     @action(methods=['get'], detail=False)
     def random(self, request, *args, **kwargs):
         """Получить случайное слово из словаря."""
@@ -152,21 +123,8 @@ class WordViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(word, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    @extend_schema(
-        summary='Просмотр списка всех переводов слова',
-        responses={
-            status.HTTP_200_OK: TranslationSerializer,
-        },
-        methods=['get'],
-    )
-    @extend_schema(
-        summary='Добавление нового перевода к слову',
-        request=TranslationSerializer,
-        responses={
-            status.HTTP_201_CREATED: TranslationSerializer,
-        },
-        methods=['post'],
-    )
+    @extend_schema(operation_id='translations_list', methods=['get'])
+    @extend_schema(operation_id='translation_create', methods=['post'])
     @action(
         methods=['get', 'post'],
         detail=True,
@@ -197,28 +155,9 @@ class WordViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_201_CREATED,
                 )
 
-    @extend_schema(
-        summary='Просмотр перевода слова',
-        responses={
-            status.HTTP_200_OK: TranslationSerializer,
-        },
-        methods=['get'],
-    )
-    @extend_schema(
-        summary='Редактирование перевода слова',
-        request=TranslationSerializer,
-        responses={
-            status.HTTP_200_OK: TranslationSerializer,
-        },
-        methods=['patch'],
-    )
-    @extend_schema(
-        summary='Удаление перевода слова',
-        responses={
-            status.HTTP_204_NO_CONTENT: None,
-        },
-        methods=['delete'],
-    )
+    @extend_schema(operation_id='translations_retrieve', methods=['get'])
+    @extend_schema(operation_id='translation_partial_update', methods=['patch'])
+    @extend_schema(operation_id='translation_destroy', methods=['delete'])
     @action(
         detail=True,
         methods=['patch', 'delete'],
@@ -250,21 +189,8 @@ class WordViewSet(viewsets.ModelViewSet):
                 )
                 return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
-    @extend_schema(
-        summary='Просмотр списка всех определений слова',
-        responses={
-            status.HTTP_200_OK: DefinitionSerializer,
-        },
-        methods=['get'],
-    )
-    @extend_schema(
-        summary='Добавление нового определения к слову',
-        request=DefinitionSerializer,
-        responses={
-            status.HTTP_201_CREATED: DefinitionSerializer,
-        },
-        methods=['post'],
-    )
+    @extend_schema(operation_id='definitions_list', methods=['get'])
+    @extend_schema(operation_id='definition_create', methods=['post'])
     @action(
         methods=['get', 'post'],
         detail=True,
@@ -290,28 +216,9 @@ class WordViewSet(viewsets.ModelViewSet):
                     self.get_serializer(new_def).data, status=status.HTTP_201_CREATED
                 )
 
-    @extend_schema(
-        summary='Просмотр определения слова',
-        responses={
-            status.HTTP_200_OK: DefinitionSerializer,
-        },
-        methods=['get'],
-    )
-    @extend_schema(
-        summary='Редактирование определения слова',
-        request=DefinitionSerializer,
-        responses={
-            status.HTTP_200_OK: DefinitionSerializer,
-        },
-        methods=['patch'],
-    )
-    @extend_schema(
-        summary='Удаление определения слова',
-        responses={
-            status.HTTP_204_NO_CONTENT: None,
-        },
-        methods=['delete'],
-    )
+    @extend_schema(operation_id='definition_retrieve', methods=['get'])
+    @extend_schema(operation_id='definition_partial_update', methods=['patch'])
+    @extend_schema(operation_id='definition_destroy', methods=['delete'])
     @action(
         detail=True,
         methods=['get', 'patch', 'delete'],
@@ -341,21 +248,8 @@ class WordViewSet(viewsets.ModelViewSet):
                 definition.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @extend_schema(
-        summary='Просмотр списка всех примеров использования слова',
-        responses={
-            status.HTTP_200_OK: UsageExampleSerializer,
-        },
-        methods=['get'],
-    )
-    @extend_schema(
-        summary='Добавление нового примера использования к слову',
-        request=UsageExampleSerializer,
-        responses={
-            status.HTTP_201_CREATED: UsageExampleSerializer,
-        },
-        methods=['post'],
-    )
+    @extend_schema(operation_id='examples_list', methods=['get'])
+    @extend_schema(operation_id='example_create', methods=['post'])
     @action(
         methods=['get', 'post'],
         detail=True,
@@ -393,28 +287,9 @@ class WordViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_201_CREATED,
                 )
 
-    @extend_schema(
-        summary='Просмотр примера использования слова',
-        responses={
-            status.HTTP_200_OK: UsageExampleSerializer,
-        },
-        methods=['get'],
-    )
-    @extend_schema(
-        summary='Редактирование примера использования слова',
-        request=UsageExampleSerializer,
-        responses={
-            status.HTTP_200_OK: UsageExampleSerializer,
-        },
-        methods=['patch'],
-    )
-    @extend_schema(
-        summary='Удаление примера использования слова',
-        responses={
-            status.HTTP_204_NO_CONTENT: None,
-        },
-        methods=['delete'],
-    )
+    @extend_schema(operation_id='example_retrieve', methods=['get'])
+    @extend_schema(operation_id='example_partial_update', methods=['patch'])
+    @extend_schema(operation_id='example_destroy', methods=['delete'])
     @action(
         detail=True,
         methods=['get', 'patch', 'delete'],
@@ -443,13 +318,7 @@ class WordViewSet(viewsets.ModelViewSet):
                 _example.delete()
                 return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @extend_schema(
-        summary='Изменить метку "проблемное" у слова',
-        request=None,
-        responses={
-            status.HTTP_200_OK: WordSerializer,
-        },
-    )
+    @extend_schema(operation_id='problematic_toggle')
     @action(
         detail=True,
         methods=['post'],
@@ -464,15 +333,7 @@ class WordViewSet(viewsets.ModelViewSet):
         return Response(self.get_serializer(word).data)
 
 
-@extend_schema(tags=['types'])
-@extend_schema_view(
-    list=extend_schema(
-        summary=('Просмотр списка всех возможных типов и частей речи слов и фраз'),
-        responses={
-            status.HTTP_200_OK: TypeSerializer,
-        },
-    )
-)
+@extend_schema_view(list=extend_schema(operation_id='types_list'))
 class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """Просмотр списка всех возможных типов слов и фраз."""
 
@@ -486,26 +347,24 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     search_fields = ('name',)
 
 
-@extend_schema(tags=['forms-groups'])
 @extend_schema_view(
-    list=extend_schema(
-        summary=('Просмотр списка всех групп форм пользователя'),
-        responses={
-            status.HTTP_200_OK: FormsGroupSerializer,
-        },
-    )
+    list=extend_schema(operation_id='formsgroups_list'),
+    create=extend_schema(operation_id='formsgroup_create'),
+    retrieve=extend_schema(operation_id='formsgroup_retrieve'),
+    partial_update=extend_schema(operation_id='formsgroup_partial_update'),
+    destroy=extend_schema(operation_id='formsgroup_destroy'),
 )
 class FormsGroupsViewSet(viewsets.ModelViewSet):
     """
     Просмотр списка всех групп форм пользователя и добавление новых групп.
     """
 
-    queryset = FormsGroup.objects.all()
     serializer_class = FormsGroupSerializer
     lookup_field = 'slug'
     http_method_names = ('get', 'post', 'patch', 'delete')
-    pagination_class = None
     permission_classes = (IsAuthenticated,)
+    queryset = FormsGroup.objects.none()
+    pagination_class = None
     filter_backends = (filters.SearchFilter,)  # добавить фильтр по языку
     search_fields = ('name',)
 
@@ -518,38 +377,12 @@ class FormsGroupsViewSet(viewsets.ModelViewSet):
         ).annotate(words_count=Count('words', distinct=True))
 
 
-@extend_schema(tags=['collections'])
 @extend_schema_view(
-    list=extend_schema(
-        summary=('Просмотр списка всех коллекций пользователя'),
-        responses={
-            status.HTTP_200_OK: CollectionSerializer,
-        },
-    ),
-    create=extend_schema(
-        summary='Добавление новой коллекции',
-        responses={
-            status.HTTP_201_CREATED: CollectionSerializer,
-        },
-    ),
-    retrieve=extend_schema(
-        summary='Просмотр коллекции',
-        responses={
-            status.HTTP_200_OK: CollectionSerializer,
-        },
-    ),
-    partial_update=extend_schema(
-        summary='Редактирование коллекции',
-        responses={
-            status.HTTP_200_OK: CollectionSerializer,
-        },
-    ),
-    destroy=extend_schema(
-        summary='Удаление коллекции',
-        responses={
-            status.HTTP_204_NO_CONTENT: None,
-        },
-    ),
+    list=extend_schema(operation_id='collections_list'),
+    create=extend_schema(operation_id='collection_create'),
+    retrieve=extend_schema(operation_id='collection_retrieve'),
+    partial_update=extend_schema(operation_id='collection_partial_update'),
+    destroy=extend_schema(operation_id='collection_destroy'),
 )
 class CollectionViewSet(viewsets.ModelViewSet):
     """Действия с коллекциями."""
@@ -557,6 +390,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     lookup_field = 'slug'
     http_method_names = ('get', 'post', 'head', 'patch', 'delete')
     permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
+    queryset = Collection.objects.none()
     pagination_class = LimitPagination
     filter_backends = (
         filters.SearchFilter,
@@ -589,6 +423,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
                     words_count=Count('words', distinct=True)
                 )
 
+    @extend_schema(operation_id='collection_favorite_create')
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def favorite(self, request, slug):
         """Добавить коллекцию в избранное."""
@@ -603,6 +438,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
             )
         return Response({'favorite': True}, status=status.HTTP_201_CREATED)
 
+    @extend_schema(operation_id='collection_favorite_destroy')
     @favorite.mapping.delete
     def remove_from_favorite(self, request, slug):
         """Удалить коллекцию из избранного."""
@@ -617,11 +453,13 @@ class CollectionViewSet(viewsets.ModelViewSet):
             )
         return Response({'favorite': False}, status=status.HTTP_204_NO_CONTENT)
 
+    @extend_schema(operation_id='collections_favorite_list')
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def favorites(self, request):
         """Получить список избранных коллекций."""
         return self.list(request)
 
+    @extend_schema(operation_id='collections_favorite_list_create')
     @favorites.mapping.post
     def add_to_favorites(self, request):
         """Добавить список коллекций в избранное."""
