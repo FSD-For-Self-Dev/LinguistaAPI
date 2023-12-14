@@ -87,7 +87,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-        default='postgres://linguista_db_user:IbLuHwL7FmQsZpgSzyi6duW9ZN34B4AI@dpg-clob85rj65ls73f6a010-a/linguista_db_wvm2',
+        default='postgres://linguista_db_user:lpeVEpdOMmWSgkaG69sTWVQKWrRuNBov@dpg-clrlngvqd2ns739danmg-a/linguista_db_6tdi',
         conn_max_age=600,
     )
 }
@@ -169,7 +169,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'core.pagination.LimitPagination',
     'PAGE_SIZE': 2,
     'DATETIME_FORMAT': '%Y-%m-%d %H:%M',
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'vocabulary.schema.CustomSchema',
 }
 
 CORS_ALLOWED_ORIGINS = [
