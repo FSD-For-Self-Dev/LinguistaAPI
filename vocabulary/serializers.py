@@ -619,13 +619,12 @@ class SynonymSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         attrs['from_word'], created = Word.objects.get_or_create(
-            text=attrs['from_word']['text'],
-            author=self.context['request'].user
+            text=attrs['from_word']['text'], author=self.context['request'].user
         )
         if attrs['from_word'] == attrs['to_word']:
-            raise serializers.ValidationError({
-                'text': ['Нельзя добавить к синонимам то же слово.']
-            })
+            raise serializers.ValidationError(
+                {'text': ['Нельзя добавить к синонимам то же слово.']}
+            )
         return super().validate(attrs)
 
     @extend_schema_field({'type': 'string'})

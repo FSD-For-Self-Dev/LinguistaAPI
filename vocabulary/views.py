@@ -358,14 +358,11 @@ class WordViewSet(viewsets.ModelViewSet):
 
                 try:
                     serializer.save(author_id=request.user.id)
-                    return Response(
-                        serializer.data,
-                        status=status.HTTP_201_CREATED
-                    )
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
                 except IntegrityError:
                     return Response(
                         {'detail': 'Такой синоним уже существует.'},
-                        status=status.HTTP_409_CONFLICT
+                        status=status.HTTP_409_CONFLICT,
                     )
 
     @action(
@@ -379,8 +376,7 @@ class WordViewSet(viewsets.ModelViewSet):
         """Получить, редактировать или удалить синоним слова."""
         word = self.get_object()
         try:
-            synonym = Synonym.objects.get(
-                pk=kwargs.get('synonym_id'))
+            synonym = Synonym.objects.get(pk=kwargs.get('synonym_id'))
         except Synonym.DoesNotExist:
             raise NotFound(detail='The synonym not found')
 
@@ -398,8 +394,7 @@ class WordViewSet(viewsets.ModelViewSet):
                 serializer = SynonymSerializer(
                     synonyms, many=True, context={'request': request}
                 )
-                return Response(serializer.data,
-                                status=status.HTTP_204_NO_CONTENT)
+                return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(list=extend_schema(operation_id='types_list'))
