@@ -257,11 +257,11 @@ class Word(CreatedModel, ModifiedModel):
 
 
 class WordSelfRelatedModel(CreatedModel):
-    from_word = models.ForeignKey(
-        Word, related_name='%(class)s_from_words', on_delete=models.CASCADE
-    )
     to_word = models.ForeignKey(
         Word, related_name='%(class)s_to_words', on_delete=models.CASCADE
+    )
+    from_word = models.ForeignKey(
+        Word, related_name='%(class)s_from_words', on_delete=models.CASCADE
     )
 
     class Meta:
@@ -288,6 +288,7 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
     )
 
     class Meta:
+        ordering = ['-created']
         get_latest_by = ['created', 'modified']
         abstract = True
 
@@ -308,6 +309,8 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
 
 class Synonym(WordSelfRelatedWithDifferenceModel, AuthorModel):
     class Meta:
+        ordering = ['-created']  # повтор
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Synonyms')
         verbose_name_plural = _('Synonyms')
         constraints = [
