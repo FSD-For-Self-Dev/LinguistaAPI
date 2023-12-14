@@ -288,6 +288,7 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
     )
 
     class Meta:
+        ordering = ['-created']
         get_latest_by = ['created', 'modified']
         abstract = True
 
@@ -308,6 +309,8 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
 
 class Synonym(WordSelfRelatedWithDifferenceModel, AuthorModel):
     class Meta:
+        ordering = ['-created']  # повтор
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Synonyms')
         verbose_name_plural = _('Synonyms')
         constraints = [
