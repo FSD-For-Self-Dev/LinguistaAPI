@@ -257,11 +257,11 @@ class Word(CreatedModel, ModifiedModel):
 
 
 class WordSelfRelatedModel(CreatedModel):
-    from_word = models.ForeignKey(
-        Word, related_name='%(class)s_from_words', on_delete=models.CASCADE
-    )
     to_word = models.ForeignKey(
         Word, related_name='%(class)s_to_words', on_delete=models.CASCADE
+    )
+    from_word = models.ForeignKey(
+        Word, related_name='%(class)s_from_words', on_delete=models.CASCADE
     )
 
     class Meta:

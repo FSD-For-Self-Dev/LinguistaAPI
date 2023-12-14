@@ -345,7 +345,7 @@ class WordViewSet(viewsets.ModelViewSet):
     def synonyms(self, request, *args, **kwargs):
         """Получить все синонимы слова или добавить новый синоним."""
         word = self.get_object()
-        synonyms = Synonym.objects.filter(to_word=word)
+        synonyms = word.synonym_to_words.all()
 
         match request.method:
             case 'GET':

@@ -154,6 +154,20 @@ class WordSameLanguageDefault:
         return '%s()' % self.__class__.__name__
 
 
+class CurrentWordDefault:
+    requires_context = True
+
+    def __call__(self, serializer_field):
+        request_word_slug = serializer_field.context['view'].kwargs.get('slug')
+        try:
+            return Word.objects.get(slug=request_word_slug)
+        except KeyError:
+            return None
+
+    def __repr__(self):
+        return '%s()' % self.__class__.__name__
+
+
 class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
@@ -594,8 +608,26 @@ class SynonymSerializer(serializers.ModelSerializer):
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(), slug_field='username'
     )
+    to_word = serializers.HiddenField(default=CurrentWordDefault())
+    text = serializers.CharField(source='from_word.text')
+    slug = serializers.SerializerMethodField()
 
     class Meta:
         model = Synonym
-        fields = ('id', 'from_word', 'to_word', 'difference', 'author')
-        read_only_fields = ('id', 'author')
+        fields = ('id', 'to_word', 'text', 'difference', 'author', 'slug')
+        read_only_fields = ('id', 'author', 'slug')
+
+    def validate(self, attrs):
+        attrs['from_word'], created = Word.objects.get_or_create(
+            text=attrs['from_word']['text'],
+            author=self.context['request'].user
+        )
+        if attrs['from_word'] == attrs['to_word']:
+            raise serializers.ValidationError({
+                'text': ['Нельзя добавить к синонимам то же слово.']
+            })
+        return super().validate(attrs)
+
+    @extend_schema_field({'type': 'string'})
+    def get_slug(self, obj):
+        return obj.from_word.slug
