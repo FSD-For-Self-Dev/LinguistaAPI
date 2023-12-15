@@ -3,6 +3,7 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
+from django.db.models.functions import Lower
 from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
@@ -82,7 +83,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Collections')
         constraints = [
             models.UniqueConstraint(
-                fields=['title', 'author'], name='unique_user_collection'
+                Lower('title'), 'author', name='unique_user_collection'
             )
         ]
 
@@ -242,7 +243,7 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name_plural = _('Words and phrases')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'], name='unique_words_in_user_voc'
+                Lower('text'), 'author', name='unique_words_in_user_voc'
             )
         ]
 
@@ -257,11 +258,11 @@ class Word(CreatedModel, ModifiedModel):
 
 
 class WordSelfRelatedModel(CreatedModel):
-    from_word = models.ForeignKey(
-        Word, related_name='%(class)s_from_words', on_delete=models.CASCADE
-    )
     to_word = models.ForeignKey(
         Word, related_name='%(class)s_to_words', on_delete=models.CASCADE
+    )
+    from_word = models.ForeignKey(
+        Word, related_name='%(class)s_from_words', on_delete=models.CASCADE
     )
 
     class Meta:
@@ -288,6 +289,7 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
     )
 
     class Meta:
+        ordering = ['-created']
         get_latest_by = ['created', 'modified']
         abstract = True
 
@@ -308,6 +310,8 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
 
 class Synonym(WordSelfRelatedWithDifferenceModel, AuthorModel):
     class Meta:
+        ordering = ['-created']  # повтор
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Synonyms')
         verbose_name_plural = _('Synonyms')
         constraints = [
@@ -352,7 +356,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         verbose_name_plural = _('Forms groups')
         ordering = ('-created', 'name')
         constraints = [
-            models.UniqueConstraint(fields=['name', 'author'], name='unique_group_name')
+            models.UniqueConstraint(Lower('name'), 'author', name='unique_group_name')
         ]
 
     def __str__(self):
@@ -411,7 +415,7 @@ class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Translations')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'], name='unique_word_translation_in_user_voc'
+                Lower('text'), 'author', name='unique_word_translation_in_user_voc'
             )
         ]
 
@@ -538,7 +542,7 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Definitions')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'], name='unique_definition_in_user_voc'
+                Lower('text'), 'author', name='unique_definition_in_user_voc'
             )
         ]
 
@@ -602,7 +606,7 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Usage examples')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'], name='unique_word_usage_example_in_user_voc'
+                Lower('text'), 'author', name='unique_word_usage_example_in_user_voc'
             )
         ]
 
