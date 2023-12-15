@@ -356,9 +356,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         verbose_name_plural = _('Forms groups')
         ordering = ('-created', 'name')
         constraints = [
-            models.UniqueConstraint(
-                Lower('name'), 'author', name='unique_group_name'
-            )
+            models.UniqueConstraint(Lower('name'), 'author', name='unique_group_name')
         ]
 
     def __str__(self):
