@@ -615,8 +615,14 @@ class SynonymSerializer(serializers.ModelSerializer):
     class Meta:
         model = Synonym
         fields = (
-            'id', 'to_word', 'text', 'difference', 'author', 'slug',
-            'created', 'modified'
+            'id',
+            'to_word',
+            'text',
+            'difference',
+            'author',
+            'slug',
+            'created',
+            'modified',
         )
         read_only_fields = ('id', 'author', 'slug', 'created', 'modified')
 
@@ -625,17 +631,17 @@ class SynonymSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Это поле нельзя редактировать.')
         return value
 
-    def validate(self, attrs, validationerror_msg='Нельзя добавить к синонимам то же слово.'):
+    def validate(
+        self, attrs, validationerror_msg='Нельзя добавить к синонимам то же слово.'
+    ):
         if not self.instance:
             attrs['from_word'], created = Word.objects.get_or_create(
                 text__iexact=attrs['from_word']['text'],
                 author=self.context['request'].user,
-                defaults={'text': attrs['from_word']['text']}
+                defaults={'text': attrs['from_word']['text']},
             )
             if attrs['from_word'] == attrs['to_word']:
-                raise serializers.ValidationError(
-                    {'text': [validationerror_msg]}
-                )
+                raise serializers.ValidationError({'text': [validationerror_msg]})
         return super().validate(attrs)
 
     @extend_schema_field({'type': 'string'})
@@ -649,5 +655,7 @@ class AntonymSerializer(SynonymSerializer):
         fields = ('id', 'to_word', 'text', 'author', 'slug', 'created')
         read_only_fields = ('id', 'author', 'slug', 'created')
 
-    def validate(self, attrs, validationerror_msg='Нельзя добавить к антонимам то же слово.'):
+    def validate(
+        self, attrs, validationerror_msg='Нельзя добавить к антонимам то же слово.'
+    ):
         return super().validate(attrs, validationerror_msg)
