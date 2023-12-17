@@ -614,21 +614,40 @@ class SynonymSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Synonym
-        fields = ('id', 'to_word', 'text', 'difference', 'author', 'slug')
-        read_only_fields = ('id', 'author', 'slug')
-
-    def validate(self, attrs):
-        attrs['from_word'], created = Word.objects.get_or_create(
-            text=attrs['from_word']['text'].lower(), author=self.context['request'].user
+        fields = (
+            'id', 'to_word', 'text', 'difference', 'author', 'slug',
+            'created', 'modified'
         )
-        if (not self.instance and attrs['from_word'] == attrs['to_word']) or (
-            self.instance and attrs['from_word'] == self.instance.to_word
-        ):
-            raise serializers.ValidationError(
-                {'text': ['Нельзя добавить к синонимам то же слово.']}
+        read_only_fields = ('id', 'author', 'slug', 'created', 'modified')
+
+    def validate_text(self, value):
+        if self.instance:
+            raise serializers.ValidationError('Это поле нельзя редактировать.')
+        return value
+
+    def validate(self, attrs, validationerror_msg='Нельзя добавить к синонимам то же слово.'):
+        if not self.instance:
+            attrs['from_word'], created = Word.objects.get_or_create(
+                text__iexact=attrs['from_word']['text'],
+                author=self.context['request'].user,
+                defaults={'text': attrs['from_word']['text']}
             )
+            if attrs['from_word'] == attrs['to_word']:
+                raise serializers.ValidationError(
+                    {'text': [validationerror_msg]}
+                )
         return super().validate(attrs)
 
     @extend_schema_field({'type': 'string'})
     def get_slug(self, obj):
         return obj.from_word.slug
+
+
+class AntonymSerializer(SynonymSerializer):
+    class Meta:
+        model = Antonym
+        fields = ('id', 'to_word', 'text', 'author', 'slug', 'created')
+        read_only_fields = ('id', 'author', 'slug', 'created')
+
+    def validate(self, attrs, validationerror_msg='Нельзя добавить к антонимам то же слово.'):
+        return super().validate(attrs, validationerror_msg)
