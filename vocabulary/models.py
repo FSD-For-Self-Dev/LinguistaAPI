@@ -152,6 +152,7 @@ class Word(CreatedModel, ModifiedModel):
     )
     text = models.CharField(
         _('Word or phrase'),
+        blank=False,
         max_length=MAX_WORD_LENGTH,
         validators=(
             MinLengthValidator(MIN_WORD_LENGTH),
