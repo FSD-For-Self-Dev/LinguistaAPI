@@ -57,6 +57,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -86,30 +87,11 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
     'default': dj_database_url.config(
-<<<<<<< HEAD
-        default='postgres://linguista_db_user:bnMM0NNDDdZB9ZXdkvmnv2IKXweGScfK@dpg-clobfcjj65ls73f6dm00-a/linguista_db_vsvd',
-=======
         default='postgres://linguista_db_user:lpeVEpdOMmWSgkaG69sTWVQKWrRuNBov@dpg-clrlngvqd2ns739danmg-a/linguista_db_6tdi',
->>>>>>> 14fe6fdea9cf1a1de12df3df79a16198aac1e62c
         conn_max_age=600,
     )
 }
 
-<<<<<<< HEAD
-=======
-# if DEBUG:
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-#             'NAME': os.getenv('DB_NAME', default='postgres'),
-#             'USER': os.getenv('DB_USER', default=''),
-#             'PASSWORD': os.getenv('DB_PASSWORD', default=''),
-#             'HOST': os.getenv('DB_HOST', default=''),
-#             'PORT': os.getenv('DB_PORT', default=''),
-#         }
-#     }
-
->>>>>>> 14fe6fdea9cf1a1de12df3df79a16198aac1e62c
 AUTH_USER_MODEL = 'users.User'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
