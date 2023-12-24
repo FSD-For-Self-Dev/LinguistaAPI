@@ -1,4 +1,4 @@
-# Описание эндпоинтов в схеме апи
+"""Описание эндпоинтов в схеме апи."""
 
 from drf_spectacular.openapi import AutoSchema
 from rest_framework import status
@@ -380,7 +380,7 @@ class CustomSchema(AutoSchema):
                 'responses'
             ]
         except KeyError:
-            return None
+            return {}
 
     def get_override_parameters(self):
         try:
