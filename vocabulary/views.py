@@ -5,7 +5,6 @@ import random
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
 from django.db.models import Count, Q
-from django.utils.translation import gettext_lazy as _
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
@@ -20,21 +19,19 @@ from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 
-from .constants import MAX_EXAMPLES_AMOUNT
 from .filters import CollectionFilter, WordFilter
 from .models import (
     Collection,
-    Definition,
     FavoriteCollection,
     FormsGroup,
     Type,
-    UsageExample,
     WordDefinitions,
     WordTranslation,
     WordTranslations,
     WordUsageExamples,
     Word,
     Synonym,
+    Antonym,
 )
 from .permissions import (
     CanAddDefinitionPermission,
@@ -53,6 +50,7 @@ from .serializers import (
     WordSerializer,
     WordShortSerializer,
     SynonymSerializer,
+    AntonymSerializer,
 )
 
 User = get_user_model()
@@ -69,7 +67,7 @@ class WordViewSet(viewsets.ModelViewSet):
     """Действия со словами из своего словаря."""
 
     lookup_field = 'slug'
-    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAuthenticated,)
     queryset = Word.objects.none()
     pagination_class = LimitPagination
@@ -111,6 +109,8 @@ class WordViewSet(viewsets.ModelViewSet):
                 return UsageExampleSerializer
             case 'synonyms' | 'synonyms_detail':
                 return SynonymSerializer
+            case 'antonyms' | 'antonyms_detail':
+                return AntonymSerializer
             case _:
                 return WordSerializer
 
@@ -150,7 +150,15 @@ class WordViewSet(viewsets.ModelViewSet):
         word.save()
         return Response(self.get_serializer(word).data, status=status.HTTP_201_CREATED)
 
-    def _list_and_create_action(self, request, objs_name, *args, **kwargs):
+    def _list_and_create_action(
+        self,
+        request,
+        objs_name,
+        relation_model=None,
+        relation_field=None,
+        *args,
+        **kwargs,
+    ):
         """Осуществить методы list, create для дополнений слова."""
         word = self.get_object()
         _objs = word.__getattribute__(objs_name).all()
@@ -171,27 +179,22 @@ class WordViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_409_CONFLICT,
                     )
 
-                relation_model = kwargs.get('relation_model', None)
                 if relation_model:
-                    relation_field = kwargs.get('relation_field')
-                    # доб проверку на отсутствие ключа relation_field
                     relation_model.objects.create(
                         **{relation_field: _new_obj}, word=word
                     )
 
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def _detail_action(self, request, objs_name, *args, **kwargs):
+    def _detail_action(
+        self, request, objs_name, lookup_name, relation_model=None, *args, **kwargs
+    ):
         """Осуществить методы retrieve, partial_update, destroy для дополнений слова."""
         word = self.get_object()
-        relation_model = kwargs.get('relation_model')
-        lookup_name = kwargs.get('lookup_name')
-        # доб проверку на отсутствие соответствующих ключей
         try:
             _obj = word.__getattribute__(objs_name).get(pk=kwargs.get(lookup_name))
         except relation_model.DoesNotExist:
-            notfounderror_msg = kwargs.get('notfounderror_msg', '')
-            raise NotFound(detail=notfounderror_msg)
+            raise NotFound(detail=kwargs.get('notfounderror_msg', ''))
 
         match request.method:
             case 'GET':
@@ -361,6 +364,37 @@ class WordViewSet(viewsets.ModelViewSet):
             **kwargs,
         )
 
+    @action(
+        methods=['get', 'post'],
+        detail=True,
+        serializer_class=AntonymSerializer,
+    )
+    def antonyms(self, request, *args, **kwargs):
+        """Получить все антонимы слова или добавить новый антоним."""
+        return self._list_and_create_action(
+            request,
+            'antonym_to_words',
+            integrityerror_msg='Такой антоним уже существует.',
+        )
+
+    @action(
+        methods=['get', 'delete'],
+        detail=True,
+        url_path=r'antonyms/(?P<antonym_id>\d+)',
+        serializer_class=AntonymSerializer,
+    )
+    def antonyms_detail(self, request, *args, **kwargs):
+        """Получить, редактировать или удалить антоним слова."""
+        return self._detail_action(
+            request,
+            'antonym_to_words',
+            notfounderror_msg='Антоним с таким id у слова не найден.',
+            relation_model=Antonym,
+            lookup_name='antonym_id',
+            *args,
+            **kwargs,
+        )
+
 
 @extend_schema_view(list=extend_schema(operation_id='types_list'))
 class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
@@ -417,7 +451,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
     """Действия с коллекциями."""
 
     lookup_field = 'slug'
-    http_method_names = ('get', 'post', 'head', 'patch', 'delete')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
     queryset = Collection.objects.none()
     pagination_class = LimitPagination
