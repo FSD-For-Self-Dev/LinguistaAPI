@@ -92,17 +92,17 @@ DATABASES = {
     )
 }
 
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-            'NAME': os.getenv('DB_NAME', default='postgres'),
-            'USER': os.getenv('DB_USER', default=''),
-            'PASSWORD': os.getenv('DB_PASSWORD', default=''),
-            'HOST': os.getenv('DB_HOST', default=''),
-            'PORT': os.getenv('DB_PORT', default=''),
-        }
-    }
+# if DEBUG:
+#     DATABASES = {
+#         'default': {
+#             'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+#             'NAME': os.getenv('DB_NAME', default='postgres'),
+#             'USER': os.getenv('DB_USER', default=''),
+#             'PASSWORD': os.getenv('DB_PASSWORD', default=''),
+#             'HOST': os.getenv('DB_HOST', default=''),
+#             'PORT': os.getenv('DB_PORT', default=''),
+#         }
+#     }
 
 AUTH_USER_MODEL = 'users.User'
 
