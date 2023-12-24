@@ -204,7 +204,13 @@ class WordViewSet(viewsets.ModelViewSet):
                     instance=_obj, data=request.data, partial=True
                 )
                 serializer.is_valid(raise_exception=True)
-                serializer.save()
+                try:
+                    serializer.save()
+                except IntegrityError:
+                    return Response(
+                        {'detail': kwargs.get('integrityerror_msg', '')},
+                        status=status.HTTP_409_CONFLICT,
+                    )
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             case 'DELETE':
                 _obj.delete()
@@ -250,6 +256,7 @@ class WordViewSet(viewsets.ModelViewSet):
             notfounderror_msg='Перевод с таким id у слова не найден.',
             relation_model=WordTranslation,
             lookup_name='translation_id',
+            integrityerror_msg='Такой перевод уже существует.',
             *args,
             **kwargs,
         )
@@ -290,6 +297,7 @@ class WordViewSet(viewsets.ModelViewSet):
             notfounderror_msg='Определение с таким id у слова не найдено.',
             relation_model=WordDefinitions,
             lookup_name='definition_id',
+            integrityerror_msg='Такое определение уже существует.',
             *args,
             **kwargs,
         )
@@ -329,6 +337,7 @@ class WordViewSet(viewsets.ModelViewSet):
             notfounderror_msg='Пример с таким id у слова не найден.',
             relation_model=WordUsageExamples,
             lookup_name='example_id',
+            integrityerror_msg='Такой пример уже существует.',
             *args,
             **kwargs,
         )
@@ -360,6 +369,7 @@ class WordViewSet(viewsets.ModelViewSet):
             notfounderror_msg='Синоним с таким id у слова не найден.',
             relation_model=Synonym,
             lookup_name='synonym_id',
+            integrityerror_msg='Такой синоним уже существует.',
             *args,
             **kwargs,
         )
@@ -391,6 +401,7 @@ class WordViewSet(viewsets.ModelViewSet):
             notfounderror_msg='Антоним с таким id у слова не найден.',
             relation_model=Antonym,
             lookup_name='antonym_id',
+            integrityerror_msg='Такой антоним уже существует.',
             *args,
             **kwargs,
         )
