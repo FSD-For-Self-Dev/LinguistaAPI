@@ -7,8 +7,6 @@ from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
 
-import dj_database_url
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -86,23 +84,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgres://linguista_db_user:lpeVEpdOMmWSgkaG69sTWVQKWrRuNBov@dpg-clrlngvqd2ns739danmg-a/linguista_db_6tdi',
-        conn_max_age=600,
-    )
+    'default': {
+        'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', default='postgres'),
+        'USER': os.getenv('DB_USER', default=''),
+        'PASSWORD': os.getenv('DB_PASSWORD', default=''),
+        'HOST': os.getenv('DB_HOST', default=''),
+        'PORT': os.getenv('DB_PORT', default=''),
+    }
 }
-
-# if DEBUG:
-#     DATABASES = {
-#         'default': {
-#             'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-#             'NAME': os.getenv('DB_NAME', default='postgres'),
-#             'USER': os.getenv('DB_USER', default=''),
-#             'PASSWORD': os.getenv('DB_PASSWORD', default=''),
-#             'HOST': os.getenv('DB_HOST', default=''),
-#             'PORT': os.getenv('DB_PORT', default=''),
-#         }
-#     }
 
 AUTH_USER_MODEL = 'users.User'
 
