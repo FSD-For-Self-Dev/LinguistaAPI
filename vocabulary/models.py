@@ -243,16 +243,18 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name = _('Word or phrase')
         verbose_name_plural = _('Words and phrases')
         constraints = [
-            models.UniqueConstraint(
-                Lower('text'), 'author', name='unique_words_in_user_voc'
-            )
+            models.UniqueConstraint('text', 'author', name='unique_words_in_user_voc')
         ]
 
     def __str__(self) -> str:
         return self.text
 
+    @staticmethod
+    def get_slug(text, author_id):
+        return slugify_text_author_fields(text, author_id)
+
     def save(self, *args, **kwargs):
-        self.slug = slugify_text_author_fields(self, self.text)
+        self.slug = self.get_slug(self.text, self.author.id)
         super(Word, self).save(*args, **kwargs)
         default_type_pk = Type.get_default_pk()
         self.types.add(default_type_pk)  # *

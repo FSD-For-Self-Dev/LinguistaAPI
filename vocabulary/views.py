@@ -119,7 +119,9 @@ class WordViewSet(viewsets.ModelViewSet):
         try:
             return super().create(request, *args, **kwargs)
         except IntegrityError:
-            word = request.data.get('text')
+            word_text, word_author_id = request.data.get('text'), request.user.id
+            word_slug = Word.get_slug(word_text, word_author_id)
+            word = Word.objects.get(slug=word_slug)
             return Response(
                 {'detail': f'Слово или фраза {word} уже есть в вашем словаре.'},
                 status=status.HTTP_409_CONFLICT,
