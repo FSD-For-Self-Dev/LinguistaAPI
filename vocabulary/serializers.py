@@ -294,8 +294,7 @@ class WordRelatedSerializer(serializers.ModelSerializer):
 
 
 class WordShortSerializer(serializers.ModelSerializer):
-    """Сериализатор для множественного добавления слов (а также синонимов,
-    антонимов, форм и похожих слов), а также для чтения в короткой форме."""
+    """Сериализатор для записи и чтения слов в короткой форме."""
 
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name', required=True
@@ -337,13 +336,7 @@ class WordShortSerializer(serializers.ModelSerializer):
             'modified',
             'author',
         )
-        read_only_fields = (
-            'id',
-            'slug',
-            'author',
-            'is_problematic',
-            'translations_count',
-        )
+        read_only_fields = ('id', 'slug', 'translations_count')
 
     @staticmethod
     def max_amount_validate(obj_list, max_amount, attr):
@@ -351,7 +344,7 @@ class WordShortSerializer(serializers.ModelSerializer):
         произвольного атрибута слова."""
         if len(obj_list) > max_amount:
             raise serializers.ValidationError(
-                f'The word cannot have more than ' f'{max_amount} {attr}'
+                f'The word cannot have more than {max_amount} {attr}'
             )
 
     def validate_types(self, types):
