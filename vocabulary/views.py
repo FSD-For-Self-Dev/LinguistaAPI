@@ -128,6 +128,25 @@ class WordViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_409_CONFLICT,
             )
 
+    @staticmethod
+    def delete_related_obj(word, objs, related_model, related_field):
+        """Удалить связанные объекты, если они не используются в других словах."""
+        for obj in objs:
+            if not related_model.objects.filter(
+                ~Q(word=word), **{related_field: obj}
+            ).exists():
+                obj.delete()
+
+    def perform_destroy(self, instance):
+        """Удалить дополнения слова при его удалении, если они больше не используются."""
+        definitions = instance.definitions.all()
+        self.delete_related_obj(instance, definitions, WordDefinitions, 'definition')
+        translations = instance.translations.all()
+        self.delete_related_obj(instance, translations, WordTranslations, 'translation')
+        examples = instance.examples.all()
+        self.delete_related_obj(instance, examples, WordUsageExamples, 'example')
+        instance.delete()
+
     @extend_schema(operation_id='word_random')
     @action(methods=['get'], detail=False, serializer_class=WordShortSerializer)
     def random(self, request, *args, **kwargs):
