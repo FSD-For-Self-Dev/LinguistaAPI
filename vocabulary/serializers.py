@@ -3,7 +3,6 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Q
-from django.utils.translation import gettext as _
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -77,7 +76,9 @@ class RelatedSerializerField(serializers.PrimaryKeyRelatedField):
         super().__init__(**kwargs)
 
     def to_representation(self, value):
-        return self.serializer_class(value, many=self.many, required=self.required).data
+        return self.serializer_class(
+            value, many=self.many, required=self.required, context=self.context
+        ).data
 
 
 class CreatableSlugRelatedField(serializers.SlugRelatedField):
@@ -103,14 +104,17 @@ class CreatableSlugRelatedField(serializers.SlugRelatedField):
         try:
             if self.capitalize:  # временное решение для групп форм
                 data = data.capitalize()
+            obj_data = {self.slug_field: data}
             if self.need_author:
-                obj_data = {
+                obj_create_data = {
                     self.slug_field: data,
                     'author': self.context['request'].user,
                 }
+                obj, _ = self.get_queryset().get_or_create(
+                    **obj_data, defaults=obj_create_data
+                )
             else:
-                obj_data = {self.slug_field: data}
-            obj, created = self.get_queryset().get_or_create(**obj_data)
+                obj, _ = self.get_queryset().get_or_create(**obj_data)
             return obj
         except (TypeError, ValueError):
             self.fail('invalid')
@@ -506,11 +510,12 @@ class WordSerializer(WordShortSerializer):
     def bulk_create_objects(objs, model_cls, related_model_cls, related_field, word):
         """Статический метод для массового создания объектов
         для полей many-to-many."""
-        objs_list = [model_cls(**data) for data in objs]
-        model_cls.objects.bulk_create(objs_list)
-        related_objs_list = [
-            related_model_cls(**{'word': word, related_field: obj}) for obj in objs_list
-        ]
+        related_objs_list = []
+        for obj_data in objs:
+            obj, _ = model_cls.objects.get_or_create(**obj_data)
+            related_objs_list.append(
+                related_model_cls(**{'word': word, related_field: obj})
+            )
         related_model_cls.objects.bulk_create(related_objs_list)
 
     def create_links_for_related_objs(self, cls, objs, word):
