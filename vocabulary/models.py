@@ -4,7 +4,6 @@ from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
 from django.db.models.functions import Lower
-from django.utils.text import slugify
 from django.utils.translation import gettext as _
 
 from core.models import AuthorModel, CreatedModel, ModifiedModel, UserRelatedModel
@@ -64,7 +63,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
-    slug = models.SlugField(_('Slug'), null=True, unique=True)
+    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
     description = models.TextField(
         _('Description'), max_length=MAX_COLLECTION_DESCRIPTION_LENGTH, blank=True
     )
@@ -91,10 +90,14 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         return _(f'{self.title} ({self.words.count()} words)')
 
     def words_count(self) -> int:
-        return self.words.count()  # *
+        return self.words.count()
+
+    @staticmethod
+    def get_slug(title, author_id):
+        return slugify_text_author_fields(title, author_id)
 
     def save(self, *args, **kwargs):
-        self.slug = slugify_text_author_fields(self, self.title)
+        self.slug = self.get_slug(self.title, self.author.id)
         super(Collection, self).save(*args, **kwargs)
 
 
@@ -108,7 +111,7 @@ class Type(models.Model):
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
-    slug = models.SlugField(_('Slug'), max_length=64, unique=True)
+    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
 
     class Meta:
         verbose_name = _('Type')
@@ -156,7 +159,7 @@ class Word(CreatedModel, ModifiedModel):
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
-    slug = models.SlugField(_('Slug'), unique=True, max_length=4096)
+    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
     author = models.ForeignKey(
         User,
         verbose_name=_('Author'),
@@ -342,7 +345,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
-    slug = models.SlugField(_('Slug'), null=True, unique=True)
+    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
     words = models.ManyToManyField(
         'Word',
         through='WordsFormGroups',
@@ -362,8 +365,12 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
     def __str__(self):
         return f'{self.name}'
 
+    @staticmethod
+    def get_slug(name, author_id):
+        return slugify_text_author_fields(name, author_id)
+
     def save(self, *args, **kwargs):
-        self.slug = slugify([self.name, self.author])
+        self.slug = self.get_slug(self.name, self.author.id)
         self.name = self.name.capitalize()
         super(FormsGroup, self).save(*args, **kwargs)
 
