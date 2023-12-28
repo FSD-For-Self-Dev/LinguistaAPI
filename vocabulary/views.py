@@ -5,6 +5,7 @@ import random
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
 from django.db.models import Count, Q
+from django.core.exceptions import ObjectDoesNotExist
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
@@ -188,14 +189,12 @@ class WordViewSet(viewsets.ModelViewSet):
 
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
 
-    def _detail_action(
-        self, request, objs_name, lookup_name, relation_model=None, *args, **kwargs
-    ):
+    def _detail_action(self, request, objs_name, lookup_name, *args, **kwargs):
         """Осуществить методы retrieve, partial_update, destroy для дополнений слова."""
         word = self.get_object()
         try:
             _obj = word.__getattribute__(objs_name).get(pk=kwargs.get(lookup_name))
-        except relation_model.DoesNotExist:
+        except ObjectDoesNotExist:
             raise NotFound(detail=kwargs.get('notfounderror_msg', ''))
 
         match request.method:
