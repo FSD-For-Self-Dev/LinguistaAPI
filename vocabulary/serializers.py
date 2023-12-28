@@ -563,7 +563,7 @@ class TypeSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'slug',
-            'sorting',
+            'words_count',
         )
         read_only_fields = fields
 

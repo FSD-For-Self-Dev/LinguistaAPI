@@ -469,8 +469,12 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     http_method_names = ('get',)
     pagination_class = None
     permission_classes = (AllowAny,)
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('name',)
+    ordering = ('-words_count_order',)
+
+    def get_queryset(self):
+        return Type.objects.annotate(words_count_order=Count('words', distinct=True))
 
 
 @extend_schema_view(

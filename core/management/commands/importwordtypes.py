@@ -32,8 +32,7 @@ class Command(BaseCommand):
     Command to import possible word types from TYPE_CHOICES
     """
 
-    help = ('Imports possible word types names, slugs from '
-            'TYPE_CHOICES')
+    help = 'Imports possible word types names, slugs from ' 'TYPE_CHOICES'
 
     def add_arguments(self, parser):
         pass
@@ -46,7 +45,6 @@ class Command(BaseCommand):
                 word_type, created = Type.objects.get_or_create(
                     slug=type_info[0].lower(),
                     name=type_info[1],
-                    sorting=type_info[2]
                 )
                 if created:
                     cnt += 1

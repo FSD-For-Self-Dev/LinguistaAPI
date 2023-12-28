@@ -109,21 +109,6 @@ class Type(models.Model):
         ),
     )
     slug = models.SlugField(_('Slug'), max_length=64, unique=True)
-    sorting = models.PositiveIntegerField(
-        _('Sorting order'),
-        blank=False,
-        null=False,
-        default=0,
-        help_text=_('increase to show at top of the list'),
-    )
-
-    @classmethod
-    def get_default_pk(cls):
-        word_type, created = cls.objects.get_or_create(
-            slug='noun',
-            defaults={'name': _('Noun'), 'sorting': 3},
-        )
-        return word_type.pk
 
     class Meta:
         verbose_name = _('Type')
@@ -131,6 +116,18 @@ class Type(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def words_count(self):
+        return self.words.count()
+
+    @classmethod
+    def get_default_pk(cls):
+        word_type, created = cls.objects.get_or_create(
+            slug='noun',
+            defaults={'name': _('Noun')},
+        )
+        return word_type.pk
 
 
 class Word(CreatedModel, ModifiedModel):
