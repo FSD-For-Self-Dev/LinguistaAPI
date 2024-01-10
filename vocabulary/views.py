@@ -100,7 +100,7 @@ class WordViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         match self.action:
-            case 'list' | 'random':
+            case 'list' | 'random' | 'multiple_add':
                 return WordShortSerializer
             case 'translations' | 'translations_detail':
                 return TranslationSerializer
@@ -115,18 +115,45 @@ class WordViewSet(viewsets.ModelViewSet):
             case _:
                 return WordSerializer
 
+    @staticmethod
+    def word_integrity_error_handler(word_data, request):
+        """Вернуть такое же слово из словаря при ошибке IntegrityError."""
+        word_text, word_author_id = word_data.get('text'), request.user.id
+        word_slug = Word.get_slug(word_text, word_author_id)
+        word = Word.objects.get(slug=word_slug)
+        return Response(
+            {
+                'detail': f'Слово или фраза {word} уже есть в вашем словаре.',
+                'word': WordShortSerializer(word, context={'request': request}).data,
+            },
+            status=status.HTTP_409_CONFLICT,
+        )
+
     def create(self, request, *args, **kwargs):
         """Обработать ошибку IntegrityError перед созданием слова."""
         try:
             return super().create(request, *args, **kwargs)
         except IntegrityError:
-            word_text, word_author_id = request.data.get('text'), request.user.id
-            word_slug = Word.get_slug(word_text, word_author_id)
-            word = Word.objects.get(slug=word_slug)
-            return Response(
-                {'detail': f'Слово или фраза {word} уже есть в вашем словаре.'},
-                status=status.HTTP_409_CONFLICT,
-            )
+            return self.word_integrity_error_handler(request.data, request)
+
+    @staticmethod
+    def delete_related_obj(word, objs, related_model, related_field):
+        """Удалить связанные объекты, если они не используются в других словах."""
+        for obj in objs:
+            if not related_model.objects.filter(
+                ~Q(word=word), **{related_field: obj}
+            ).exists():
+                obj.delete()
+
+    def perform_destroy(self, instance):
+        """Удалить дополнения слова при его удалении, если они больше не используются."""
+        definitions = instance.definitions.all()
+        self.delete_related_obj(instance, definitions, WordDefinitions, 'definition')
+        translations = instance.translations.all()
+        self.delete_related_obj(instance, translations, WordTranslations, 'translation')
+        examples = instance.examples.all()
+        self.delete_related_obj(instance, examples, WordUsageExamples, 'example')
+        instance.delete()
 
     @extend_schema(operation_id='word_random')
     @action(methods=['get'], detail=False, serializer_class=WordShortSerializer)
@@ -152,6 +179,30 @@ class WordViewSet(viewsets.ModelViewSet):
         word.is_problematic = not word.is_problematic
         word.save()
         return Response(self.get_serializer(word).data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(operation_id='multiple_add')
+    @action(
+        methods=['post'],
+        detail=False,
+        url_path='multiple-add',
+        serializer_class=WordShortSerializer,
+    )
+    def multiple_add(self, request, *args, **kwargs):
+        """Быстрое добавление нескольких слов сразу в словарь пользователя."""
+        serializer = self.get_serializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        for data in serializer.validated_data:
+            try:
+                return self.word_integrity_error_handler(data, request)
+            except ObjectDoesNotExist:
+                pass
+
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, status=status.HTTP_201_CREATED, headers=headers
+        )
 
     def _list_and_create_action(
         self,
@@ -418,8 +469,12 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     http_method_names = ('get',)
     pagination_class = None
     permission_classes = (AllowAny,)
-    filter_backends = (filters.SearchFilter,)
+    filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('name',)
+    ordering = ('-words_count_order',)
+
+    def get_queryset(self):
+        return Type.objects.annotate(words_count_order=Count('words', distinct=True))
 
 
 @extend_schema_view(

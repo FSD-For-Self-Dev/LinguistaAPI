@@ -86,7 +86,7 @@ class WordAdmin(admin.ModelAdmin):
 
 @admin.register(Type)
 class TypeAdmin(TranslationAdmin):
-    list_display = ('name', 'sorting')
+    list_display = ('name', 'words_count')
     list_display_links = ('name',)
 
 
