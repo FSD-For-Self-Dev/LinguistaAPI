@@ -186,8 +186,7 @@ class TranslationSerializer(serializers.ModelSerializer):
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
-        default=WordSameLanguageDefault(),
-        # нужно будет исправить default на родной язык пользователя
+        # нужно будет добавить default на родной язык пользователя
     )
 
     class Meta:
