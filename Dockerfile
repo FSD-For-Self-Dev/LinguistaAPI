@@ -9,6 +9,7 @@ RUN pip3 install -r requirements.txt --no-cache-dir
 COPY . .
 
 RUN python manage.py migrate
+RUN python manage.py loaddata data_dump.json
 
 EXPOSE 8000
 
