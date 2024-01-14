@@ -21,15 +21,69 @@ drf-spectacular = "^0.26.3"
 python-dotenv = "^1.0.0"
 Pillow = "^10.0.1"
 django-modeltranslation = "^0.18.11"
+django-cleanup = "^8.0.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.0"
 pytest-django = "^4.4.0"
 pytest-pythonpath = "^0.7.3"
 factory-boy = "^3.3.0"
-django-cleanup = "^8.0.0"
-flake8 = "^6.1.0"
+pre-commit = "^3.5.0"
+ruff="^0.1.6"
 
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "LC_MESSAGES",
+    ".pytest-cache",
+    "*/migrations/*",
+    "*/__pycache__/*",
+]
+# Same as Black.
+line-length = 88
+indent-width = 4
+# Assume Python 3.10
+target-version = "py310"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "single"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402"]
+"**/{tests,docs,tools}/*" = ["E402"]
+"/settings.py" = ["E501"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "single"
