@@ -2,14 +2,18 @@ version: '3.8'
 services:
   db:
     image: postgres:12.1-alpine
-    restart: always
+    ports:
+      - "5432:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data/
+      - /var/lib/postgresql/data/
+    restart: always
     env_file:
       - ./.env
 
   app:
     image: fsdforselfdev/linguista:latest
+    ports:
+     - "8000:80"
     restart: always
     volumes:
       - static_value:/app/static/
@@ -19,11 +23,20 @@ services:
     env_file:
       - ./.env
 
+  # this service will use same image, and once the migration is done it will be stopped
+  app_migrations:
+    image: fsdforselfdev/linguista:latest
+    command: bash -c "python manage.py migrate && python manage.py loaddata data_dump.json"
+    depends_on:
+      - app
+    env_file:
+      - ./.env
+
   # frontend:
   #   ...
 
   nginx:
-    image: nginx:1.21-alpine
+    image: nginx:1.21.3-alpine
     ports:
       - 80:80
     volumes:
@@ -40,4 +53,3 @@ services:
 volumes:
   static_value:
   media_value:
-  postgres_data:

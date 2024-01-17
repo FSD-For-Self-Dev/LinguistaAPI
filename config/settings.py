@@ -7,8 +7,6 @@ from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
 
-import dj_database_url
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,6 +55,7 @@ MIDDLEWARE = [
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -84,24 +83,16 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'config.wsgi.application'
 
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-            'NAME': os.getenv('DB_NAME', default='postgres'),
-            'USER': os.getenv('DB_USER', default=''),
-            'PASSWORD': os.getenv('DB_PASSWORD', default=''),
-            'HOST': os.getenv('DB_HOST', default=''),
-            'PORT': os.getenv('DB_PORT', default='')
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', default='postgres'),
+        'USER': os.getenv('DB_USER', default=''),
+        'PASSWORD': os.getenv('DB_PASSWORD', default=''),
+        'HOST': os.getenv('DB_HOST', default=''),
+        'PORT': os.getenv('DB_PORT', default=''),
     }
-else:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default='postgres://linguista_db_user:R6GisftSL9uuQcKU8ykbqf5MxAr3kVP7@dpg-cl72tuauuipc73f6d8t0-a/linguista_db_06pk',
-            conn_max_age=600
-        )
-    }
+}
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -134,21 +125,16 @@ REST_AUTH = {
     'PASSWORD_RESET_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetSerializer',
     'PASSWORD_RESET_CONFIRM_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetConfirmSerializer',
     'PASSWORD_CHANGE_SERIALIZER': 'dj_rest_auth.serializers.PasswordChangeSerializer',
-
     'REGISTER_SERIALIZER': 'dj_rest_auth.registration.serializers.RegisterSerializer',
     'EMAIL_REQUIRED': False,
-
     'REGISTER_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
-
     'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
     'TOKEN_CREATOR': 'dj_rest_auth.utils.default_create_token',
-
     'PASSWORD_RESET_USE_SITES_DOMAIN': False,
     'OLD_PASSWORD_FIELD_ENABLED': False,
     'LOGOUT_ON_PASSWORD_CHANGE': False,
     'SESSION_LOGIN': True,
     'USE_JWT': False,
-
     'JWT_AUTH_COOKIE': None,
     'JWT_AUTH_REFRESH_COOKIE': None,
     'JWT_AUTH_REFRESH_COOKIE_PATH': '/',
@@ -164,21 +150,17 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.TokenAuthentication',
     ],
-
     'DEFAULT_FILTER_BACKENDS': [
         'django_filters.rest_framework.DjangoFilterBackend',
     ],
-
     'DEFAULT_PAGINATION_CLASS': 'core.pagination.LimitPagination',
     'PAGE_SIZE': 2,
-
-    'DATETIME_FORMAT': "%Y-%m-%d %H:%M",
-
-    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DATETIME_FORMAT': '%Y-%m-%d %H:%M',
+    # 'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'vocabulary.schema.CustomSchema',
 }
 
 CORS_ALLOWED_ORIGINS = [
@@ -194,7 +176,6 @@ CORS_URLS_REGEX = r'^/api/.*$'
 
 SIMPLE_JWT = {
     # Срок жизни токена
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=45),
     'ACCESS_TOKEN_LIFETIME': timedelta(days=3),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
@@ -215,9 +196,7 @@ LANGUAGES = (
     ('ru', _('Russian')),
     ('en', _('English')),
 )
-LOCALE_PATHS = (
-    os.path.join(BASE_DIR, 'locale'),
-)
+LOCALE_PATHS = (os.path.join(BASE_DIR, 'locale'),)
 
 TIME_ZONE = 'UTC'
 
@@ -252,3 +231,5 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 SERVER_EMAIL = EMAIL_HOST_USER
 EMAIL_ADMIN = EMAIL_HOST_USER
+
+APPEND_SLASH = False
