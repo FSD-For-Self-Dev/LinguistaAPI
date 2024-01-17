@@ -25,7 +25,6 @@ from .models import (
     Collection,
     FavoriteCollection,
     FormsGroup,
-    Note,
     Type,
     WordDefinitions,
     WordTranslation,
@@ -46,7 +45,6 @@ from .serializers import (
     CollectionsListSerializer,
     DefinitionSerializer,
     FormsGroupSerializer,
-    NoteSerializer,
     TranslationSerializer,
     TypeSerializer,
     UsageExampleSerializer,
@@ -216,8 +214,8 @@ class WordViewSet(viewsets.ModelViewSet):
         **kwargs,
     ):
         """Осуществить методы list, create для дополнений слова."""
-        word = self.get_object() #возвращает кверисет модели Word
-        _objs = word.__getattribute__(objs_name).all() # получаем выборку по полю defenitions в модели
+        word = self.get_object()
+        _objs = word.__getattribute__(objs_name).all()
         match request.method:
             case 'GET':
                 serializer = self.get_serializer(
@@ -355,7 +353,7 @@ class WordViewSet(viewsets.ModelViewSet):
             *args,
             **kwargs,
         )
-#region Hidden
+
     @extend_schema(operation_id='examples_list', methods=['get'])
     @extend_schema(operation_id='example_create', methods=['post'])
     @action(
@@ -459,27 +457,7 @@ class WordViewSet(viewsets.ModelViewSet):
             *args,
             **kwargs,
         )
-#endregion
-    @action(
-        methods=['get', 'post'],
-        detail=True,
-        serializer_class = NoteSerializer,
-        permission_classes=[IsAuthenticated],
-    )
-    def ohnononotes(self, request, *args, **kwargs):
-        # print('1111!!!')
-        # return Response({"msg": "ok"})
-        if request.method == 'GET':
-            slug = kwargs.get('slug')
-            print(slug)
-            if slug:
-                try:
-                    word = Word.objects.get(slug=slug)
-                    note = Note.objects.get(word=word)
-                    serializer = NoteSerializer(note)
-                    return Response(serializer.data)
-                except Word.DoesNotExist:
-                    return Response({'error': 'Слово не найдено.'}, status=404)
+
 
 @extend_schema_view(list=extend_schema(operation_id='types_list'))
 class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):

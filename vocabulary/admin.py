@@ -65,10 +65,6 @@ class WordDefinitionsInline(admin.TabularInline):
     model = WordDefinitions
 
 
-class NoteInline(admin.TabularInline):
-    model = Note
-
-
 @admin.register(Word)
 class WordAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
@@ -85,7 +81,6 @@ class WordAdmin(admin.ModelAdmin):
         AntonymInline,
         FormInline,
         SimilarInline,
-        NoteInline,
     )
 
 
