@@ -5,7 +5,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
-      - /var/lib/postgresql/data/
+      - linguista_db_volume:/var/lib/postgresql/data/
     restart: always
     env_file:
       - ./.env
@@ -51,5 +51,6 @@ services:
       # - frontend
 
 volumes:
+  linguista_db_volume:
   static_value:
   media_value:
