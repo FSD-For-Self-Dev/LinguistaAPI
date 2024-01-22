@@ -357,7 +357,7 @@ class WordViewSet(viewsets.ModelViewSet):
             *args,
             **kwargs,
         )
-#region Hidden
+
     @extend_schema(operation_id='examples_list', methods=['get'])
     @extend_schema(operation_id='example_create', methods=['post'])
     @action(
@@ -461,7 +461,7 @@ class WordViewSet(viewsets.ModelViewSet):
             *args,
             **kwargs,
         )
-#endregion
+
     @action(
         methods=['get', 'post', 'patch', 'delete'],
         detail=True,
@@ -472,7 +472,10 @@ class WordViewSet(viewsets.ModelViewSet):
             slug = kwargs.get('slug')
             word = Word.objects.get(slug=slug)
         except KeyError:
-            return Response({'error': 'Отсутствует параметр slug.'}, status=400)
+            return Response(
+                {'error': 'Отсутствует параметр slug.'},
+                status=400
+            )
         except Word.DoesNotExist:
             return Response({'error': 'Слово не найдено.'}, status=404)
 
