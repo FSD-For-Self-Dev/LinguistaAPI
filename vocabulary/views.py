@@ -25,6 +25,7 @@ from .models import (
     Collection,
     FavoriteCollection,
     FormsGroup,
+    Note,
     Type,
     WordDefinitions,
     WordTranslation,
@@ -45,6 +46,7 @@ from .serializers import (
     CollectionsListSerializer,
     DefinitionSerializer,
     FormsGroupSerializer,
+    NoteSerializer,
     TranslationSerializer,
     TypeSerializer,
     UsageExampleSerializer,
@@ -112,6 +114,8 @@ class WordViewSet(viewsets.ModelViewSet):
                 return SynonymSerializer
             case 'antonyms' | 'antonyms_detail':
                 return AntonymSerializer
+            case 'notes':
+                return NoteSerializer
             case _:
                 return WordSerializer
 
@@ -353,7 +357,7 @@ class WordViewSet(viewsets.ModelViewSet):
             *args,
             **kwargs,
         )
-
+#region Hidden
     @extend_schema(operation_id='examples_list', methods=['get'])
     @extend_schema(operation_id='example_create', methods=['post'])
     @action(
@@ -457,7 +461,51 @@ class WordViewSet(viewsets.ModelViewSet):
             *args,
             **kwargs,
         )
+#endregion
+    @action(
+        methods=['get', 'post', 'patch', 'delete'],
+        detail=True,
+        permission_classes=[IsAuthenticated],
+    )
+    def notes(self, request, *args, **kwargs):
+        try:
+            slug = kwargs.get('slug')
+            word = Word.objects.get(slug=slug)
+        except KeyError:
+            return Response({'error': 'Отсутствует параметр slug.'}, status=400)
+        except Word.DoesNotExist:
+            return Response({'error': 'Слово не найдено.'}, status=404)
 
+        if request.method == 'POST':
+            serializer_class = self.get_serializer_class()
+            serializer = serializer_class(data=request.data)
+            if serializer.is_valid():
+                serializer.save(word=word)
+                return Response(serializer.data)
+            return Response(serializer.errors, status=400)
+
+        elif request.method == 'GET' or request.method == 'PATCH':
+            note = Note.objects.get(word=word)
+            if request.method == 'PATCH':
+                serializer_class = self.get_serializer_class()
+                serializer = serializer_class(
+                    note,
+                    data=request.data,
+                    partial=True
+                )
+                if serializer.is_valid():
+                    serializer.save()
+                    return Response(serializer.data)
+                return Response(serializer.errors, status=400)
+
+            serializer_class = self.get_serializer_class()
+            serializer = serializer_class(note)
+            return Response(serializer.data)
+
+        elif request.method == 'DELETE':
+            note = Note.objects.get(word=word)
+            note.delete()
+            return Response({'error': 'Заметка удалена.'}, status=204)
 
 @extend_schema_view(list=extend_schema(operation_id='types_list'))
 class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
