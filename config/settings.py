@@ -172,8 +172,6 @@ CORS_ALLOWED_ORIGINS = [
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
 
-CORS_URLS_REGEX = r'^/api/.*$'
-
 SIMPLE_JWT = {
     # Срок жизни токена
     'ACCESS_TOKEN_LIFETIME': timedelta(days=3),
