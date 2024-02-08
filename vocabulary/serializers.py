@@ -630,3 +630,21 @@ class SynonymSerializer(serializers.ModelSerializer):
     @extend_schema_field({'type': 'string'})
     def get_slug(self, obj):
         return obj.from_word.slug
+
+
+class SimilarSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(),
+        serializer_class=UserSerializer,
+        many=False,
+    )
+    to_word = serializers.HiddenField(default=CurrentWordDefault())
+    text = serializers.CharField(source='from_word.text')
+    translations = TranslationSerializer(many=True, required=False)
+    language = serializers.HiddenField(default=WordSameLanguageDefault())
+    slug = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Similar
+        fields = ('id', 'to_word', 'text', 'translations', 'language', 'author', 'slug')
+        read_only_fields = ('id', 'author', 'slug')
