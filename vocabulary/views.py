@@ -34,7 +34,7 @@ from .models import (
     WordTranslations,
     WordUsageExamples,
     Word,
-    Synonym,
+    Synonym, Similar,
 )
 from .permissions import (
     CanAddDefinitionPermission,
@@ -52,7 +52,7 @@ from .serializers import (
     UsageExampleSerializer,
     WordSerializer,
     WordShortSerializer,
-    SynonymSerializer,
+    SynonymSerializer, SimilarSerializer,
 )
 
 User = get_user_model()
@@ -393,6 +393,52 @@ class WordViewSet(viewsets.ModelViewSet):
                 synonyms = Synonym.objects.filter(to_word=word)
                 serializer = SynonymSerializer(
                     synonyms, many=True, context={'request': request}
+                )
+                return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+
+    @action(
+        methods=['post'],
+        detail=True,
+        serializer_class=SimilarSerializer,
+        permission_classes=[IsAuthenticated],
+    )
+    def similars(self, request, *args, **kwargs):
+        """Добавить похожие слова."""
+        match request.method:
+            case 'POST':
+                serializer = self.get_serializer(data=request.data)
+                serializer.is_valid(raise_exception=True)
+
+                try:
+                    serializer.save(author_id=request.user.id)
+                    return Response(serializer.data, status=status.HTTP_201_CREATED)
+                except IntegrityError:
+                    return Response(
+                        {'detail': 'Такое слово уже добавлено.'},
+                        status=status.HTTP_409_CONFLICT,
+                    )
+
+    @action(
+        detail=True,
+        methods=['delete'],
+        url_path=r'similars/(?P<similar_id>\d+)',
+        url_name="word's similars detail",
+        serializer_class=SimilarSerializer,
+    )
+    def similars_delete(self, request, *args, **kwargs):
+        """Удалить похожие слова."""
+        word = self.get_object()
+        try:
+            similar = Similar.objects.get(pk=kwargs.get('similar_id'))
+        except Similar.DoesNotExist:
+            raise NotFound(detail='The similar not found')
+
+        match request.method:
+            case 'DELETE':
+                similar.delete()
+                similars = Similar.objects.filter(to_word=word)
+                serializer = SimilarSerializer(
+                    similars, many=True, context={'request': request}
                 )
                 return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
