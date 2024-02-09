@@ -14,10 +14,6 @@ services:
     build:
       context: ..
       dockerfile: ./Dockerfile
-    # command: bash -c "python manage.py migrate && python manage.py collectstatic --no-input"
-    # command: >
-    #   sh -c "chmod +x /app/docker-entrypoint.sh && /app/docker-entrypoint.sh"
-    # entrypoint: [ "/app/docker-entrypoint.sh" ]
     ports:
      - "8000:8000"
     restart: always
