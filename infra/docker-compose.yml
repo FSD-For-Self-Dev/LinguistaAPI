@@ -28,8 +28,8 @@ services:
   # this service will use same image as web app, and once the migration is done it will be stopped
   app_migrations:
     build:
-      context: .
-      dockerfile: ../Dockerfile
+      context: ..
+      dockerfile: ./Dockerfile
     command: bash -c "python manage.py migrate && python manage.py loaddata data_dump.json && python manage.py collectstatic --no-input"
     volumes:
       - static_value:/app/static/
