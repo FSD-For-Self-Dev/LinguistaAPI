@@ -1,3 +1,5 @@
+# Запуск контейнеров из образов dockerhub
+
 version: '3.8'
 services:
   db:
