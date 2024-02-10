@@ -3,7 +3,7 @@
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
-from django.utils.text import slugify
+from django.db.models.functions import Lower
 from django.utils.translation import gettext as _
 
 from core.models import AuthorModel, CreatedModel, ModifiedModel, UserRelatedModel
@@ -63,7 +63,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
-    slug = models.SlugField(_('Slug'), null=True, unique=True)
+    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
     description = models.TextField(
         _('Description'), max_length=MAX_COLLECTION_DESCRIPTION_LENGTH, blank=True
     )
@@ -82,7 +82,7 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Collections')
         constraints = [
             models.UniqueConstraint(
-                fields=['title', 'author'], name='unique_user_collection'
+                Lower('title'), 'author', name='unique_user_collection'
             )
         ]
 
@@ -90,10 +90,14 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         return _(f'{self.title} ({self.words.count()} words)')
 
     def words_count(self) -> int:
-        return self.words.count()  # *
+        return self.words.count()
+
+    @staticmethod
+    def get_slug(title, author_id):
+        return slugify_text_author_fields(title, author_id)
 
     def save(self, *args, **kwargs):
-        self.slug = slugify_text_author_fields(self, self.title)
+        self.slug = self.get_slug(self.title, self.author.id)
         super(Collection, self).save(*args, **kwargs)
 
 
@@ -107,22 +111,7 @@ class Type(models.Model):
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
-    slug = models.SlugField(_('Slug'), max_length=64, unique=True)
-    sorting = models.PositiveIntegerField(
-        _('Sorting order'),
-        blank=False,
-        null=False,
-        default=0,
-        help_text=_('increase to show at top of the list'),
-    )
-
-    @classmethod
-    def get_default_pk(cls):
-        word_type, created = cls.objects.get_or_create(
-            slug='noun',
-            defaults={'name': _('Noun'), 'sorting': 3},
-        )
-        return word_type.pk
+    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
 
     class Meta:
         verbose_name = _('Type')
@@ -130,6 +119,18 @@ class Type(models.Model):
 
     def __str__(self) -> str:
         return self.name
+
+    @property
+    def words_count(self):
+        return self.words.count()
+
+    @classmethod
+    def get_default_pk(cls):
+        word_type, created = cls.objects.get_or_create(
+            slug='noun',
+            defaults={'name': _('Noun')},
+        )
+        return word_type.pk
 
 
 class Word(CreatedModel, ModifiedModel):
@@ -151,13 +152,14 @@ class Word(CreatedModel, ModifiedModel):
     )
     text = models.CharField(
         _('Word or phrase'),
+        blank=False,
         max_length=MAX_WORD_LENGTH,
         validators=(
             MinLengthValidator(MIN_WORD_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
-    slug = models.SlugField(_('Slug'), unique=True, max_length=4096)
+    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
     author = models.ForeignKey(
         User,
         verbose_name=_('Author'),
@@ -241,16 +243,18 @@ class Word(CreatedModel, ModifiedModel):
         verbose_name = _('Word or phrase')
         verbose_name_plural = _('Words and phrases')
         constraints = [
-            models.UniqueConstraint(
-                fields=['text', 'author'], name='unique_words_in_user_voc'
-            )
+            models.UniqueConstraint('text', 'author', name='unique_words_in_user_voc')
         ]
 
     def __str__(self) -> str:
         return self.text
 
+    @staticmethod
+    def get_slug(text, author_id):
+        return slugify_text_author_fields(text, author_id)
+
     def save(self, *args, **kwargs):
-        self.slug = slugify_text_author_fields(self, self.text)
+        self.slug = self.get_slug(self.text, self.author.id)
         super(Word, self).save(*args, **kwargs)
         default_type_pk = Type.get_default_pk()
         self.types.add(default_type_pk)  # *
@@ -341,7 +345,7 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
-    slug = models.SlugField(_('Slug'), null=True, unique=True)
+    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
     words = models.ManyToManyField(
         'Word',
         through='WordsFormGroups',
@@ -355,14 +359,18 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         verbose_name_plural = _('Forms groups')
         ordering = ('-created', 'name')
         constraints = [
-            models.UniqueConstraint(fields=['name', 'author'], name='unique_group_name')
+            models.UniqueConstraint(Lower('name'), 'author', name='unique_group_name')
         ]
 
     def __str__(self):
         return f'{self.name}'
 
+    @staticmethod
+    def get_slug(name, author_id):
+        return slugify_text_author_fields(name, author_id)
+
     def save(self, *args, **kwargs):
-        self.slug = slugify([self.name, self.author])
+        self.slug = self.get_slug(self.name, self.author.id)
         self.name = self.name.capitalize()
         super(FormsGroup, self).save(*args, **kwargs)
 
@@ -414,7 +422,7 @@ class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Translations')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'], name='unique_word_translation_in_user_voc'
+                Lower('text'), 'author', name='unique_word_translation_in_user_voc'
             )
         ]
 
@@ -541,7 +549,7 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Definitions')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'], name='unique_definition_in_user_voc'
+                Lower('text'), 'author', name='unique_definition_in_user_voc'
             )
         ]
 
@@ -605,7 +613,7 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
         verbose_name_plural = _('Usage examples')
         constraints = [
             models.UniqueConstraint(
-                fields=['text', 'author'], name='unique_word_usage_example_in_user_voc'
+                Lower('text'), 'author', name='unique_word_usage_example_in_user_voc'
             )
         ]
 

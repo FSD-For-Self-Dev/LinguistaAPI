@@ -3,7 +3,6 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Q
-from django.utils.translation import gettext as _
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -77,7 +76,9 @@ class RelatedSerializerField(serializers.PrimaryKeyRelatedField):
         super().__init__(**kwargs)
 
     def to_representation(self, value):
-        return self.serializer_class(value, many=self.many, required=self.required).data
+        return self.serializer_class(
+            value, many=self.many, required=self.required, context=self.context
+        ).data
 
 
 class CreatableSlugRelatedField(serializers.SlugRelatedField):
@@ -103,14 +104,17 @@ class CreatableSlugRelatedField(serializers.SlugRelatedField):
         try:
             if self.capitalize:  # временное решение для групп форм
                 data = data.capitalize()
+            obj_data = {self.slug_field: data}
             if self.need_author:
-                obj_data = {
+                obj_create_data = {
                     self.slug_field: data,
                     'author': self.context['request'].user,
                 }
+                obj, _ = self.get_queryset().get_or_create(
+                    **obj_data, defaults=obj_create_data
+                )
             else:
-                obj_data = {self.slug_field: data}
-            obj, created = self.get_queryset().get_or_create(**obj_data)
+                obj, _ = self.get_queryset().get_or_create(**obj_data)
             return obj
         except (TypeError, ValueError):
             self.fail('invalid')
@@ -182,8 +186,8 @@ class TranslationSerializer(serializers.ModelSerializer):
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
-        default=WordSameLanguageDefault(),
-        # нужно будет исправить default на родной язык пользователя
+        required=True,
+        # нужно будет добавить default на родной язык пользователя
     )
 
     class Meta:
@@ -290,8 +294,7 @@ class WordRelatedSerializer(serializers.ModelSerializer):
 
 
 class WordShortSerializer(serializers.ModelSerializer):
-    """Сериализатор для множественного добавления слов (а также синонимов,
-    антонимов, форм и похожих слов), а также для чтения в короткой форме."""
+    """Сериализатор для записи и чтения слов в короткой форме."""
 
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name', required=True
@@ -333,13 +336,7 @@ class WordShortSerializer(serializers.ModelSerializer):
             'modified',
             'author',
         )
-        read_only_fields = (
-            'id',
-            'slug',
-            'author',
-            'is_problematic',
-            'translations_count',
-        )
+        read_only_fields = ('id', 'slug', 'translations_count')
 
     @staticmethod
     def max_amount_validate(obj_list, max_amount, attr):
@@ -347,7 +344,7 @@ class WordShortSerializer(serializers.ModelSerializer):
         произвольного атрибута слова."""
         if len(obj_list) > max_amount:
             raise serializers.ValidationError(
-                f'The word cannot have more than ' f'{max_amount} {attr}'
+                f'The word cannot have more than {max_amount} {attr}'
             )
 
     def validate_types(self, types):
@@ -506,11 +503,12 @@ class WordSerializer(WordShortSerializer):
     def bulk_create_objects(objs, model_cls, related_model_cls, related_field, word):
         """Статический метод для массового создания объектов
         для полей many-to-many."""
-        objs_list = [model_cls(**data) for data in objs]
-        model_cls.objects.bulk_create(objs_list)
-        related_objs_list = [
-            related_model_cls(**{'word': word, related_field: obj}) for obj in objs_list
-        ]
+        related_objs_list = []
+        for obj_data in objs:
+            obj, _ = model_cls.objects.get_or_create(**obj_data)
+            related_objs_list.append(
+                related_model_cls(**{'word': word, related_field: obj})
+            )
         related_model_cls.objects.bulk_create(related_objs_list)
 
     def create_links_for_related_objs(self, cls, objs, word):
@@ -565,7 +563,7 @@ class TypeSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'slug',
-            'sorting',
+            'words_count',
         )
         read_only_fields = fields
 
@@ -614,22 +612,51 @@ class SynonymSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Synonym
-        fields = ('id', 'to_word', 'text', 'difference', 'author', 'slug')
-        read_only_fields = ('id', 'author', 'slug')
-
-    def validate(self, attrs):
-        attrs['from_word'], created = Word.objects.get_or_create(
-            text=attrs['from_word']['text'], author=self.context['request'].user
+        fields = (
+            'id',
+            'to_word',
+            'text',
+            'difference',
+            'author',
+            'slug',
+            'created',
+            'modified',
         )
-        if attrs['from_word'] == attrs['to_word']:
-            raise serializers.ValidationError(
-                {'text': ['Нельзя добавить к синонимам то же слово.']}
+        read_only_fields = ('id', 'author', 'slug', 'created', 'modified')
+
+    def validate_text(self, value):
+        if self.instance:
+            raise serializers.ValidationError('Это поле нельзя редактировать.')
+        return value
+
+    def validate(
+        self, attrs, validationerror_msg='Нельзя добавить к синонимам то же слово.'
+    ):
+        if not self.instance:
+            attrs['from_word'], created = Word.objects.get_or_create(
+                text__iexact=attrs['from_word']['text'],
+                author=self.context['request'].user,
+                defaults={'text': attrs['from_word']['text']},
             )
+            if attrs['from_word'] == attrs['to_word']:
+                raise serializers.ValidationError({'text': [validationerror_msg]})
         return super().validate(attrs)
 
     @extend_schema_field({'type': 'string'})
     def get_slug(self, obj):
         return obj.from_word.slug
+
+
+class AntonymSerializer(SynonymSerializer):
+    class Meta:
+        model = Antonym
+        fields = ('id', 'to_word', 'text', 'author', 'slug', 'created')
+        read_only_fields = ('id', 'author', 'slug', 'created')
+
+    def validate(
+        self, attrs, validationerror_msg='Нельзя добавить к антонимам то же слово.'
+    ):
+        return super().validate(attrs, validationerror_msg)
 
 
 class SimilarSerializer(serializers.ModelSerializer):

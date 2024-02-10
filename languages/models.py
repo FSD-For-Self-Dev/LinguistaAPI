@@ -70,7 +70,6 @@ class Language(models.Model):
             defaults={
                 'name': 'English',
                 'name_local': 'English',
-                'sorting': cls.LANGS_SORTING_VALS.get('en', 3),
             },
         )
         return lang.pk

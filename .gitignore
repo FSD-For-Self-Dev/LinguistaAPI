@@ -132,6 +132,8 @@ dmypy.json
 static/
 
 # IDE folders
-
 .vscode/
 .idea/
+
+# Poetry lock file
+poetry.lock
