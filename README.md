@@ -70,6 +70,8 @@ poetry show --tree
 
 ### Запуск в режиме разработчика
 
+*Добавить файл .env в директорию проекта, заполнить по примеру example.env*
+
 Выполнение миграций (из директории с manage.py):
 ```bash
 poetry run python manage.py migrate
@@ -90,8 +92,6 @@ poetry run python manage.py loaddata data_dump.json
 poetry run python manage.py makesuperuser
 ```
 
-Добавить файл .env в директорию проекта, заполнить по примеру example.env
-
 Запуск в режиме разработчика (из директории с manage.py):
 ```bash
 poetry run python manage.py runserver
@@ -99,11 +99,15 @@ poetry run python manage.py runserver
 
 ## Запуск проекта в контейнерах
 
-Добавить файл .env в директорию с файлом docker-compose.yaml, заполнить по примеру infra/example.env
+*Добавить файл .env в директорию с файлом docker-compose.yaml, заполнить по примеру infra/example.env*
 
 Запуск контейнеров (из директории с файлом docker-compose.yaml):
 ```bash
-docker-compose up -d --build | docker compose up -d --build
+docker-compose up -d --build
+```
+или
+```bash
+docker compose up -d --build
 ```
 
 ## Документация
