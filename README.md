@@ -9,13 +9,13 @@ backend | rest api
 
 ## Запуск проекта в режиме разработчика
 
-### Создание окружения poetry
+### Создание окружения
+
+#### - Poetry
 
 Создание виртуального окружения:
 ```bash
-
 poetry env use python3.11
-
 ```
 
 Установка зависимостей (для разработки):
@@ -33,62 +33,71 @@ poetry shell
 poetry env list
 ```
 
-
-### Создание окружениия venv
-Выполнить из директории проекта
+Установка хуков прекоммита:
+```bash
+pre-commit install
 ```
 
+#### - Venv
+
+Создание виртуального окружения:
+```bash
 python -m venv venv
-
 . venv/Sctipts/actvate | source venv/Scripts/activate
-
 python -m pip install --upgrade pip
-
 ```
 
-
-Выполнить из директории с requirements.txt для установки зависимостей
-
-
-```
-
+Установка зависимостей (из директории с requirements.txt):
+```bash
 pip install -r requirements.txt
-
 ```
 
-Выполнить миграции из директории с manage.py
-
-```
-py manage.py makemigrations
-py manage.py migrate
+Установка хуков прекоммита:
+```bash
+pre-commit install
 ```
 
-Добавить админа
+### Запуск в режиме разработчика
 
+Выполнение миграций (из директории с manage.py):
+```bash
+python manage.py migrate
 ```
-py manage.py makesuperuser
+
+Сбор статики (из директории с manage.py):
+```bash
+python manage.py collectstatic
+```
+
+Загрузка псевдоданных (из директории с manage.py и data_dump.json; логин и пароль админа: admin 123):
+```bash
+python manage.py loaddata data_dump.json
+```
+
+Создание нового админа (из директории с manage.py):
+```bash
+python manage.py makesuperuser
 ```
 
 Добавить файл .env в директорию проекта, заполнить по примеру example.env
 
-Запустить в режиме разработчика
-
-```
-py manage.py runserver
+Запуск в режиме разработчика (из директории с manage.py):
+```bash
+python manage.py runserver
 ```
 
 ## Запуск проекта в контейнерах
 
-Выполнить из директории с файлом docker-compose.yaml
+Добавить файл .env в директорию с файлом docker-compose.yaml, заполнить по примеру infra/example.env
 
-```
-docker-compose up -d --build
+Запуск контейнеров (из директории с файлом docker-compose.yaml):
+```bash
+docker-compose up -d --build | docker compose up -d --build
 ```
 
 ## Документация
 
 Доступна на эндпоинтах
-
 ```
 api/schema/docs/
 ```
