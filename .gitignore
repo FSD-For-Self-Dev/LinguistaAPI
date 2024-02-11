@@ -130,6 +130,7 @@ dmypy.json
 
 # local static files
 static/
+staticfiles/
 
 # IDE folders
 .vscode/
