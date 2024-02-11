@@ -32,11 +32,11 @@ poetry --version
 
 Создание виртуального окружения:
 ```bash
-poetry env use /path/to/python
+poetry env use /path/to/python  # через полный путь
 ```
-или если python3.11 есть в PATH:
+или
 ```bash
-poetry env use python3.11
+poetry env use python3.11  # если python3.11 есть в PATH
 ```
 
 Проверка активированного окружения:
