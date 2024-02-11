@@ -33,7 +33,7 @@ poetry shell
 poetry env list
 ```
 
-**Установка хуков прекоммита:**
+***Установка хуков прекоммита:***
 ```bash
 pre-commit install
 ```
@@ -52,7 +52,7 @@ python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-Установка хуков прекоммита:
+***Установка хуков прекоммита:***
 ```bash
 pre-commit install
 ```
