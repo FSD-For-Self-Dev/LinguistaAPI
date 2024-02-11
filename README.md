@@ -9,9 +9,7 @@ backend | rest api
 
 ## Запуск проекта в режиме разработчика
 
-### Создание окружения
-
-#### Poetry
+### Создание окружения poetry
 
 Установка poetry:
 ```bash
@@ -24,77 +22,79 @@ poetry --version
 ```
 
 Создание виртуального окружения:
++ Если python3.11 есть в PATH:
 ```bash
 poetry env use python3.11
+```
++ Через полный путь:
+```bash
+poetry env use /path/to/python
+```
+
+Проверка активированного окружения:
+```bash
+poetry env info
 ```
 
 Установка зависимостей (для разработки):
 ```bash
-poetry install --with dev
-```
-
-Запуск оболочки и активация виртуального окружения (из папки проекта):
-```bash
-poetry shell
-```
-
-Проверка активации виртуального окружения:
-```bash
-poetry env list
+poetry install --with dev --no-root
 ```
 
 ***Установка хуков прекоммита:***
 ```bash
-pre-commit install
+poetry run pre-commit install
 ```
 
-#### Venv
+### Для справки, работа с зависимостями в poetry
 
-Создание виртуального окружения:
+Добавление нового пакета:
 ```bash
-python -m venv venv | python3 -m venv venv
-source venv/Scripts/activate | source venv/bin/activate
-python -m pip install --upgrade pip | python3 -m pip3 install --upgrade pip
+poetry add package
 ```
 
-Установка зависимостей (из директории с requirements.txt):
+Обновление версии пакета:
 ```bash
-pip install -r requirements.txt | pip3 install -r requirements.txt
+poetry update package
 ```
 
-***Установка хуков прекоммита:***
+Удаление пакета:
 ```bash
-pip install pre-commit | pip3 install pre-commit
-pre-commit install
+poetry remove package
+```
+
+Cведения обо всех установленных пакетах:
+```bash
+poetry show --tree
 ```
 
 ### Запуск в режиме разработчика
 
 Выполнение миграций (из директории с manage.py):
 ```bash
-python manage.py migrate | python3 manage.py migrate
+poetry run python manage.py migrate
 ```
 
 Сбор статики (из директории с manage.py):
 ```bash
-python manage.py collectstatic | python3 manage.py collectstatic
+poetry run python manage.py collectstatic
 ```
 
 Загрузка псевдоданных (из директории с manage.py и data_dump.json; логин и пароль админа: admin 123):
 ```bash
-python manage.py loaddata data_dump.json | python3 manage.py loaddata data_dump.json
+poetry run python manage.py loaddata data_dump.json
 ```
 
 Создание нового админа (из директории с manage.py):
 ```bash
-python manage.py makesuperuser | python3 manage.py makesuperuser
+poetry run python manage.py makesuperuser
 ```
 
 Добавить файл .env в директорию проекта, заполнить по примеру example.env
 
 Запуск в режиме разработчика (из директории с manage.py):
 ```bash
-python manage.py runserver | python3 manage.py runserver
+poetry run python manage.py runserver
 ```
 
 ## Запуск проекта в контейнерах
