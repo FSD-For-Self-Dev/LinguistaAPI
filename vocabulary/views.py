@@ -71,6 +71,7 @@ class WordViewSet(viewsets.ModelViewSet):
 
     lookup_field = 'slug'
     http_method_names = ('get', 'post', 'patch', 'delete')
+    serializer_class = WordSerializer
     permission_classes = (IsAuthenticated,)
     queryset = Word.objects.none()
     pagination_class = LimitPagination
@@ -102,22 +103,10 @@ class WordViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         match self.action:
-            case 'list' | 'random' | 'multiple_add':
+            case 'list':
                 return WordShortSerializer
-            case 'translations' | 'translations_detail':
-                return TranslationSerializer
-            case 'definitions' | 'definitions_detail':
-                return DefinitionSerializer
-            case 'examples' | 'examples_detail':
-                return UsageExampleSerializer
-            case 'synonyms' | 'synonyms_detail':
-                return SynonymSerializer
-            case 'antonyms' | 'antonyms_detail':
-                return AntonymSerializer
-            case 'notes':
-                return NoteSerializer
             case _:
-                return WordSerializer
+                return super().get_serializer_class()
 
     @staticmethod
     def word_integrity_error_handler(word_data, request):
@@ -465,6 +454,7 @@ class WordViewSet(viewsets.ModelViewSet):
     @action(
         methods=['get', 'post', 'patch', 'delete'],
         detail=True,
+        serializer_class=NoteSerializer,
         permission_classes=[IsAuthenticated],
     )
     def notes(self, request, *args, **kwargs):
@@ -472,10 +462,7 @@ class WordViewSet(viewsets.ModelViewSet):
             slug = kwargs.get('slug')
             word = Word.objects.get(slug=slug)
         except KeyError:
-            return Response(
-                {'error': 'Отсутствует параметр slug.'},
-                status=400
-            )
+            return Response({'error': 'Отсутствует параметр slug.'}, status=400)
         except Word.DoesNotExist:
             return Response({'error': 'Слово не найдено.'}, status=404)
 
@@ -491,11 +478,7 @@ class WordViewSet(viewsets.ModelViewSet):
             note = Note.objects.get(word=word)
             if request.method == 'PATCH':
                 serializer_class = self.get_serializer_class()
-                serializer = serializer_class(
-                    note,
-                    data=request.data,
-                    partial=True
-                )
+                serializer = serializer_class(note, data=request.data, partial=True)
                 if serializer.is_valid():
                     serializer.save()
                     return Response(serializer.data)
@@ -509,6 +492,7 @@ class WordViewSet(viewsets.ModelViewSet):
             note = Note.objects.get(word=word)
             note.delete()
             return Response({'error': 'Заметка удалена.'}, status=204)
+
 
 @extend_schema_view(list=extend_schema(operation_id='types_list'))
 class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
