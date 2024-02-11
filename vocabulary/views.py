@@ -71,6 +71,7 @@ class WordViewSet(viewsets.ModelViewSet):
 
     lookup_field = 'slug'
     http_method_names = ('get', 'post', 'patch', 'delete')
+    serializer_class = WordSerializer
     permission_classes = (IsAuthenticated,)
     queryset = Word.objects.none()
     pagination_class = LimitPagination
@@ -102,20 +103,10 @@ class WordViewSet(viewsets.ModelViewSet):
 
     def get_serializer_class(self):
         match self.action:
-            case 'list' | 'random' | 'multiple_add':
+            case 'list':
                 return WordShortSerializer
-            case 'translations' | 'translations_detail':
-                return TranslationSerializer
-            case 'definitions' | 'definitions_detail':
-                return DefinitionSerializer
-            case 'examples' | 'examples_detail':
-                return UsageExampleSerializer
-            case 'synonyms' | 'synonyms_detail':
-                return SynonymSerializer
-            case 'antonyms' | 'antonyms_detail':
-                return AntonymSerializer
             case _:
-                return WordSerializer
+                return super().get_serializer_class()
 
     @staticmethod
     def word_integrity_error_handler(word_data, request):
