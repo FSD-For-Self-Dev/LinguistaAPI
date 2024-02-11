@@ -13,7 +13,16 @@ backend | rest api
 
 Установка poetry:
 ```bash
-pip install poetry | pip3 install poetry
+pip install poetry
+```
+или
+```bash
+(Invoke-WebRequest -Uri https://install.python-poetry.org\
+ -UseBasicParsing).Content | python -  # Windows
+```
+или
+```bash
+curl -sSL https://install.python-poetry.org | python3 -  # Linux, macOS, Windows (WSL)
 ```
 
 Проверка установки poetry:
@@ -22,13 +31,12 @@ poetry --version
 ```
 
 Создание виртуального окружения:
-+ Если python3.11 есть в PATH:
-```bash
-poetry env use python3.11
-```
-+ Через полный путь:
 ```bash
 poetry env use /path/to/python
+```
+или если python3.11 есть в PATH:
+```bash
+poetry env use python3.11
 ```
 
 Проверка активированного окружения:
@@ -70,7 +78,7 @@ poetry show --tree
 
 ### Запуск в режиме разработчика
 
-*Добавить файл .env в директорию проекта, заполнить по примеру example.env*
+> *Добавить файл .env в директорию проекта, заполнить по примеру example.env*
 
 Выполнение миграций (из директории с manage.py):
 ```bash
@@ -99,7 +107,7 @@ poetry run python manage.py runserver
 
 ## Запуск проекта в контейнерах
 
-*Добавить файл .env в директорию с файлом docker-compose.yaml, заполнить по примеру infra/example.env*
+> *Добавить файл .env в директорию с файлом docker-compose.yaml, заполнить по примеру infra/example.env*
 
 Запуск контейнеров (из директории с файлом docker-compose.yaml):
 ```bash
