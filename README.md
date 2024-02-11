@@ -11,84 +11,116 @@ backend | rest api
 
 ### Создание окружения poetry
 
+Установка poetry:
+```bash
+pip install poetry
+```
+или
+```bash
+(Invoke-WebRequest -Uri https://install.python-poetry.org\
+ -UseBasicParsing).Content | python -  # Windows
+```
+или
+```bash
+curl -sSL https://install.python-poetry.org | python3 -  # Linux, macOS, Windows (WSL)
+```
+
+Проверка установки poetry:
+```bash
+poetry --version
+```
+
 Создание виртуального окружения:
 ```bash
+poetry env use /path/to/python  # через полный путь
+```
+или
+```bash
+poetry env use python3.11  # если python3.11 есть в PATH
+```
 
-poetry env use python3.11
-
+Проверка активированного окружения:
+```bash
+poetry env info
 ```
 
 Установка зависимостей (для разработки):
 ```bash
-poetry install --with dev
+poetry install --with dev --no-root
 ```
 
-Запуск оболочки и активация виртуального окружения (из папки проекта):
+***Установка хуков прекоммита:***
 ```bash
-poetry shell
+poetry run pre-commit install
 ```
 
-Проверка активации виртуального окружения:
+### Для справки, работа с зависимостями в poetry
+
+Добавление нового пакета:
 ```bash
-poetry env list
+poetry add package
 ```
 
-
-### Создание окружениия venv
-Выполнить из директории проекта
+Обновление версии пакета:
+```bash
+poetry update package
 ```
 
-python -m venv venv
-
-. venv/Sctipts/actvate | source venv/Scripts/activate
-
-python -m pip install --upgrade pip
-
+Удаление пакета:
+```bash
+poetry remove package
 ```
 
-
-Выполнить из директории с requirements.txt для установки зависимостей
-
-
+Cведения обо всех установленных пакетах:
+```bash
+poetry show --tree
 ```
 
-pip install -r requirements.txt
+### Запуск в режиме разработчика
 
+> *Добавить файл .env в директорию проекта, заполнить по примеру example.env*
+
+Выполнение миграций (из директории с manage.py):
+```bash
+poetry run python manage.py migrate
 ```
 
-Выполнить миграции из директории с manage.py
-
-```
-py manage.py makemigrations
-py manage.py migrate
+Сбор статики (из директории с manage.py):
+```bash
+poetry run python manage.py collectstatic
 ```
 
-Добавить админа
-
+Загрузка псевдоданных (из директории с manage.py и data_dump.json; логин и пароль админа: admin 123):
+```bash
+poetry run python manage.py loaddata data_dump.json
 ```
-py manage.py makesuperuser
+
+Создание нового админа (из директории с manage.py):
+```bash
+poetry run python manage.py makesuperuser
 ```
 
-Добавить файл .env в директорию проекта, заполнить по примеру example.env
-
-Запустить в режиме разработчика
-
-```
-py manage.py runserver
+Запуск в режиме разработчика (из директории с manage.py):
+```bash
+poetry run python manage.py runserver
 ```
 
 ## Запуск проекта в контейнерах
 
-Выполнить из директории с файлом docker-compose.yaml
+> *Добавить файл .env в директорию с файлом docker-compose.yaml, заполнить по примеру infra/example.env*
 
-```
+Запуск контейнеров (из директории с файлом docker-compose.yaml):
+```bash
 docker-compose up -d --build
+```
+или
+```bash
+docker compose up -d --build
 ```
 
 ## Документация
 
 Доступна на эндпоинтах
-
 ```
 api/schema/docs/
 ```
