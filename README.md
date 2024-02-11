@@ -15,7 +15,7 @@ backend | rest api
 
 Установка poetry:
 ```bash
-pip install poetry | pipx install poetry | curl -sSL https://install.python-poetry.org | python3 - | (Invoke-WebRequest -Uri https://install.python-poetry.org -UseBasicParsing).Content | py -
+pip install poetry | pip3 install poetry
 ```
 
 Проверка установки poetry:
