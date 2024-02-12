@@ -113,6 +113,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
 SITE_ID = 1
 
 REST_AUTH = {
@@ -126,13 +134,13 @@ REST_AUTH = {
     'PASSWORD_RESET_CONFIRM_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetConfirmSerializer',
     'PASSWORD_CHANGE_SERIALIZER': 'dj_rest_auth.serializers.PasswordChangeSerializer',
     'REGISTER_SERIALIZER': 'dj_rest_auth.registration.serializers.RegisterSerializer',
-    'EMAIL_REQUIRED': False,
+    'EMAIL_REQUIRED': True,
     'REGISTER_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
     'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
     'TOKEN_CREATOR': 'dj_rest_auth.utils.default_create_token',
     'PASSWORD_RESET_USE_SITES_DOMAIN': False,
     'OLD_PASSWORD_FIELD_ENABLED': False,
-    'LOGOUT_ON_PASSWORD_CHANGE': False,
+    'LOGOUT_ON_PASSWORD_CHANGE': True,
     'SESSION_LOGIN': True,
     'USE_JWT': False,
     'JWT_AUTH_COOKIE': None,
@@ -232,4 +240,4 @@ DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 SERVER_EMAIL = EMAIL_HOST_USER
 EMAIL_ADMIN = EMAIL_HOST_USER
 
-APPEND_SLASH = False
+APPEND_SLASH = True
