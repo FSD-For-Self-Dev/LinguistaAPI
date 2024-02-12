@@ -1,4 +1,4 @@
-''' Users models '''
+""" Users models """
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
@@ -10,27 +10,13 @@ from core.constants import GENDERS
 class User(AbstractUser):
     last_name = None
 
-    email = models.EmailField(
-        _('Email'),
-        unique=True,
-        blank=True
-    )
-    slug = models.SlugField(
-        _('Slug'),
-        max_length=255
-    )
+    email = models.EmailField(_('Email'), unique=True, blank=False)
+    slug = models.SlugField(_('Slug'), max_length=255)
     gender = models.CharField(
-        _('Gender'),
-        max_length=1,
-        choices=GENDERS,
-        null=True,
-        blank=True
+        _('Gender'), max_length=1, choices=GENDERS, null=True, blank=True
     )
     image = models.ImageField(
-        _('Profile image'),
-        upload_to='users/profile-images/',
-        blank=True,
-        null=True
+        _('Profile image'), upload_to='users/profile-images/', blank=True, null=True
     )
 
     class Meta:

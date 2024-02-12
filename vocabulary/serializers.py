@@ -9,18 +9,7 @@ from rest_framework import serializers
 
 from users.serializers import UserSerializer
 
-from .constants import (
-    MAX_ANTONYMS_AMOUNT,
-    MAX_DEFINITIONS_AMOUNT,
-    MAX_EXAMPLES_AMOUNT,
-    MAX_FORMS_AMOUNT,
-    MAX_NOTES_AMOUNT,
-    MAX_SIMILARS_AMOUNT,
-    MAX_SYNONYMS_AMOUNT,
-    MAX_TAGS_AMOUNT,
-    MAX_TRANSLATIONS_AMOUNT,
-    MAX_TYPES_AMOUNT,
-)
+from .constants import AmountLimits
 from .models import (
     Antonym,
     Collection,
@@ -344,23 +333,25 @@ class WordShortSerializer(serializers.ModelSerializer):
         произвольного атрибута слова."""
         if len(obj_list) > max_amount:
             raise serializers.ValidationError(
-                f'The word cannot have more than {max_amount} {attr}'
+                AmountLimits.get_error_message(max_amount, attr)
             )
 
     def validate_types(self, types):
-        self.max_amount_validate(types, MAX_TYPES_AMOUNT, 'types')
+        self.max_amount_validate(types, AmountLimits.MAX_TYPES_AMOUNT, 'типов')
         return types
 
     def validate_translations(self, translations):
-        self.max_amount_validate(translations, MAX_TRANSLATIONS_AMOUNT, 'translations')
+        self.max_amount_validate(
+            translations, AmountLimits.MAX_TRANSLATIONS_AMOUNT, 'переводов'
+        )
         return translations
 
     def validate_tags(self, tags):
-        self.max_amount_validate(tags, MAX_TAGS_AMOUNT, 'tags')
+        self.max_amount_validate(tags, AmountLimits.MAX_TAGS_AMOUNT, 'тегов')
         return tags
 
     def validate_notes(self, notes):
-        self.max_amount_validate(notes, MAX_NOTES_AMOUNT, 'notes')
+        self.max_amount_validate(notes, AmountLimits.MAX_NOTES_AMOUNT, 'заметок')
         return notes
 
     @extend_schema_field(serializers.BooleanField)
@@ -476,27 +467,35 @@ class WordSerializer(WordShortSerializer):
         read_only_fields = ('id', 'slug', 'translations_count', 'examples_count')
 
     def validate_examples(self, examples):
-        self.max_amount_validate(examples, MAX_EXAMPLES_AMOUNT, 'examples')
+        self.max_amount_validate(examples, AmountLimits.MAX_EXAMPLES_AMOUNT, 'примеров')
         return examples
 
     def validate_definitions(self, definitions):
-        self.max_amount_validate(definitions, MAX_DEFINITIONS_AMOUNT, 'definitions')
+        self.max_amount_validate(
+            definitions, AmountLimits.MAX_DEFINITIONS_AMOUNT, 'определений'
+        )
         return definitions
 
     def validate_synonyms(self, synonyms):
-        self.max_amount_validate(synonyms, MAX_SYNONYMS_AMOUNT, 'synonyms')
+        self.max_amount_validate(
+            synonyms, AmountLimits.MAX_SYNONYMS_AMOUNT, 'синонимов'
+        )
         return synonyms
 
     def validate_antonyms(self, antonyms):
-        self.max_amount_validate(antonyms, MAX_ANTONYMS_AMOUNT, 'antonyms')
+        self.max_amount_validate(
+            antonyms, AmountLimits.MAX_ANTONYMS_AMOUNT, 'антонимов'
+        )
         return antonyms
 
     def validate_similars(self, similars):
-        self.max_amount_validate(similars, MAX_SIMILARS_AMOUNT, 'similars')
+        self.max_amount_validate(
+            similars, AmountLimits.MAX_SIMILARS_AMOUNT, 'похожих слов'
+        )
         return similars
 
     def validate_forms(self, forms):
-        self.max_amount_validate(forms, MAX_FORMS_AMOUNT, 'forms')
+        self.max_amount_validate(forms, AmountLimits.MAX_FORMS_AMOUNT, 'форм')
         return forms
 
     @staticmethod
