@@ -10,23 +10,7 @@ from core.models import AuthorModel, CreatedModel, ModifiedModel, UserRelatedMod
 from languages.models import Language
 
 from .constants import (
-    MAX_COLLECTION_DESCRIPTION_LENGTH,
-    MAX_COLLECTION_NAME_LENGTH,
-    MAX_DEFINITION_LENGTH,
-    MAX_EXAMPLE_LENGTH,
-    MAX_FORMSGROUP_NAME_LENGTH,
-    MAX_IMAGE_NAME_LENGTH,
-    MAX_NOTE_LENGTH,
-    MAX_TAG_LENGTH,
-    MAX_TRANSLATION_LENGTH,
-    MAX_WORD_LENGTH,
-    MIN_COLLECTION_NAME_LENGTH,
-    MIN_DEFINITION_LENGTH,
-    MIN_EXAMPLE_LENGTH,
-    MIN_FORMSGROUP_NAME_LENGTH,
-    MIN_TAG_LENGTH,
-    MIN_TRANSLATION_LENGTH,
-    MIN_WORD_LENGTH,
+    LengthLimits,
     REGEX_MESSAGE,
     REGEX_TEXT_MASK,
 )
@@ -38,10 +22,10 @@ User = get_user_model()
 class Tag(models.Model):
     name = models.CharField(
         _('Tag name'),
-        max_length=MAX_TAG_LENGTH,
+        max_length=LengthLimits.MAX_TAG_LENGTH,
         unique=True,
         validators=(
-            MinLengthValidator(MIN_TAG_LENGTH),
+            MinLengthValidator(LengthLimits.MIN_TAG_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
@@ -57,15 +41,17 @@ class Tag(models.Model):
 class Collection(CreatedModel, ModifiedModel, AuthorModel):
     title = models.CharField(
         _('Collection title'),
-        max_length=MAX_COLLECTION_NAME_LENGTH,
+        max_length=LengthLimits.MAX_COLLECTION_NAME_LENGTH,
         validators=(
-            MinLengthValidator(MIN_COLLECTION_NAME_LENGTH),
+            MinLengthValidator(LengthLimits.MIN_COLLECTION_NAME_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
     slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
     description = models.TextField(
-        _('Description'), max_length=MAX_COLLECTION_DESCRIPTION_LENGTH, blank=True
+        _('Description'),
+        max_length=LengthLimits.MAX_COLLECTION_DESCRIPTION_LENGTH,
+        blank=True,
     )
     words = models.ManyToManyField(
         'Word',
@@ -153,9 +139,9 @@ class Word(CreatedModel, ModifiedModel):
     text = models.CharField(
         _('Word or phrase'),
         blank=False,
-        max_length=MAX_WORD_LENGTH,
+        max_length=LengthLimits.MAX_WORD_LENGTH,
         validators=(
-            MinLengthValidator(MIN_WORD_LENGTH),
+            MinLengthValidator(LengthLimits.MIN_WORD_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
@@ -313,7 +299,7 @@ class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
 
 class Synonym(WordSelfRelatedWithDifferenceModel, AuthorModel):
     class Meta:
-        ordering = ['-created']  # повтор
+        ordering = ['-created']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Synonyms')
         verbose_name_plural = _('Synonyms')
@@ -338,10 +324,10 @@ class Antonym(WordSelfRelatedModel, AuthorModel):
 class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
     name = models.CharField(
         _('Group name'),
-        max_length=MAX_FORMSGROUP_NAME_LENGTH,
+        max_length=LengthLimits.MAX_FORMSGROUP_NAME_LENGTH,
         blank=False,
         validators=(
-            MinLengthValidator(MIN_FORMSGROUP_NAME_LENGTH),
+            MinLengthValidator(LengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
@@ -400,10 +386,10 @@ class Similar(WordSelfRelatedModel, AuthorModel):
 class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Translation'),
-        max_length=MAX_TRANSLATION_LENGTH,
+        max_length=LengthLimits.MAX_TRANSLATION_LENGTH,
         help_text=_('A translation of a word or phrase'),
         validators=(
-            MinLengthValidator(MIN_TRANSLATION_LENGTH),
+            MinLengthValidator(LengthLimits.MIN_TRANSLATION_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
@@ -525,19 +511,19 @@ class WordTranslations(WordRelatedModel):
 class Definition(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Definition'),
-        max_length=MAX_DEFINITION_LENGTH,
+        max_length=LengthLimits.MAX_DEFINITION_LENGTH,
         help_text=_('A definition of a word or phrase'),
         validators=(
-            MinLengthValidator(MIN_DEFINITION_LENGTH),
+            MinLengthValidator(LengthLimits.MIN_DEFINITION_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
     translation = models.CharField(
         _('A translation of the definition'),
-        max_length=MAX_DEFINITION_LENGTH,
+        max_length=LengthLimits.MAX_DEFINITION_LENGTH,
         blank=True,
         validators=(
-            MinLengthValidator(MIN_DEFINITION_LENGTH),
+            MinLengthValidator(LengthLimits.MIN_DEFINITION_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
@@ -589,19 +575,19 @@ class WordDefinitions(WordRelatedModel):
 class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
     text = models.CharField(
         _('Usage example'),
-        max_length=MAX_EXAMPLE_LENGTH,
+        max_length=LengthLimits.MAX_EXAMPLE_LENGTH,
         help_text=_('An usage example of a word or phrase'),
         validators=(
-            MinLengthValidator(MIN_EXAMPLE_LENGTH),
+            MinLengthValidator(LengthLimits.MIN_EXAMPLE_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
     translation = models.CharField(
         _('A translation of the example'),
-        max_length=MAX_EXAMPLE_LENGTH,
+        max_length=LengthLimits.MAX_EXAMPLE_LENGTH,
         blank=True,
         validators=(
-            MinLengthValidator(MIN_EXAMPLE_LENGTH),
+            MinLengthValidator(LengthLimits.MIN_EXAMPLE_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
         ),
     )
@@ -653,7 +639,9 @@ class Note(CreatedModel, ModifiedModel):
     word = models.ForeignKey(
         'Word', verbose_name=_('Word'), on_delete=models.CASCADE, related_name='notes'
     )
-    text = models.CharField(_('Note text'), max_length=MAX_NOTE_LENGTH, blank=False)
+    text = models.CharField(
+        _('Note text'), max_length=LengthLimits.MAX_NOTE_LENGTH, blank=False
+    )
 
     class Meta:
         ordering = ['-created']
@@ -681,7 +669,7 @@ class ImageAssociation(CreatedModel, ModifiedModel):
     )
     name = models.CharField(
         _('Image name'),
-        max_length=MAX_IMAGE_NAME_LENGTH,
+        max_length=LengthLimits.MAX_IMAGE_NAME_LENGTH,
         blank=True,
         validators=(RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),),
     )

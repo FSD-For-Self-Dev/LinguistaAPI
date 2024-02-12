@@ -20,6 +20,7 @@ from rest_framework.response import Response
 
 from core.pagination import LimitPagination
 
+from .constants import AmountLimits
 from .filters import CollectionFilter, WordFilter
 from .models import (
     Collection,
@@ -34,11 +35,7 @@ from .models import (
     Synonym,
     Antonym,
 )
-from .permissions import (
-    CanAddDefinitionPermission,
-    CanAddUsageExamplePermission,
-    IsAuthorOrReadOnly,
-)
+from .permissions import IsAuthorOrReadOnly
 from .serializers import (
     CollectionSerializer,
     CollectionShortSerializer,
@@ -147,7 +144,7 @@ class WordViewSet(viewsets.ModelViewSet):
         instance.delete()
 
     @extend_schema(operation_id='word_random')
-    @action(methods=['get'], detail=False, serializer_class=WordShortSerializer)
+    @action(methods=('get',), detail=False, serializer_class=WordShortSerializer)
     def random(self, request, *args, **kwargs):
         """Получить случайное слово из словаря."""
         queryset = self.filter_queryset(self.get_queryset())
@@ -159,7 +156,7 @@ class WordViewSet(viewsets.ModelViewSet):
 
     @extend_schema(operation_id='problematic_toggle')
     @action(
-        methods=['post'],
+        methods=('post',),
         detail=True,
         url_path='problematic-toggle',
         serializer_class=WordSerializer,
@@ -173,7 +170,7 @@ class WordViewSet(viewsets.ModelViewSet):
 
     @extend_schema(operation_id='multiple_add')
     @action(
-        methods=['post'],
+        methods=('post',),
         detail=False,
         url_path='multiple-add',
         serializer_class=WordShortSerializer,
@@ -217,10 +214,19 @@ class WordViewSet(viewsets.ModelViewSet):
                 serializer = self.get_serializer(data=request.data)
                 serializer.is_valid(raise_exception=True)
                 try:
+                    amount_limit = kwargs.get('amount_limit', '')
+                    if amount_limit:
+                        assert _objs.count() < amount_limit
                     _new_obj = serializer.save(author_id=request.user.id)
                 except IntegrityError:
+                    ## использовать IntegrityError_handler
                     return Response(
-                        {'detail': kwargs.get('integrityerror_msg', '')},
+                        {'detail': kwargs.get('integrityerror_msg', 'Integrity error')},
+                        status=status.HTTP_409_CONFLICT,
+                    )
+                except AssertionError:
+                    return Response(
+                        {'detail': kwargs.get('amountlimit_msg', 'Amount limit error')},
                         status=status.HTTP_409_CONFLICT,
                     )
 
@@ -263,10 +269,10 @@ class WordViewSet(viewsets.ModelViewSet):
                 )
                 return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
-    @extend_schema(operation_id='translations_list', methods=['get'])
-    @extend_schema(operation_id='translation_create', methods=['post'])
+    @extend_schema(operation_id='translations_list', methods=('get',))
+    @extend_schema(operation_id='translation_create', methods=('post',))
     @action(
-        methods=['get', 'post'],
+        methods=('get', 'post'),
         detail=True,
         serializer_class=TranslationSerializer,
     )
@@ -275,18 +281,20 @@ class WordViewSet(viewsets.ModelViewSet):
         return self._list_and_create_action(
             request,
             'translations',
-            integrityerror_msg='Такой перевод уже существует.',
             relation_model=WordTranslations,
             relation_field='translation',
-            *args,
-            **kwargs,
+            integrityerror_msg='Такой перевод уже существует.',
+            amount_limit=AmountLimits.MAX_TRANSLATIONS_AMOUNT,
+            amountlimit_msg=AmountLimits.get_error_message(
+                AmountLimits.MAX_TRANSLATIONS_AMOUNT, 'переводов'
+            ),
         )
 
-    @extend_schema(operation_id='translations_retrieve', methods=['get'])
-    @extend_schema(operation_id='translation_partial_update', methods=['patch'])
-    @extend_schema(operation_id='translation_destroy', methods=['delete'])
+    @extend_schema(operation_id='translations_retrieve', methods=('get',))
+    @extend_schema(operation_id='translation_partial_update', methods=('patch',))
+    @extend_schema(operation_id='translation_destroy', methods=('delete',))
     @action(
-        methods=['get', 'patch', 'delete'],
+        methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'translations/(?P<translation_id>\d+)',
         serializer_class=TranslationSerializer,
@@ -296,38 +304,42 @@ class WordViewSet(viewsets.ModelViewSet):
         return self._detail_action(
             request,
             'translations',
-            notfounderror_msg='Перевод с таким id у слова не найден.',
             relation_model=WordTranslation,
             lookup_name='translation_id',
+            notfounderror_msg='Перевод с таким id у слова не найден.',
             integrityerror_msg='Такой перевод уже существует.',
             *args,
             **kwargs,
         )
 
-    @extend_schema(operation_id='definitions_list', methods=['get'])
-    @extend_schema(operation_id='definition_create', methods=['post'])
+    @extend_schema(operation_id='definitions_list', methods=('get',))
+    @extend_schema(operation_id='definition_create', methods=('post',))
     @action(
-        methods=['get', 'post'],
+        methods=('get', 'post'),
         detail=True,
         serializer_class=DefinitionSerializer,
-        permission_classes=[IsAuthenticated, CanAddDefinitionPermission],
+        permission_classes=(IsAuthenticated,),
     )
     def definitions(self, request, *args, **kwargs):
         """Получить все определения слова или добавить новое определение."""
         return self._list_and_create_action(
             request,
             'definitions',
-            integrityerror_msg='Такое определение уже существует.',
             relation_model=WordDefinitions,
             relation_field='definition',
+            integrityerror_msg='Такое определение уже существует.',
+            amount_limit=AmountLimits.MAX_DEFINITIONS_AMOUNT,
+            amountlimit_msg=AmountLimits.get_error_message(
+                AmountLimits.MAX_DEFINITIONS_AMOUNT, 'определений'
+            ),
         )
 
-    @extend_schema(operation_id='definition_retrieve', methods=['get'])
-    @extend_schema(operation_id='definition_partial_update', methods=['patch'])
-    @extend_schema(operation_id='definition_destroy', methods=['delete'])
+    @extend_schema(operation_id='definition_retrieve', methods=('get',))
+    @extend_schema(operation_id='definition_partial_update', methods=('patch',))
+    @extend_schema(operation_id='definition_destroy', methods=('delete',))
     @action(
         detail=True,
-        methods=['get', 'patch', 'delete'],
+        methods=('get', 'patch', 'delete'),
         url_path=r'definitions/(?P<definition_id>\d+)',
         url_name="word's definition detail",
         serializer_class=DefinitionSerializer,
@@ -337,37 +349,41 @@ class WordViewSet(viewsets.ModelViewSet):
         return self._detail_action(
             request,
             'definitions',
-            notfounderror_msg='Определение с таким id у слова не найдено.',
             relation_model=WordDefinitions,
             lookup_name='definition_id',
+            notfounderror_msg='Определение с таким id у слова не найдено.',
             integrityerror_msg='Такое определение уже существует.',
             *args,
             **kwargs,
         )
 
-    @extend_schema(operation_id='examples_list', methods=['get'])
-    @extend_schema(operation_id='example_create', methods=['post'])
+    @extend_schema(operation_id='examples_list', methods=('get',))
+    @extend_schema(operation_id='example_create', methods=('post',))
     @action(
-        methods=['get', 'post'],
+        methods=('get', 'post'),
         detail=True,
         serializer_class=UsageExampleSerializer,
-        permission_classes=[IsAuthenticated, CanAddUsageExamplePermission],
+        permission_classes=(IsAuthenticated,),
     )
     def examples(self, request, *args, **kwargs):
         """Получить все примеры слова или добавить новый пример."""
         return self._list_and_create_action(
             request,
             'examples',
-            integrityerror_msg='Такой пример уже существует.',
             relation_model=WordUsageExamples,
             relation_field='example',
+            integrityerror_msg='Такой пример уже существует.',
+            amount_limit=AmountLimits.MAX_EXAMPLES_AMOUNT,
+            amountlimit_msg=AmountLimits.get_error_message(
+                AmountLimits.MAX_EXAMPLES_AMOUNT, 'примеров'
+            ),
         )
 
-    @extend_schema(operation_id='example_retrieve', methods=['get'])
-    @extend_schema(operation_id='example_partial_update', methods=['patch'])
-    @extend_schema(operation_id='example_destroy', methods=['delete'])
+    @extend_schema(operation_id='example_retrieve', methods=('get',))
+    @extend_schema(operation_id='example_partial_update', methods=('patch',))
+    @extend_schema(operation_id='example_destroy', methods=('delete',))
     @action(
-        methods=['get', 'patch', 'delete'],
+        methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'examples/(?P<example_id>\d+)',
         serializer_class=UsageExampleSerializer,
@@ -377,16 +393,16 @@ class WordViewSet(viewsets.ModelViewSet):
         return self._detail_action(
             request,
             'examples',
-            notfounderror_msg='Пример с таким id у слова не найден.',
             relation_model=WordUsageExamples,
             lookup_name='example_id',
+            notfounderror_msg='Пример с таким id у слова не найден.',
             integrityerror_msg='Такой пример уже существует.',
             *args,
             **kwargs,
         )
 
     @action(
-        methods=['get', 'post'],
+        methods=('get', 'post'),
         detail=True,
         serializer_class=SynonymSerializer,
     )
@@ -396,10 +412,14 @@ class WordViewSet(viewsets.ModelViewSet):
             request,
             'synonym_to_words',
             integrityerror_msg='Такой синоним уже существует.',
+            amount_limit=AmountLimits.MAX_SYNONYMS_AMOUNT,
+            amountlimit_msg=AmountLimits.get_error_message(
+                AmountLimits.MAX_SYNONYMS_AMOUNT, 'синонимов'
+            ),
         )
 
     @action(
-        methods=['get', 'patch', 'delete'],
+        methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'synonyms/(?P<synonym_id>\d+)',
         serializer_class=SynonymSerializer,
@@ -409,16 +429,16 @@ class WordViewSet(viewsets.ModelViewSet):
         return self._detail_action(
             request,
             'synonym_to_words',
-            notfounderror_msg='Синоним с таким id у слова не найден.',
             relation_model=Synonym,
             lookup_name='synonym_id',
+            notfounderror_msg='Синоним с таким id у слова не найден.',
             integrityerror_msg='Такой синоним уже существует.',
             *args,
             **kwargs,
         )
 
     @action(
-        methods=['get', 'post'],
+        methods=('get', 'post'),
         detail=True,
         serializer_class=AntonymSerializer,
     )
@@ -428,10 +448,14 @@ class WordViewSet(viewsets.ModelViewSet):
             request,
             'antonym_to_words',
             integrityerror_msg='Такой антоним уже существует.',
+            amount_limit=AmountLimits.MAX_ANTONYMS_AMOUNT,
+            amountlimit_msg=AmountLimits.get_error_message(
+                AmountLimits.MAX_ANTONYMS_AMOUNT, 'антонимов'
+            ),
         )
 
     @action(
-        methods=['get', 'delete'],
+        methods=('get', 'delete'),
         detail=True,
         url_path=r'antonyms/(?P<antonym_id>\d+)',
         serializer_class=AntonymSerializer,
@@ -441,9 +465,9 @@ class WordViewSet(viewsets.ModelViewSet):
         return self._detail_action(
             request,
             'antonym_to_words',
-            notfounderror_msg='Антоним с таким id у слова не найден.',
             relation_model=Antonym,
             lookup_name='antonym_id',
+            notfounderror_msg='Антоним с таким id у слова не найден.',
             integrityerror_msg='Такой антоним уже существует.',
             *args,
             **kwargs,
@@ -545,7 +569,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
                 )
 
     @extend_schema(operation_id='collection_favorite_create')
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=('post',), permission_classes=(IsAuthenticated,))
     def favorite(self, request, slug):
         """Добавить коллекцию в избранное."""
         collection = self.get_object()
@@ -575,7 +599,7 @@ class CollectionViewSet(viewsets.ModelViewSet):
         return Response({'favorite': False}, status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(operation_id='collections_favorite_list')
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=('get',), permission_classes=(IsAuthenticated,))
     def favorites(self, request):
         """Получить список избранных коллекций."""
         return self.list(request)
