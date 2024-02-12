@@ -49,7 +49,6 @@ from .serializers import (
     WordSerializer,
     WordShortSerializer,
     SynonymSerializer,
-    SimilarSerializer,
     AntonymSerializer,
 )
 
@@ -502,24 +501,22 @@ class WordViewSet(viewsets.ModelViewSet):
         methods=['delete'],
         url_path=r'similars/(?P<similar_id>\d+)',
         url_name="word's similars detail",
-        serializer_class=SimilarSerializer,
+        serializer_class=WordShortSerializer,
     )
     def similars_delete(self, request, *args, **kwargs):
-        """Удалить похожие слова."""
+        """Удалить похожее слово."""
         word = self.get_object()
         try:
             similar = Similar.objects.get(pk=kwargs.get('similar_id'))
         except Similar.DoesNotExist:
-            raise NotFound(detail='The similar not found')
+            raise NotFound(detail='Такое слово не найдено')
 
-        match request.method:
-            case 'DELETE':
-                similar.delete()
-                similars = Similar.objects.filter(to_word=word)
-                serializer = SimilarSerializer(
-                    similars, many=True, context={'request': request}
-                )
-                return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
+        similar.delete()
+        similars = word.similars.all()
+        serializer = WordShortSerializer(
+            similars, many=True, context={'request': request}
+        )
+        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(list=extend_schema(operation_id='types_list'))
