@@ -475,48 +475,71 @@ class WordViewSet(viewsets.ModelViewSet):
         )
 
     @action(
-        methods=['post'],
+        methods=['get'],
         detail=True,
-        serializer_class=SimilarSerializer,
-        permission_classes=[IsAuthenticated],
-    )
-    def similars(self, request, *args, **kwargs):
-        """Добавить похожие слова."""
-        match request.method:
-            case 'POST':
-                serializer = self.get_serializer(data=request.data)
-                serializer.is_valid(raise_exception=True)
-
-                try:
-                    serializer.save(author_id=request.user.id)
-                    return Response(serializer.data, status=status.HTTP_201_CREATED)
-                except IntegrityError:
-                    return Response(
-                        {'detail': 'Такое слово уже добавлено.'},
-                        status=status.HTTP_409_CONFLICT,
-                    )
-
-    @action(
-        detail=True,
-        methods=['delete'],
-        url_path=r'similars/(?P<similar_id>\d+)',
-        url_name="word's similars detail",
         serializer_class=WordShortSerializer,
     )
-    def similars_delete(self, request, *args, **kwargs):
-        """Удалить похожее слово."""
+    def similars_get(self, request, *args, **kwargs):
+        """Получить все похожие слова."""
         word = self.get_object()
-        try:
-            similar = Similar.objects.get(pk=kwargs.get('similar_id'))
-        except Similar.DoesNotExist:
-            raise NotFound(detail='Такое слово не найдено')
-
-        similar.delete()
         similars = word.similars.all()
-        serializer = WordShortSerializer(
-            similars, many=True, context={'request': request}
+        serializer = self.get_serializer(similars, many=True)
+        count = similars.count()
+        return Response({"count": count, "similars": serializer.data}, status=status.HTTP_200_OK)
+
+    @action(
+        methods=['post'],
+        detail=True,
+        serializer_class=WordShortSerializer,
+    )
+    def similars(self, request, *args, **kwargs):
+        """Добавить похожее слово."""
+        from_vocabulary = request.query_params.get('from_vocabulary', None)
+        if from_vocabulary == 'true':
+            words = self.get_queryset().filter(word=request.data.get("word"))
+            if not words.exists():
+                return Response({'detail': 'Слово не найдено в словаре.'}, status=status.HTTP_404_NOT_FOUND)
+            word_id = words.first().id
+            instance = Word.objects.filter(id=word_id).first()
+            serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
+            serializer.is_valid(raise_exception=True)
+            try:
+                serializer.save()
+            except IntegrityError:
+                return Response(
+                    {'detail': 'Такое похожее слово уже существует.'},
+                    status=status.HTTP_409_CONFLICT,
+                )
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        else:
+            return self._list_and_create_action(
+                request,
+                'similar_to_words',
+                integrityerror_msg='Такое похожее слово уже существует.',
+                amount_limit=AmountLimits.MAX_SIMILARS_AMOUNT,
+                amountlimit_msg=AmountLimits.get_error_message(
+                    AmountLimits.MAX_SIMILARS_AMOUNT, 'похожих слов'
+                ),
+            )
+
+    @action(
+        methods=('get', 'delete'),
+        detail=True,
+        url_path=r'similars/(?P<similar_id>\d+)',
+        serializer_class=WordSerializer,
+    )
+    def similar_detail(self, request, *args, **kwargs):
+        """Получить или удалить похожее слово."""
+        return self._detail_action(
+            request,
+            'similar_to_words',
+            relation_model=Similar,
+            lookup_name='similar_id',
+            notfounderror_msg='Похожее слово с таким id у слова не найден.',
+            integrityerror_msg='Такое похожее слово уже существует.',
+            *args,
+            **kwargs,
         )
-        return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
 
 @extend_schema_view(list=extend_schema(operation_id='types_list'))
