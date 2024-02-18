@@ -7,8 +7,6 @@ from pathlib import Path
 
 from django.utils.translation import gettext_lazy as _
 
-import dj_database_url
-
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -86,23 +84,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASES = {
-    'default': dj_database_url.config(
-        default='postgres://linguista_db_user:lpeVEpdOMmWSgkaG69sTWVQKWrRuNBov@dpg-clrlngvqd2ns739danmg-a/linguista_db_6tdi',
-        conn_max_age=600,
-    )
-}
-
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
-            'NAME': os.getenv('DB_NAME', default='postgres'),
-            'USER': os.getenv('DB_USER', default=''),
-            'PASSWORD': os.getenv('DB_PASSWORD', default=''),
-            'HOST': os.getenv('DB_HOST', default=''),
-            'PORT': os.getenv('DB_PORT', default=''),
-        }
+    'default': {
+        'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', default='postgres'),
+        'USER': os.getenv('DB_USER', default=''),
+        'PASSWORD': os.getenv('DB_PASSWORD', default=''),
+        'HOST': os.getenv('DB_HOST', default=''),
+        'PORT': os.getenv('DB_PORT', default=''),
     }
+}
 
 AUTH_USER_MODEL = 'users.User'
 
@@ -123,6 +113,14 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+PASSWORD_HASHERS = [
+    'django.contrib.auth.hashers.PBKDF2PasswordHasher',
+    'django.contrib.auth.hashers.PBKDF2SHA1PasswordHasher',
+    'django.contrib.auth.hashers.Argon2PasswordHasher',
+    'django.contrib.auth.hashers.BCryptSHA256PasswordHasher',
+    'django.contrib.auth.hashers.ScryptPasswordHasher',
+]
+
 SITE_ID = 1
 
 REST_AUTH = {
@@ -136,13 +134,13 @@ REST_AUTH = {
     'PASSWORD_RESET_CONFIRM_SERIALIZER': 'dj_rest_auth.serializers.PasswordResetConfirmSerializer',
     'PASSWORD_CHANGE_SERIALIZER': 'dj_rest_auth.serializers.PasswordChangeSerializer',
     'REGISTER_SERIALIZER': 'dj_rest_auth.registration.serializers.RegisterSerializer',
-    'EMAIL_REQUIRED': False,
+    'EMAIL_REQUIRED': True,
     'REGISTER_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
     'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
     'TOKEN_CREATOR': 'dj_rest_auth.utils.default_create_token',
     'PASSWORD_RESET_USE_SITES_DOMAIN': False,
     'OLD_PASSWORD_FIELD_ENABLED': False,
-    'LOGOUT_ON_PASSWORD_CHANGE': False,
+    'LOGOUT_ON_PASSWORD_CHANGE': True,
     'SESSION_LOGIN': True,
     'USE_JWT': False,
     'JWT_AUTH_COOKIE': None,
@@ -173,16 +171,16 @@ REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'vocabulary.schema.CustomSchema',
 }
 
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     'http://localhost:3000',
     'http://localhost',
     'https://fsd-for-self-dev.github.io',
+    'http://localhost:3030',
     # Дополнительные разрешенные источники, если есть
 ]
 
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS
-
-CORS_URLS_REGEX = r'^/api/.*$'
 
 SIMPLE_JWT = {
     # Срок жизни токена
@@ -241,3 +239,5 @@ EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 SERVER_EMAIL = EMAIL_HOST_USER
 EMAIL_ADMIN = EMAIL_HOST_USER
+
+APPEND_SLASH = True

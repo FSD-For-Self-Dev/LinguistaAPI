@@ -3,25 +3,13 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Q
-from django.utils.translation import gettext as _
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from users.serializers import UserSerializer
 
-from .constants import (
-    MAX_ANTONYMS_AMOUNT,
-    MAX_DEFINITIONS_AMOUNT,
-    MAX_EXAMPLES_AMOUNT,
-    MAX_FORMS_AMOUNT,
-    MAX_NOTES_AMOUNT,
-    MAX_SIMILARS_AMOUNT,
-    MAX_SYNONYMS_AMOUNT,
-    MAX_TAGS_AMOUNT,
-    MAX_TRANSLATIONS_AMOUNT,
-    MAX_TYPES_AMOUNT,
-)
+from .constants import AmountLimits
 from .models import (
     Antonym,
     Collection,
@@ -77,7 +65,9 @@ class RelatedSerializerField(serializers.PrimaryKeyRelatedField):
         super().__init__(**kwargs)
 
     def to_representation(self, value):
-        return self.serializer_class(value, many=self.many, required=self.required).data
+        return self.serializer_class(
+            value, many=self.many, required=self.required, context=self.context
+        ).data
 
 
 class CreatableSlugRelatedField(serializers.SlugRelatedField):
@@ -103,14 +93,17 @@ class CreatableSlugRelatedField(serializers.SlugRelatedField):
         try:
             if self.capitalize:  # временное решение для групп форм
                 data = data.capitalize()
+            obj_data = {self.slug_field: data}
             if self.need_author:
-                obj_data = {
+                obj_create_data = {
                     self.slug_field: data,
                     'author': self.context['request'].user,
                 }
+                obj, _ = self.get_queryset().get_or_create(
+                    **obj_data, defaults=obj_create_data
+                )
             else:
-                obj_data = {self.slug_field: data}
-            obj, created = self.get_queryset().get_or_create(**obj_data)
+                obj, _ = self.get_queryset().get_or_create(**obj_data)
             return obj
         except (TypeError, ValueError):
             self.fail('invalid')
@@ -182,8 +175,8 @@ class TranslationSerializer(serializers.ModelSerializer):
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
-        default=WordSameLanguageDefault(),
-        # нужно будет исправить default на родной язык пользователя
+        required=True,
+        # нужно будет добавить default на родной язык пользователя
     )
 
     class Meta:
@@ -290,8 +283,7 @@ class WordRelatedSerializer(serializers.ModelSerializer):
 
 
 class WordShortSerializer(serializers.ModelSerializer):
-    """Сериализатор для множественного добавления слов (а также синонимов,
-    антонимов, форм и похожих слов), а также для чтения в короткой форме."""
+    """Сериализатор для записи и чтения слов в короткой форме."""
 
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(), slug_field='name', required=True
@@ -333,13 +325,7 @@ class WordShortSerializer(serializers.ModelSerializer):
             'modified',
             'author',
         )
-        read_only_fields = (
-            'id',
-            'slug',
-            'author',
-            'is_problematic',
-            'translations_count',
-        )
+        read_only_fields = ('id', 'slug', 'translations_count')
 
     @staticmethod
     def max_amount_validate(obj_list, max_amount, attr):
@@ -347,23 +333,25 @@ class WordShortSerializer(serializers.ModelSerializer):
         произвольного атрибута слова."""
         if len(obj_list) > max_amount:
             raise serializers.ValidationError(
-                f'The word cannot have more than ' f'{max_amount} {attr}'
+                AmountLimits.get_error_message(max_amount, attr)
             )
 
     def validate_types(self, types):
-        self.max_amount_validate(types, MAX_TYPES_AMOUNT, 'types')
+        self.max_amount_validate(types, AmountLimits.MAX_TYPES_AMOUNT, 'типов')
         return types
 
     def validate_translations(self, translations):
-        self.max_amount_validate(translations, MAX_TRANSLATIONS_AMOUNT, 'translations')
+        self.max_amount_validate(
+            translations, AmountLimits.MAX_TRANSLATIONS_AMOUNT, 'переводов'
+        )
         return translations
 
     def validate_tags(self, tags):
-        self.max_amount_validate(tags, MAX_TAGS_AMOUNT, 'tags')
+        self.max_amount_validate(tags, AmountLimits.MAX_TAGS_AMOUNT, 'тегов')
         return tags
 
     def validate_notes(self, notes):
-        self.max_amount_validate(notes, MAX_NOTES_AMOUNT, 'notes')
+        self.max_amount_validate(notes, AmountLimits.MAX_NOTES_AMOUNT, 'заметок')
         return notes
 
     @extend_schema_field(serializers.BooleanField)
@@ -479,38 +467,47 @@ class WordSerializer(WordShortSerializer):
         read_only_fields = ('id', 'slug', 'translations_count', 'examples_count')
 
     def validate_examples(self, examples):
-        self.max_amount_validate(examples, MAX_EXAMPLES_AMOUNT, 'examples')
+        self.max_amount_validate(examples, AmountLimits.MAX_EXAMPLES_AMOUNT, 'примеров')
         return examples
 
     def validate_definitions(self, definitions):
-        self.max_amount_validate(definitions, MAX_DEFINITIONS_AMOUNT, 'definitions')
+        self.max_amount_validate(
+            definitions, AmountLimits.MAX_DEFINITIONS_AMOUNT, 'определений'
+        )
         return definitions
 
     def validate_synonyms(self, synonyms):
-        self.max_amount_validate(synonyms, MAX_SYNONYMS_AMOUNT, 'synonyms')
+        self.max_amount_validate(
+            synonyms, AmountLimits.MAX_SYNONYMS_AMOUNT, 'синонимов'
+        )
         return synonyms
 
     def validate_antonyms(self, antonyms):
-        self.max_amount_validate(antonyms, MAX_ANTONYMS_AMOUNT, 'antonyms')
+        self.max_amount_validate(
+            antonyms, AmountLimits.MAX_ANTONYMS_AMOUNT, 'антонимов'
+        )
         return antonyms
 
     def validate_similars(self, similars):
-        self.max_amount_validate(similars, MAX_SIMILARS_AMOUNT, 'similars')
+        self.max_amount_validate(
+            similars, AmountLimits.MAX_SIMILARS_AMOUNT, 'похожих слов'
+        )
         return similars
 
     def validate_forms(self, forms):
-        self.max_amount_validate(forms, MAX_FORMS_AMOUNT, 'forms')
+        self.max_amount_validate(forms, AmountLimits.MAX_FORMS_AMOUNT, 'форм')
         return forms
 
     @staticmethod
     def bulk_create_objects(objs, model_cls, related_model_cls, related_field, word):
         """Статический метод для массового создания объектов
         для полей many-to-many."""
-        objs_list = [model_cls(**data) for data in objs]
-        model_cls.objects.bulk_create(objs_list)
-        related_objs_list = [
-            related_model_cls(**{'word': word, related_field: obj}) for obj in objs_list
-        ]
+        related_objs_list = []
+        for obj_data in objs:
+            obj, _ = model_cls.objects.get_or_create(**obj_data)
+            related_objs_list.append(
+                related_model_cls(**{'word': word, related_field: obj})
+            )
         related_model_cls.objects.bulk_create(related_objs_list)
 
     def create_links_for_related_objs(self, cls, objs, word):
@@ -565,7 +562,7 @@ class TypeSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'slug',
-            'sorting',
+            'words_count',
         )
         read_only_fields = fields
 

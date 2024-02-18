@@ -1,17 +1,23 @@
+# Запуск контейнеров из образов dockerhub и локальный билд бэка
+
 version: '3.8'
 services:
   db:
     image: postgres:12.1-alpine
-    volumes:
-      - /var/lib/postgresql/data/
+    ports:
+      - "5432:5432"
     restart: always
+    volumes:
+      - postgresql_data:/var/lib/postgresql/data/
     env_file:
       - ./.env
 
   app:
-    image: fsdforselfdev/linguista:latest
+    build:
+      context: ..
+      dockerfile: ./Dockerfile
     ports:
-     - "8000:80"
+     - "8000:8000"
     restart: always
     volumes:
       - static_value:/app/static/
@@ -21,24 +27,37 @@ services:
     env_file:
       - ./.env
 
-  # frontend:
-  #   ...
+  # this service will use same image as web app, and once the migration is done it will be stopped
+  app_migrations:
+    build:
+      context: ..
+      dockerfile: ./Dockerfile
+    command: bash -c "python manage.py migrate && python manage.py loaddata data_dump.json && python manage.py collectstatic --no-input"
+    volumes:
+      - static_value:/app/static/
+    depends_on:
+      - app
+      - db
+    env_file:
+      - ./.env
 
   nginx:
-    image: nginx:1.21.3-alpine
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
     ports:
       - 80:80
+    restart: always
     volumes:
-      - ./nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
       # - ../frontend/build:/usr/share/nginx/html/
       - ../docs/:/usr/share/nginx/html/api/docs/
       - static_value:/var/html/static/
       - media_value:/var/html/media/
-
     depends_on:
       - app
-      # - frontend
 
 volumes:
   static_value:
   media_value:
+  postgresql_data:

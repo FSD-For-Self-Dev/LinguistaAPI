@@ -12,3 +12,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Poetry files
+poetry.lock
+pyproject.toml
