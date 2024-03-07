@@ -2,52 +2,135 @@
 
 from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, RegexValidator
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.db.models.functions import Lower
 from django.utils.translation import gettext as _
 
-from core.models import AuthorModel, CreatedModel, ModifiedModel, UserRelatedModel
+from core.models import (
+    AuthorModel,
+    CreatedModel,
+    ModifiedModel,
+    UserRelatedModel,
+)
 from languages.models import Language
 
 from .constants import (
     LengthLimits,
-    REGEX_MESSAGE,
+    REGEX_TEXT_MASK_DETAIL,
     REGEX_TEXT_MASK,
+    REGEX_HEXCOLOR_MASK,
+    REGEX_HEXCOLOR_MASK_DETAIL,
 )
-from .utils import slugify_text_author_fields
+from .utils import slugify_text_author_fields, slugify_text_word_fields
 
 User = get_user_model()
 
 
-class Tag(models.Model):
+class SlugModel(models.Model):
+    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
+
+    slugify_func = slugify_text_author_fields
+    get_slug_by_fields = ('text', 'author')
+
+    class Meta:
+        abstract = True
+
+    @classmethod
+    def check_class_attrs(cls):
+        assert hasattr(cls, 'slugify_func') and hasattr(cls, 'get_slug_by_fields'), (
+            'Set `slugify_func`, `get_slug_by_fields` class attributes to use '
+            'SlugModel.'
+        )
+
+    @classmethod
+    def get_slug(cls, *args, **kwargs):
+        cls.check_class_attrs()
+        _slug_fields = []
+        for field in cls.get_slug_by_fields:
+            try:
+                value = kwargs.get(field)
+                if not value:
+                    return None
+                _slug_fields.append(value)
+            except KeyError:
+                raise AssertionError(
+                    f'Can not get slug from data. Make sure {field} are passed in '
+                    'data.'
+                )
+        return cls.slugify_func(*_slug_fields)
+
+    @classmethod
+    def get_object(cls, data):
+        slug = cls.get_slug(**data)
+        try:
+            return cls.objects.get(slug=slug)
+        except ObjectDoesNotExist:
+            return None
+
+    def save(self, *args, **kwargs):
+        self.check_class_attrs()
+        slugify_data = {
+            field: self.__getattribute__(field) for field in self.get_slug_by_fields
+        }
+        self.slug = self.get_slug(**slugify_data)
+        return super().save(*args, **kwargs)
+
+
+class GetObjectModelMixin:
+    get_object_by_fields = ('field',)
+
+    @classmethod
+    def check_class_attrs(cls):
+        assert hasattr(
+            cls, 'get_object_by_fields'
+        ), 'Set `get_object_by_fields` class attributes to use GetObjectModelMixin.'
+
+    @classmethod
+    def get_object(cls, data):
+        cls.check_class_attrs()
+        for field in cls.get_object_by_fields:
+            assert (
+                field in data
+            ), f'Can not get object from data. Make sure {field} are passed in data.'
+        try:
+            return cls.objects.get(**data)
+        except ObjectDoesNotExist:
+            return None
+
+
+class Tag(GetObjectModelMixin, AuthorModel, CreatedModel, ModifiedModel):
     name = models.CharField(
         _('Tag name'),
         max_length=LengthLimits.MAX_TAG_LENGTH,
         unique=True,
         validators=(
             MinLengthValidator(LengthLimits.MIN_TAG_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
 
+    get_object_by_fields = ('name', 'author')
+
     class Meta:
+        ordering = ['-created', '-modified']
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Tag')
         verbose_name_plural = _('Tags')
 
     def __str__(self) -> str:
-        return self.name
+        return f'{self.name} (by {self.author})'
 
 
-class Collection(CreatedModel, ModifiedModel, AuthorModel):
+class Collection(CreatedModel, ModifiedModel, AuthorModel, SlugModel):
     title = models.CharField(
         _('Collection title'),
         max_length=LengthLimits.MAX_COLLECTION_NAME_LENGTH,
         validators=(
             MinLengthValidator(LengthLimits.MIN_COLLECTION_NAME_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
-    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
     description = models.TextField(
         _('Description'),
         max_length=LengthLimits.MAX_COLLECTION_DESCRIPTION_LENGTH,
@@ -61,8 +144,11 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         blank=True,
     )
 
+    slugify_func = slugify_text_author_fields
+    get_slug_by_fields = ('title', 'author')
+
     class Meta:
-        ordering = ['-created']
+        ordering = ['-created', '-modified']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
@@ -73,53 +159,41 @@ class Collection(CreatedModel, ModifiedModel, AuthorModel):
         ]
 
     def __str__(self) -> str:
-        return _(f'{self.title} ({self.words.count()} words)')
+        return _(f'{self.title}')
 
     def words_count(self) -> int:
         return self.words.count()
 
-    @staticmethod
-    def get_slug(title, author_id):
-        return slugify_text_author_fields(title, author_id)
 
-    def save(self, *args, **kwargs):
-        self.slug = self.get_slug(self.title, self.author.id)
-        super(Collection, self).save(*args, **kwargs)
-
-
-class Type(models.Model):
+class Type(CreatedModel, ModifiedModel, AuthorModel, SlugModel):
     name = models.CharField(
         _('Type name'),
         max_length=64,
         unique=True,
         validators=(
             MinLengthValidator(1),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
-    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
+
+    slugify_func = slugify_text_author_fields
+    get_slug_by_fields = ('name', 'author')
 
     class Meta:
+        ordering = ['-created', '-modified']
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Type')
         verbose_name_plural = _('Types')
 
     def __str__(self) -> str:
-        return self.name
+        return f'{self.name}'
 
     @property
     def words_count(self):
         return self.words.count()
 
-    @classmethod
-    def get_default_pk(cls):
-        word_type, created = cls.objects.get_or_create(
-            slug='noun',
-            defaults={'name': _('Noun')},
-        )
-        return word_type.pk
 
-
-class Word(CreatedModel, ModifiedModel):
+class Word(CreatedModel, ModifiedModel, AuthorModel, SlugModel):
     INACTIVE = 'I'
     ACTIVE = 'A'
     MASTERED = 'M'
@@ -142,15 +216,8 @@ class Word(CreatedModel, ModifiedModel):
         max_length=LengthLimits.MAX_WORD_LENGTH,
         validators=(
             MinLengthValidator(LengthLimits.MIN_WORD_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
-    )
-    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
-    author = models.ForeignKey(
-        User,
-        verbose_name=_('Author'),
-        on_delete=models.CASCADE,
-        related_name='vocabulary',
     )
     types = models.ManyToManyField(
         'Type', verbose_name=_('Type'), related_name='words', blank=True
@@ -217,14 +284,16 @@ class Word(CreatedModel, ModifiedModel):
     examples = models.ManyToManyField(
         'UsageExample',
         through='WordUsageExamples',
-        related_name='usage_example_for',
+        related_name='example_for',
         verbose_name=_('Usage example'),
         blank=True,
     )
-    # pronunciation_voice = ...
+
+    slugify_func = slugify_text_author_fields
+    get_slug_by_fields = ('text', 'author')
 
     class Meta:
-        ordering = ['-created']
+        ordering = ['-created', '-modified']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Word or phrase')
         verbose_name_plural = _('Words and phrases')
@@ -233,20 +302,10 @@ class Word(CreatedModel, ModifiedModel):
         ]
 
     def __str__(self) -> str:
-        return self.text
-
-    @staticmethod
-    def get_slug(text, author_id):
-        return slugify_text_author_fields(text, author_id)
-
-    def save(self, *args, **kwargs):
-        self.slug = self.get_slug(self.text, self.author.id)
-        super(Word, self).save(*args, **kwargs)
-        default_type_pk = Type.get_default_pk()
-        self.types.add(default_type_pk)  # *
+        return f'{self.text} (by {self.author})'
 
 
-class WordSelfRelatedModel(CreatedModel):
+class WordSelfRelatedModel(GetObjectModelMixin, CreatedModel):
     to_word = models.ForeignKey(
         Word, related_name='%(class)s_to_words', on_delete=models.CASCADE
     )
@@ -254,9 +313,9 @@ class WordSelfRelatedModel(CreatedModel):
         Word, related_name='%(class)s_from_words', on_delete=models.CASCADE
     )
 
+    get_object_by_fields = ('to_word', 'from_word')
+
     class Meta:
-        ordering = ['-created']
-        get_latest_by = ['created']
         abstract = True
 
     def get_classname(self):
@@ -269,69 +328,102 @@ class WordSelfRelatedModel(CreatedModel):
         )
 
 
-class WordSelfRelatedWithDifferenceModel(WordSelfRelatedModel, ModifiedModel):
-    difference = models.CharField(
+class WordSelfRelatedWithNoteModel(WordSelfRelatedModel):
+    note = models.CharField(
         max_length=512,
-        verbose_name=_('Difference'),
-        help_text=_('Difference between these %(class)ss'),
+        verbose_name=_('Note'),
+        help_text=_('Note for %(class)ss'),
         blank=True,
     )
 
     class Meta:
-        ordering = ['-created']
-        get_latest_by = ['created', 'modified']
         abstract = True
 
     def __str__(self) -> str:
-        if self.difference:
+        if self.note:
             classname = self.get_classname().lower()
             return (
-                '`{from_word}` is {classname} for `{to_word}`'
-                '(with a difference in: {difference})'
+                '`{from_word}` is {classname} for `{to_word}`' '(note: {note})'
             ).format(
                 from_word=self.from_word,
                 to_word=self.to_word,
-                difference=self.difference,
+                note=self.note,
                 classname=classname,
             )
         return super().__str__()
 
 
-class Synonym(WordSelfRelatedWithDifferenceModel, AuthorModel):
+class Synonym(WordSelfRelatedWithNoteModel):
     class Meta:
         ordering = ['-created']
-        get_latest_by = ['created', 'modified']
+        get_latest_by = ['created']
         verbose_name = _('Synonyms')
         verbose_name_plural = _('Synonyms')
         constraints = [
+            models.CheckConstraint(
+                check=~models.Q(to_word=models.F('from_word')),
+                name='synonym_not_same_word',
+            ),  # need tests
             models.UniqueConstraint(
-                fields=['from_word', 'to_word'], name='unique_synonym_pair'
-            )
+                fields=['from_word', 'to_word'], name='unique_synonyms_pair'
+            ),
         ]
 
 
-class Antonym(WordSelfRelatedModel, AuthorModel):
+class Antonym(WordSelfRelatedWithNoteModel):
     class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
         verbose_name = _('Antonym')
         verbose_name_plural = _('Antonyms')
         constraints = [
+            models.CheckConstraint(
+                check=~models.Q(to_word=models.F('from_word')),
+                name='antonym_not_same_word',
+            ),
             models.UniqueConstraint(
-                fields=['from_word', 'to_word'], name='unique_antonym_pair'
-            )
+                fields=['from_word', 'to_word'], name='unique_antonyms_pair'
+            ),
         ]
 
 
-class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
+class FormsGroup(AuthorModel, CreatedModel, ModifiedModel, SlugModel):
     name = models.CharField(
         _('Group name'),
         max_length=LengthLimits.MAX_FORMSGROUP_NAME_LENGTH,
         blank=False,
         validators=(
             MinLengthValidator(LengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
-    slug = models.SlugField(_('Slug'), unique=True, blank=False, null=False)
+    language = models.ForeignKey(
+        Language,
+        verbose_name=_('Language'),
+        on_delete=models.SET_DEFAULT,
+        related_name='forms_groups',
+        default=Language.get_default_pk,
+    )
+    color = models.CharField(
+        _('Group color'),
+        max_length=7,
+        blank=True,
+        validators=(
+            MinLengthValidator(7),
+            RegexValidator(
+                regex=REGEX_HEXCOLOR_MASK, message=REGEX_HEXCOLOR_MASK_DETAIL
+            ),
+        ),
+    )
+    translation = models.CharField(
+        _('Group name translation'),
+        max_length=LengthLimits.MAX_FORMSGROUP_NAME_LENGTH,
+        blank=True,
+        validators=(
+            MinLengthValidator(LengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+        ),
+    )
     words = models.ManyToManyField(
         'Word',
         through='WordsFormGroups',
@@ -340,7 +432,12 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
         blank=True,
     )
 
+    slugify_func = slugify_text_author_fields
+    get_slug_by_fields = ('name', 'author')
+
     class Meta:
+        ordering = ['-created', '-modified']
+        get_latest_by = ['created', 'modified']
         verbose_name = _('Forms group')
         verbose_name_plural = _('Forms groups')
         ordering = ('-created', 'name')
@@ -351,46 +448,53 @@ class FormsGroup(AuthorModel, CreatedModel, ModifiedModel):
     def __str__(self):
         return f'{self.name}'
 
-    @staticmethod
-    def get_slug(name, author_id):
-        return slugify_text_author_fields(name, author_id)
-
     def save(self, *args, **kwargs):
-        self.slug = self.get_slug(self.name, self.author.id)
         self.name = self.name.capitalize()
         super(FormsGroup, self).save(*args, **kwargs)
 
 
-class Form(WordSelfRelatedModel, AuthorModel):
+class Form(WordSelfRelatedModel):
     class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
         verbose_name = _('Form')
         verbose_name_plural = _('Forms')
         constraints = [
+            models.CheckConstraint(
+                check=~models.Q(to_word=models.F('from_word')),
+                name='form_not_same_word',
+            ),
             models.UniqueConstraint(
-                fields=['from_word', 'to_word'], name='unique_forms'
-            )
+                fields=['from_word', 'to_word'], name='unique_forms_pair'
+            ),
         ]
 
 
-class Similar(WordSelfRelatedModel, AuthorModel):
+class Similar(WordSelfRelatedModel):
     class Meta:
+        ordering = ['-created']
+        get_latest_by = ['created']
         verbose_name = _('Similar')
         verbose_name_plural = _('Similars')
         constraints = [
+            models.CheckConstraint(
+                check=~models.Q(to_word=models.F('from_word')),
+                name='similar_not_same_word',
+            ),
             models.UniqueConstraint(
-                fields=['from_word', 'to_word'], name='unique_similars'
-            )
+                fields=['from_word', 'to_word'], name='unique_similars_pair'
+            ),
         ]
 
 
-class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
+class WordTranslation(CreatedModel, ModifiedModel, AuthorModel, SlugModel):
     text = models.CharField(
         _('Translation'),
         max_length=LengthLimits.MAX_TRANSLATION_LENGTH,
         help_text=_('A translation of a word or phrase'),
         validators=(
             MinLengthValidator(LengthLimits.MIN_TRANSLATION_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     language = models.ForeignKey(
@@ -401,8 +505,11 @@ class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
         default=Language.get_default_pk,
     )
 
+    slugify_func = slugify_text_author_fields
+    get_slug_by_fields = ('text', 'author')
+
     class Meta:
-        ordering = ['-created']
+        ordering = ['-created', '-modified']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Translation')
         verbose_name_plural = _('Translations')
@@ -413,7 +520,7 @@ class WordTranslation(CreatedModel, ModifiedModel, AuthorModel):
         ]
 
     def __str__(self) -> str:
-        return self.text
+        return f'{self.text} ({self.language})'
 
 
 class WordRelatedModel(CreatedModel):
@@ -437,6 +544,8 @@ class WordsFormGroups(WordRelatedModel):
         related_name='%(class)s',
     )
 
+    get_object_by_fields = ('word', 'forms_group')
+
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created']
@@ -455,13 +564,15 @@ class WordsFormGroups(WordRelatedModel):
         )
 
 
-class WordsInCollections(WordRelatedModel):
+class WordsInCollections(GetObjectModelMixin, WordRelatedModel):
     collection = models.ForeignKey(
         'Collection',
         verbose_name=_('Collection'),
         on_delete=models.CASCADE,
         related_name='%(class)s',
     )
+
+    get_object_by_fields = ('word', 'collection')
 
     class Meta:
         ordering = ['-created']
@@ -481,13 +592,15 @@ class WordsInCollections(WordRelatedModel):
         )
 
 
-class WordTranslations(WordRelatedModel):
+class WordTranslations(GetObjectModelMixin, WordRelatedModel):
     translation = models.ForeignKey(
         'WordTranslation',
         verbose_name=_('Translation'),
         on_delete=models.CASCADE,
         related_name='%(class)s',
     )
+
+    get_object_by_fields = ('word', 'translation')
 
     class Meta:
         ordering = ['-created']
@@ -508,14 +621,14 @@ class WordTranslations(WordRelatedModel):
         )
 
 
-class Definition(CreatedModel, ModifiedModel, AuthorModel):
+class Definition(CreatedModel, ModifiedModel, AuthorModel, SlugModel):
     text = models.CharField(
         _('Definition'),
         max_length=LengthLimits.MAX_DEFINITION_LENGTH,
         help_text=_('A definition of a word or phrase'),
         validators=(
             MinLengthValidator(LengthLimits.MIN_DEFINITION_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     translation = models.CharField(
@@ -524,12 +637,15 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
         blank=True,
         validators=(
             MinLengthValidator(LengthLimits.MIN_DEFINITION_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
 
+    slugify_func = slugify_text_author_fields
+    get_slug_by_fields = ('text', 'author')
+
     class Meta:
-        ordering = ['-created']
+        ordering = ['-created', '-modified']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Definition')
         verbose_name_plural = _('Definitions')
@@ -545,13 +661,15 @@ class Definition(CreatedModel, ModifiedModel, AuthorModel):
         return self.text
 
 
-class WordDefinitions(WordRelatedModel):
+class WordDefinitions(GetObjectModelMixin, WordRelatedModel):
     definition = models.ForeignKey(
         'Definition',
         verbose_name=_('Definition'),
         on_delete=models.CASCADE,
         related_name='%(class)s',
     )
+
+    get_object_by_fields = ('word', 'definition')
 
     class Meta:
         ordering = ['-created']
@@ -572,14 +690,14 @@ class WordDefinitions(WordRelatedModel):
         )
 
 
-class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
+class UsageExample(CreatedModel, ModifiedModel, AuthorModel, SlugModel):
     text = models.CharField(
         _('Usage example'),
         max_length=LengthLimits.MAX_EXAMPLE_LENGTH,
         help_text=_('An usage example of a word or phrase'),
         validators=(
             MinLengthValidator(LengthLimits.MIN_EXAMPLE_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     translation = models.CharField(
@@ -588,12 +706,15 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
         blank=True,
         validators=(
             MinLengthValidator(LengthLimits.MIN_EXAMPLE_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
 
+    slugify_func = slugify_text_author_fields
+    get_slug_by_fields = ('text', 'author')
+
     class Meta:
-        ordering = ['-created']
+        ordering = ['-created', '-modified']
         get_latest_by = ['created', 'modified']
         verbose_name = _('Usage example')
         verbose_name_plural = _('Usage examples')
@@ -609,13 +730,15 @@ class UsageExample(CreatedModel, ModifiedModel, AuthorModel):
         return self.text
 
 
-class WordUsageExamples(WordRelatedModel):
+class WordUsageExamples(GetObjectModelMixin, WordRelatedModel):
     example = models.ForeignKey(
         'UsageExample',
         verbose_name=_('Usage example'),
         on_delete=models.CASCADE,
         related_name='%(class)s',
     )
+
+    get_object_by_fields = ('word', 'example')
 
     class Meta:
         ordering = ['-created']
@@ -635,28 +758,37 @@ class WordUsageExamples(WordRelatedModel):
         )
 
 
-class Note(CreatedModel, ModifiedModel):
+class Note(CreatedModel, ModifiedModel, AuthorModel, SlugModel):
     word = models.ForeignKey(
-        'Word', verbose_name=_('Word'), on_delete=models.CASCADE, related_name='notes'
+        'Word',
+        verbose_name=_('Word'),
+        on_delete=models.CASCADE,
+        related_name='notes',
+        null=True,
     )
     text = models.CharField(
         _('Note text'), max_length=LengthLimits.MAX_NOTE_LENGTH, blank=False
     )
+
+    slugify_func = slugify_text_word_fields
+    get_slug_by_fields = ('text', 'word')
 
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created']
         verbose_name = _('Note')
         verbose_name_plural = _('Notes')
+        constraints = [
+            models.UniqueConstraint(fields=['word', 'text'], name='unique_word_note')
+        ]
 
     def __str__(self) -> str:
-        return _(
-            f'Note to the word `{self.word}`: {self.text} '
-            f'(note was added at {self.created:%Y-%m-%d})'
-        )
+        return _(f'Note to the word `{self.word}`: {self.text} ')
 
 
-class ImageAssociation(CreatedModel, ModifiedModel):
+class ImageAssociation(
+    CreatedModel, ModifiedModel
+):  # set ManytoMany relation with word; get_object
     word = models.ForeignKey(
         'Word', verbose_name=_('Word'), on_delete=models.CASCADE, related_name='images'
     )
@@ -671,7 +803,9 @@ class ImageAssociation(CreatedModel, ModifiedModel):
         _('Image name'),
         max_length=LengthLimits.MAX_IMAGE_NAME_LENGTH,
         blank=True,
-        validators=(RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_MESSAGE),),
+        validators=(
+            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+        ),
     )
 
     class Meta:
@@ -684,7 +818,7 @@ class ImageAssociation(CreatedModel, ModifiedModel):
         return _(f'Image for `{self.word}`')
 
 
-class FavoriteWord(UserRelatedModel):
+class FavoriteWord(GetObjectModelMixin, UserRelatedModel):
     word = models.ForeignKey(
         'Word',
         verbose_name=_('Word'),
@@ -692,11 +826,18 @@ class FavoriteWord(UserRelatedModel):
         related_name='favorite_for',
     )
 
+    get_object_by_fields = ('word', 'user')
+
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created']
         verbose_name = _('Favorite word')
         verbose_name_plural = _('Favorite words')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['word', 'user'], name='unique_user_favorite_word'
+            )
+        ]
 
     def __str__(self) -> str:
         return _(
@@ -705,7 +846,7 @@ class FavoriteWord(UserRelatedModel):
         )
 
 
-class FavoriteCollection(UserRelatedModel):
+class FavoriteCollection(GetObjectModelMixin, UserRelatedModel):
     collection = models.ForeignKey(
         'Collection',
         verbose_name=_('Collection'),
@@ -713,11 +854,18 @@ class FavoriteCollection(UserRelatedModel):
         related_name='favorite_for',
     )
 
+    get_object_by_fields = ('collection', 'user')
+
     class Meta:
         ordering = ['-created']
         get_latest_by = ['created']
         verbose_name = _('Favorite collection')
         verbose_name_plural = _('Favorite collections')
+        constraints = [
+            models.UniqueConstraint(
+                fields=['collection', 'user'], name='unique_user_favorite_collection'
+            )
+        ]
 
     def __str__(self) -> str:
         return _(

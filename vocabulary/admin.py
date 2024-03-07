@@ -109,19 +109,39 @@ class FormsGroupAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
 
 
-admin.site.register(WordTranslation)
+@admin.register(UsageExample)
+class UsageExampleAdmin(admin.ModelAdmin):
+    list_display = ('id', 'text', 'translation')
+    list_display_links = ('text',)
+
+
+@admin.register(WordTranslation)
+class WordTranslationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'text', 'language')
+    list_display_links = ('text',)
+
+
+@admin.register(Synonym)
+class SynonymAdmin(admin.ModelAdmin):
+    list_display = ('id', 'from_word', 'to_word', 'note')
+    list_display_links = ('from_word',)
+
+
+@admin.register(Note)
+class NoteAdmin(admin.ModelAdmin):
+    list_display = ('id', 'text', 'word', 'created')
+    list_display_links = ('text', 'word')
+
+
 admin.site.register(WordTranslations)
-admin.site.register(UsageExample)
 admin.site.register(WordUsageExamples)
 admin.site.register(Definition)
 admin.site.register(WordDefinitions)
 admin.site.register(Tag)
 admin.site.register(WordsInCollections)
-admin.site.register(Synonym)
 admin.site.register(Antonym)
 admin.site.register(Form)
 admin.site.register(Similar)
-admin.site.register(Note)
 admin.site.register(ImageAssociation)
 admin.site.register(FavoriteWord)
 admin.site.register(FavoriteCollection)
