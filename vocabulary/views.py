@@ -3,9 +3,8 @@
 import random
 
 from django.contrib.auth import get_user_model
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.db.models import Count, Q
-from django.core.exceptions import ObjectDoesNotExist
 
 from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import (
@@ -14,7 +13,6 @@ from drf_spectacular.utils import (
 )
 from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
@@ -27,14 +25,11 @@ from .models import (
     FavoriteCollection,
     FormsGroup,
     Type,
-    WordDefinitions,
+    Definition,
     WordTranslation,
-    WordTranslations,
-    WordUsageExamples,
+    UsageExample,
     Word,
-    Synonym,
-    Similar,
-    Antonym,
+    Tag,
 )
 from .permissions import IsAuthorOrReadOnly
 from .serializers import (
@@ -48,9 +43,24 @@ from .serializers import (
     UsageExampleSerializer,
     WordSerializer,
     WordShortSerializer,
-    SynonymSerializer,
+    SynonymDetailSerializer,
     AntonymSerializer,
+    AntonymDetailSerializer,
+    SimilarSerializer,
+    SimilarDetailSerializer,
+    SynonymSerializer,
+    SynonymsListSerializer,
+    AntonymsListSerializer,
+    SimilarsListSerializer,
+    ExamplesListSerializer,
+    DefinitionsListSerializer,
+    TranslationsListSerializer,
+    WordUpdateSerializer,
 )
+from .mixins import (
+    ActionsWithRelatedObjectsMixin,
+)
+from .exceptions import ObjectAlreadyExist
 
 User = get_user_model()
 
@@ -62,7 +72,7 @@ User = get_user_model()
     partial_update=extend_schema(operation_id='word_partial_update'),
     destroy=extend_schema(operation_id='word_destroy'),
 )
-class WordViewSet(viewsets.ModelViewSet):
+class WordViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     """Действия со словами из своего словаря."""
 
     lookup_field = 'slug'
@@ -90,7 +100,7 @@ class WordViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         user = self.request.user
         if user.is_authenticated:
-            return user.vocabulary.annotate(
+            return user.words.annotate(
                 translations_count=Count('translations', distinct=True),
                 examples_count=Count('examples', distinct=True),
                 collections_count=Count('collections', distinct=True),
@@ -101,48 +111,56 @@ class WordViewSet(viewsets.ModelViewSet):
         match self.action:
             case 'list':
                 return WordShortSerializer
+            case 'partial_update':
+                return WordUpdateSerializer
             case _:
                 return super().get_serializer_class()
 
-    @staticmethod
-    def word_integrity_error_handler(word_data, request):
-        """Вернуть такое же слово из словаря при ошибке IntegrityError."""
-        word_text, word_author_id = word_data.get('text'), request.user.id
-        word_slug = Word.get_slug(word_text, word_author_id)
-        word = Word.objects.get(slug=word_slug)
-        return Response(
-            {
-                'detail': f'Слово или фраза {word} уже есть в вашем словаре.',
-                'word': WordShortSerializer(word, context={'request': request}).data,
-            },
-            status=status.HTTP_409_CONFLICT,
-        )
-
     def create(self, request, *args, **kwargs):
-        """Обработать ошибку IntegrityError перед созданием слова."""
+        """Обработать ошибку ObjectAlreadyExist перед созданием слова."""
         try:
-            return super().create(request, *args, **kwargs)
-        except IntegrityError:
-            return self.word_integrity_error_handler(request.data, request)
+            serializer = self.get_serializer(data=request.data)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
+            headers = self.get_success_headers(serializer.data)
+            return Response(
+                {'word': serializer.data, 'conflicts': serializer.nested_conflict_data},
+                status=status.HTTP_201_CREATED,
+                headers=headers,
+            )
+        except ObjectAlreadyExist as exception:
+            return Response(
+                {
+                    'detail': exception.detail,
+                    'word': self.get_serializer(
+                        exception.object, context={'request': request}
+                    ).data,
+                },
+                status=exception.status_code,
+            )
 
-    @staticmethod
-    def delete_related_obj(word, objs, related_model, related_field):
-        """Удалить связанные объекты, если они не используются в других словах."""
-        for obj in objs:
-            if not related_model.objects.filter(
-                ~Q(word=word), **{related_field: obj}
-            ).exists():
-                obj.delete()
+    def update(self, request, *args, **kwargs):
+        """Обработать ошибку ObjectAlreadyExist перед обновлением слова."""
+        try:
+            return super().update(request, *args, **kwargs)
+        except ObjectAlreadyExist as exception:
+            return Response(
+                {
+                    'detail': exception.detail,
+                    'object': exception.serializer_class(
+                        exception.object, context={'request': request}
+                    ).data,
+                },
+                status=exception.status_code,
+            )
 
     def perform_destroy(self, instance):
-        """Удалить дополнения слова при его удалении, если они больше не используются."""
-        definitions = instance.definitions.all()
-        self.delete_related_obj(instance, definitions, WordDefinitions, 'definition')
-        translations = instance.translations.all()
-        self.delete_related_obj(instance, translations, WordTranslations, 'translation')
-        examples = instance.examples.all()
-        self.delete_related_obj(instance, examples, WordUsageExamples, 'example')
+        """Удалить связанные объекты, если они больше не используются."""
         instance.delete()
+        Definition.objects.filter(definition_for__isnull=True).delete()
+        WordTranslation.objects.filter(translation_for__isnull=True).delete()
+        UsageExample.objects.filter(example_for__isnull=True).delete()
+        Tag.objects.filter(words__isnull=True).delete()
 
     @extend_schema(operation_id='word_random')
     @action(methods=('get',), detail=False, serializer_class=WordShortSerializer)
@@ -169,6 +187,7 @@ class WordViewSet(viewsets.ModelViewSet):
         word.save()
         return Response(self.get_serializer(word).data, status=status.HTTP_201_CREATED)
 
+    # transaction atomic
     @extend_schema(operation_id='multiple_add')
     @action(
         methods=('post',),
@@ -176,99 +195,20 @@ class WordViewSet(viewsets.ModelViewSet):
         url_path='multiple-add',
         serializer_class=WordShortSerializer,
     )
-    def multiple_add(self, request, *args, **kwargs):
+    def multiple_add(self, request, *args, **kwargs):  # Обновить
         """Быстрое добавление нескольких слов сразу в словарь пользователя."""
         serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
-
-        for data in serializer.validated_data:
-            try:
-                return self.word_integrity_error_handler(data, request)
-            except ObjectDoesNotExist:
-                pass
-
+        # for data in serializer.validated_data:
+        #     try:
+        #         return self.word_integrity_error_handler(data, request)
+        #     except ObjectDoesNotExist:
+        #         pass
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(
             serializer.data, status=status.HTTP_201_CREATED, headers=headers
         )
-
-    def _list_and_create_action(
-        self,
-        request,
-        objs_name,
-        relation_model=None,
-        relation_field=None,
-        *args,
-        **kwargs,
-    ):
-        """Осуществить методы list, create для дополнений слова."""
-        word = self.get_object()
-        _objs = word.__getattribute__(objs_name).all()
-        match request.method:
-            case 'GET':
-                serializer = self.get_serializer(
-                    _objs, many=True, context={'request': request}
-                )
-                return Response(serializer.data, status=status.HTTP_200_OK)
-            case 'POST':
-                serializer = self.get_serializer(data=request.data)
-                serializer.is_valid(raise_exception=True)
-                try:
-                    amount_limit = kwargs.get('amount_limit', '')
-                    if amount_limit:
-                        assert _objs.count() < amount_limit
-                    _new_obj = serializer.save(author_id=request.user.id)
-                except IntegrityError:
-                    ## использовать IntegrityError_handler
-                    return Response(
-                        {'detail': kwargs.get('integrityerror_msg', 'Integrity error')},
-                        status=status.HTTP_409_CONFLICT,
-                    )
-                except AssertionError:
-                    return Response(
-                        {'detail': kwargs.get('amountlimit_msg', 'Amount limit error')},
-                        status=status.HTTP_409_CONFLICT,
-                    )
-
-                if relation_model:
-                    relation_model.objects.create(
-                        **{relation_field: _new_obj}, word=word
-                    )
-
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def _detail_action(self, request, objs_name, lookup_name, *args, **kwargs):
-        """Осуществить методы retrieve, partial_update, destroy для дополнений слова."""
-        word = self.get_object()
-        try:
-            _obj = word.__getattribute__(objs_name).get(pk=kwargs.get(lookup_name))
-        except ObjectDoesNotExist:
-            raise NotFound(detail=kwargs.get('notfounderror_msg', ''))
-
-        match request.method:
-            case 'GET':
-                return Response(self.get_serializer(_obj).data)
-            case 'PATCH':
-                serializer = self.get_serializer(
-                    instance=_obj, data=request.data, partial=True
-                )
-                serializer.is_valid(raise_exception=True)
-                try:
-                    serializer.save()
-                except IntegrityError:
-                    return Response(
-                        {'detail': kwargs.get('integrityerror_msg', '')},
-                        status=status.HTTP_409_CONFLICT,
-                    )
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            case 'DELETE':
-                _obj.delete()
-                objs = word.__getattribute__(objs_name).all()
-                serializer = self.get_serializer(
-                    objs, many=True, context={'request': request}
-                )
-                return Response(serializer.data, status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(operation_id='translations_list', methods=('get',))
     @extend_schema(operation_id='translation_create', methods=('post',))
@@ -279,16 +219,19 @@ class WordViewSet(viewsets.ModelViewSet):
     )
     def translations(self, request, *args, **kwargs):
         """Получить все переводы слова или добавить новый перевод."""
+        from_vocabulary_param = request.query_params.get('from_vocabulary', None)
         return self._list_and_create_action(
             request,
-            'translations',
-            relation_model=WordTranslations,
-            relation_field='translation',
-            integrityerror_msg='Такой перевод уже существует.',
+            objs_related_name='translations',
+            alreadyexist_detail='Этот перевод уже добавлен к этому слову.',
+            conflict_detail='Такой перевод уже есть в вашем словаре, обновить его?',
             amount_limit=AmountLimits.MAX_TRANSLATIONS_AMOUNT,
-            amountlimit_msg=AmountLimits.get_error_message(
+            amountlimit_detail=AmountLimits.get_error_message(
                 AmountLimits.MAX_TRANSLATIONS_AMOUNT, 'переводов'
             ),
+            add_intermediate=True,
+            from_vocabulary=from_vocabulary_param,
+            from_vocabulary_serializer=TranslationsListSerializer,
         )
 
     @extend_schema(operation_id='translations_retrieve', methods=('get',))
@@ -304,11 +247,11 @@ class WordViewSet(viewsets.ModelViewSet):
         """Получить, редактировать или удалить перевод слова."""
         return self._detail_action(
             request,
-            'translations',
-            relation_model=WordTranslation,
-            lookup_name='translation_id',
+            objs_related_name='translations',
+            lookup_field='id',
+            lookup_attr='translation_id',
             notfounderror_msg='Перевод с таким id у слова не найден.',
-            integrityerror_msg='Такой перевод уже существует.',
+            alreadyexist_detail='Этот перевод уже добавлен к этому слову.',
             *args,
             **kwargs,
         )
@@ -323,16 +266,19 @@ class WordViewSet(viewsets.ModelViewSet):
     )
     def definitions(self, request, *args, **kwargs):
         """Получить все определения слова или добавить новое определение."""
+        from_vocabulary_param = request.query_params.get('from_vocabulary', None)
         return self._list_and_create_action(
             request,
-            'definitions',
-            relation_model=WordDefinitions,
-            relation_field='definition',
-            integrityerror_msg='Такое определение уже существует.',
+            objs_related_name='definitions',
+            alreadyexist_detail='Это определение уже добавлено к этому слову.',
+            conflict_detail='Такое определение уже есть в вашем словаре, обновить его?',
             amount_limit=AmountLimits.MAX_DEFINITIONS_AMOUNT,
-            amountlimit_msg=AmountLimits.get_error_message(
+            amountlimit_detail=AmountLimits.get_error_message(
                 AmountLimits.MAX_DEFINITIONS_AMOUNT, 'определений'
             ),
+            add_intermediate=True,
+            from_vocabulary=from_vocabulary_param,
+            from_vocabulary_serializer=DefinitionsListSerializer,
         )
 
     @extend_schema(operation_id='definition_retrieve', methods=('get',))
@@ -349,11 +295,11 @@ class WordViewSet(viewsets.ModelViewSet):
         """Получить, редактировать или удалить определение слова."""
         return self._detail_action(
             request,
-            'definitions',
-            relation_model=WordDefinitions,
-            lookup_name='definition_id',
+            objs_related_name='definitions',
+            lookup_field='id',
+            lookup_attr='definition_id',
             notfounderror_msg='Определение с таким id у слова не найдено.',
-            integrityerror_msg='Такое определение уже существует.',
+            alreadyexist_detail='Это определение уже добавлено к этому слову.',
             *args,
             **kwargs,
         )
@@ -364,20 +310,23 @@ class WordViewSet(viewsets.ModelViewSet):
         methods=('get', 'post'),
         detail=True,
         serializer_class=UsageExampleSerializer,
-        permission_classes=(IsAuthenticated,),
+        permission_classes=(IsAuthenticated,),  # *
     )
     def examples(self, request, *args, **kwargs):
         """Получить все примеры слова или добавить новый пример."""
+        from_vocabulary_param = request.query_params.get('from_vocabulary', None)
         return self._list_and_create_action(
             request,
-            'examples',
-            relation_model=WordUsageExamples,
-            relation_field='example',
-            integrityerror_msg='Такой пример уже существует.',
+            objs_related_name='examples',
+            alreadyexist_detail='Этот пример уже добавлен к этому слову.',
+            conflict_detail='Такой пример уже есть в вашем словаре, обновить его?',
             amount_limit=AmountLimits.MAX_EXAMPLES_AMOUNT,
-            amountlimit_msg=AmountLimits.get_error_message(
+            amountlimit_detail=AmountLimits.get_error_message(
                 AmountLimits.MAX_EXAMPLES_AMOUNT, 'примеров'
             ),
+            add_intermediate=True,
+            from_vocabulary=from_vocabulary_param,
+            from_vocabulary_serializer=ExamplesListSerializer,
         )
 
     @extend_schema(operation_id='example_retrieve', methods=('get',))
@@ -393,11 +342,11 @@ class WordViewSet(viewsets.ModelViewSet):
         """Получить, редактировать или удалить пример использования слова."""
         return self._detail_action(
             request,
-            'examples',
-            relation_model=WordUsageExamples,
-            lookup_name='example_id',
+            objs_related_name='examples',
+            lookup_field='id',
+            lookup_attr='example_id',
             notfounderror_msg='Пример с таким id у слова не найден.',
-            integrityerror_msg='Такой пример уже существует.',
+            alreadyexist_detail='Этот пример уже добавлен к этому слову.',
             *args,
             **kwargs,
         )
@@ -409,31 +358,40 @@ class WordViewSet(viewsets.ModelViewSet):
     )
     def synonyms(self, request, *args, **kwargs):
         """Получить все синонимы слова или добавить новый синоним."""
+        from_vocabulary_param = request.query_params.get('from_vocabulary', None)
         return self._list_and_create_action(
             request,
-            'synonym_to_words',
-            integrityerror_msg='Такой синоним уже существует.',
+            objs_related_name='synonym_to_words',
+            response_objs_related_name='synonyms',
+            alreadyexist_detail='Это слово уже добавлено в синонимы.',
+            conflict_detail='Такое слово уже есть в вашем словаре, обновить его?',
             amount_limit=AmountLimits.MAX_SYNONYMS_AMOUNT,
-            amountlimit_msg=AmountLimits.get_error_message(
+            amountlimit_detail=AmountLimits.get_error_message(
                 AmountLimits.MAX_SYNONYMS_AMOUNT, 'синонимов'
             ),
+            from_vocabulary=from_vocabulary_param,
+            from_vocabulary_serializer=SynonymsListSerializer,
         )
 
     @action(
         methods=('get', 'patch', 'delete'),
         detail=True,
-        url_path=r'synonyms/(?P<synonym_id>\d+)',
-        serializer_class=SynonymSerializer,
+        url_path=r'synonyms/(?P<synonym_slug>[\w-]+)',
+        serializer_class=SynonymDetailSerializer,
     )
     def synonyms_detail(self, request, *args, **kwargs):
         """Получить, редактировать или удалить синоним слова."""
         return self._detail_action(
             request,
-            'synonym_to_words',
-            relation_model=Synonym,
-            lookup_name='synonym_id',
-            notfounderror_msg='Синоним с таким id у слова не найден.',
-            integrityerror_msg='Такой синоним уже существует.',
+            objs_related_name='synonyms'
+            if request.method == 'DELETE'
+            else 'synonym_to_words',
+            lookup_field='slug' if request.method == 'DELETE' else 'from_word__slug',
+            lookup_attr='synonym_slug',
+            notfounderror_msg='Синоним с таким slug у слова не найден.',
+            alreadyexist_detail='Это слово уже добавлено в синонимы.',
+            list_serializer_class=SynonymSerializer,
+            list_objs_related_name='synonym_to_words',
             *args,
             **kwargs,
         )
@@ -445,98 +403,84 @@ class WordViewSet(viewsets.ModelViewSet):
     )
     def antonyms(self, request, *args, **kwargs):
         """Получить все антонимы слова или добавить новый антоним."""
+        from_vocabulary_param = request.query_params.get('from_vocabulary', None)
         return self._list_and_create_action(
             request,
-            'antonym_to_words',
-            integrityerror_msg='Такой антоним уже существует.',
+            objs_related_name='antonym_to_words',
+            response_objs_related_name='antonyms',
+            alreadyexist_detail='Это слово уже добавлено в антонимы.',
+            conflict_detail='Такое слово уже есть в вашем словаре, обновить его?',
             amount_limit=AmountLimits.MAX_ANTONYMS_AMOUNT,
-            amountlimit_msg=AmountLimits.get_error_message(
+            amountlimit_detail=AmountLimits.get_error_message(
                 AmountLimits.MAX_ANTONYMS_AMOUNT, 'антонимов'
             ),
+            from_vocabulary=from_vocabulary_param,
+            from_vocabulary_serializer=AntonymsListSerializer,
         )
 
     @action(
-        methods=('get', 'delete'),
+        methods=('get', 'patch', 'delete'),
         detail=True,
-        url_path=r'antonyms/(?P<antonym_id>\d+)',
-        serializer_class=AntonymSerializer,
+        url_path=r'antonyms/(?P<antonym_slug>[\w-]+)',
+        serializer_class=AntonymDetailSerializer,
     )
     def antonyms_detail(self, request, *args, **kwargs):
         """Получить, редактировать или удалить антоним слова."""
         return self._detail_action(
             request,
-            'antonym_to_words',
-            relation_model=Antonym,
-            lookup_name='antonym_id',
-            notfounderror_msg='Антоним с таким id у слова не найден.',
-            integrityerror_msg='Такой антоним уже существует.',
+            objs_related_name='antonyms'
+            if request.method == 'DELETE'
+            else 'antonym_to_words',
+            lookup_field='slug' if request.method == 'DELETE' else 'from_word__slug',
+            lookup_attr='antonym_slug',
+            notfounderror_msg='Антоним с таким slug у слова не найден.',
+            alreadyexist_detail='Это слово уже добавлено в антонимы.',
+            list_serializer_class=AntonymSerializer,
+            list_objs_related_name='antonym_to_words',
             *args,
             **kwargs,
         )
 
     @action(
-        methods=['get'],
+        methods=['get', 'post'],
         detail=True,
-        serializer_class=WordShortSerializer,
-    )
-    def similars_get(self, request, *args, **kwargs):
-        """Получить все похожие слова."""
-        word = self.get_object()
-        similars = word.similars.all()
-        serializer = self.get_serializer(similars, many=True)
-        count = similars.count()
-        return Response({"count": count, "similars": serializer.data}, status=status.HTTP_200_OK)
-
-    @action(
-        methods=['post'],
-        detail=True,
-        serializer_class=WordShortSerializer,
+        serializer_class=SimilarSerializer,
     )
     def similars(self, request, *args, **kwargs):
-        """Добавить похожее слово."""
-        from_vocabulary = request.query_params.get('from_vocabulary', None)
-        if from_vocabulary == 'true':
-            words = self.get_queryset().filter(word=request.data.get("word"))
-            if not words.exists():
-                return Response({'detail': 'Слово не найдено в словаре.'}, status=status.HTTP_404_NOT_FOUND)
-            word_id = words.first().id
-            instance = Word.objects.filter(id=word_id).first()
-            serializer = self.get_serializer(instance=instance, data=request.data, partial=True)
-            serializer.is_valid(raise_exception=True)
-            try:
-                serializer.save()
-            except IntegrityError:
-                return Response(
-                    {'detail': 'Такое похожее слово уже существует.'},
-                    status=status.HTTP_409_CONFLICT,
-                )
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        else:
-            return self._list_and_create_action(
-                request,
-                'similar_to_words',
-                integrityerror_msg='Такое похожее слово уже существует.',
-                amount_limit=AmountLimits.MAX_SIMILARS_AMOUNT,
-                amountlimit_msg=AmountLimits.get_error_message(
-                    AmountLimits.MAX_SIMILARS_AMOUNT, 'похожих слов'
-                ),
-            )
+        """Получить все похожие слова или добавить новое."""
+        from_vocabulary_param = request.query_params.get('from_vocabulary', None)
+        return self._list_and_create_action(
+            request,
+            objs_related_name='similar_to_words',
+            response_objs_related_name='similars',
+            alreadyexist_detail='Это слово уже добавлено в похожие.',
+            conflict_detail='Такое слово уже есть в вашем словаре, обновить его?',
+            amount_limit=AmountLimits.MAX_SIMILARS_AMOUNT,
+            amountlimit_detail=AmountLimits.get_error_message(
+                AmountLimits.MAX_SIMILARS_AMOUNT, 'похожих слов'
+            ),
+            from_vocabulary=from_vocabulary_param,
+            from_vocabulary_serializer=SimilarsListSerializer,
+        )
 
     @action(
         methods=('get', 'delete'),
         detail=True,
-        url_path=r'similars/(?P<similar_id>\d+)',
-        serializer_class=WordSerializer,
+        url_path=r'similars/(?P<similar_slug>[\w-]+)',
+        serializer_class=SimilarDetailSerializer,
     )
     def similar_detail(self, request, *args, **kwargs):
         """Получить или удалить похожее слово."""
         return self._detail_action(
             request,
-            'similar_to_words',
-            relation_model=Similar,
-            lookup_name='similar_id',
-            notfounderror_msg='Похожее слово с таким id у слова не найден.',
-            integrityerror_msg='Такое похожее слово уже существует.',
+            objs_related_name='similars'
+            if request.method == 'DELETE'
+            else 'similar_to_words',
+            lookup_field='slug' if request.method == 'DELETE' else 'from_word__slug',
+            lookup_attr='similar_slug',
+            notfounderror_msg='Похожее слово с таким slug у слова не найдено.',
+            list_serializer_class=SimilarSerializer,
+            list_objs_related_name='similar_to_words',
             *args,
             **kwargs,
         )
