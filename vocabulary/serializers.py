@@ -2,7 +2,7 @@
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Q
+from django.utils.translation import gettext as _
 
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
@@ -28,147 +28,45 @@ from .models import (
     Word,
     WordDefinitions,
     WordTranslation,
-    WordTranslations,
     WordUsageExamples,
+    WordTranslations,
+)
+from .serializers_fields import (
+    ReadableHiddenField,
+    CurrentWordDefault,
+    WordSameLanguageDefault,
+    KwargsMethodField,
+)
+from .serializers_mixins import (
+    ListUpdateSerializer,
+    NestedSerializerMixin,
+    FavoriteSerializerMixin,
+    CountObjsSerializerMixin,
+    AlreadyExistSerializerHandler,
+    UpdateSerializerMixin,
 )
 
 User = get_user_model()
 
 
-class ReadWriteSerializerMethodField(serializers.SerializerMethodField):
-    """Поле для чтения и записи полей вне модели."""
+class NoteInLineSerializer(serializers.ModelSerializer):
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
+    )
 
-    def __init__(self, method_name=None, **kwargs):
-        self.method_name = method_name
-        kwargs['source'] = '*'
-        super(serializers.SerializerMethodField, self).__init__(**kwargs)
-
-    def to_internal_value(self, data):
-        return {self.field_name: data}
-
-    def to_representation(self, value):
-        method = getattr(self.parent, self.method_name)
-        return method(value)
-
-
-class RelatedSerializerField(serializers.PrimaryKeyRelatedField):
-    """
-    Кастомное поле для использования в сериализаторе слов.
-
-    Позволяет при записи передавать id объектов,
-    а при чтении выводить данные сериализатора.
-    """
-
-    def __init__(self, serializer_class, many=False, **kwargs):
-        self.serializer_class = serializer_class
-        self.many = many
-        super().__init__(**kwargs)
-
-    def to_representation(self, value):
-        return self.serializer_class(
-            value, many=self.many, required=self.required, context=self.context
-        ).data
-
-
-class CreatableSlugRelatedField(serializers.SlugRelatedField):
-    """
-    Поле для получения объекта по слагу или создания объекта с таким слагом,
-    если его нет.
-    """
-
-    def __init__(self, slug_field=None, need_author=False, capitalize=False, **kwargs):
-        super(CreatableSlugRelatedField, self).__init__(slug_field, **kwargs)
-        self.need_author = need_author
-        self.capitalize = capitalize
-
-    def get_queryset(self):
-        if self.need_author:
-            request_user = self.context['request'].user
-            admin_user = User.objects.get(username='admin')
-            # добавить проверку на наличие админа
-            return self.queryset.filter(Q(author=request_user) | Q(author=admin_user))
-        return super().get_queryset()
-
-    def to_internal_value(self, data):
-        try:
-            if self.capitalize:  # временное решение для групп форм
-                data = data.capitalize()
-            obj_data = {self.slug_field: data}
-            if self.need_author:
-                obj_create_data = {
-                    self.slug_field: data,
-                    'author': self.context['request'].user,
-                }
-                obj, _ = self.get_queryset().get_or_create(
-                    **obj_data, defaults=obj_create_data
-                )
-            else:
-                obj, _ = self.get_queryset().get_or_create(**obj_data)
-            return obj
-        except (TypeError, ValueError):
-            self.fail('invalid')
-
-
-@extend_schema_field({'type': 'string'})
-class ReadableHiddenField(serializers.Field):
-    def __init__(self, slug_field=None, serializer_class=None, many=False, **kwargs):
-        assert 'default' in kwargs, 'default is a required argument.'
-        assert (
-            slug_field is not None or serializer_class is not None
-        ), 'slug_field or serializer_class argument is required.'
-        self.slug_field = slug_field
-        self.serializer_class = serializer_class
-        self.many = many
-        super().__init__(**kwargs)
-
-    def get_value(self, dictionary):
-        return serializers.empty
-
-    def to_internal_value(self, data):
-        return data
-
-    def to_representation(self, obj):
-        if self.serializer_class:
-            return self.serializer_class(obj, many=self.many).data
-        return getattr(obj, self.slug_field)
-
-
-class WordSameLanguageDefault:
-    requires_context = True
-
-    def __call__(self, serializer_field):
-        request_data = serializer_field.context['request'].data
-        try:
-            return Language.objects.get(name=request_data['language'])
-        except KeyError:
-            return None
-
-    def __repr__(self):
-        return '%s()' % self.__class__.__name__
-
-
-class CurrentWordDefault:
-    requires_context = True
-
-    def __call__(self, serializer_field):
-        request_word_slug = serializer_field.context['view'].kwargs.get('slug')
-        try:
-            return Word.objects.get(slug=request_word_slug)
-        except KeyError:
-            return None
-
-    def __repr__(self):
-        return '%s()' % self.__class__.__name__
-
-
-class NoteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Note
-        fields = ('text', 'created')
-        read_only_fields = ('created',)
+        fields = ('id', 'text', 'word', 'author', 'created', 'modified')
+        read_only_fields = ('id', 'created', 'modified')
+        list_serializer_class = ListUpdateSerializer
+        foreign_key_field_name = 'word'
 
 
-class TranslationSerializer(serializers.ModelSerializer):
+class NoteInLineUpdateSerializer(NoteInLineSerializer):
+    id = serializers.IntegerField(required=False)
+
+
+class TranslationSerializer(AlreadyExistSerializerHandler):
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(), slug_field='username'
     )
@@ -176,13 +74,22 @@ class TranslationSerializer(serializers.ModelSerializer):
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
-        # нужно будет добавить default на родной язык пользователя
+        # нужно будет добавить inital на родной язык пользователя
     )
+
+    already_exist_detail = _('Такой перевод уже есть в вашем словаре. Обновить его?')
 
     class Meta:
         model = WordTranslation
-        fields = ('id', 'text', 'language', 'author')
-        read_only_fields = ('id', 'author')
+        fields = ('id', 'text', 'language', 'author', 'created', 'modified')
+        read_only_fields = ('created', 'modified')
+        list_serializer_class = ListUpdateSerializer
+
+    # validate language in native or learning
+
+
+class TranslationUpdateSerializer(TranslationSerializer):
+    id = serializers.IntegerField(required=False)
 
 
 class UsageExampleSerializer(serializers.ModelSerializer):
@@ -193,7 +100,12 @@ class UsageExampleSerializer(serializers.ModelSerializer):
     class Meta:
         model = UsageExample
         fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
-        read_only_fields = ('id', 'author', 'created', 'modified')
+        read_only_fields = ('created', 'modified')
+        list_serializer_class = ListUpdateSerializer
+
+
+class UsageExampleUpdateSerializer(UsageExampleSerializer):
+    id = serializers.IntegerField(required=False)
 
 
 class DefinitionSerializer(serializers.ModelSerializer):
@@ -204,57 +116,86 @@ class DefinitionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Definition
         fields = ('id', 'author', 'text', 'translation', 'created', 'modified')
-        read_only_fields = ('id', 'author', 'created', 'modified')
+        read_only_fields = ('created', 'modified')
+        list_serializer_class = ListUpdateSerializer
 
 
-class CollectionShortSerializer(serializers.ModelSerializer):
+class DefinitionUpdateSerializer(DefinitionSerializer):
+    id = serializers.IntegerField(required=False)
+
+
+class CollectionShortSerializer(CountObjsSerializerMixin, FavoriteSerializerMixin):
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(), slug_field='username'
     )
-    words_count = serializers.SerializerMethodField()
+    words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
     last_3_words = serializers.SerializerMethodField()
-    favorite = serializers.SerializerMethodField(method_name='get_favorite')
 
     class Meta:
         model = Collection
+        favorite_model = FavoriteCollection
+        favorite_model_field = 'collection'
         fields = (
             'id',
             'slug',
             'author',
             'title',
+            'favorite',
+            'description',
             'words_count',
             'last_3_words',
-            'favorite',
             'created',
             'modified',
         )
-        read_only_fields = ('id', 'slug', 'words_count', 'created', 'modified')
-
-    @extend_schema_field({'type': 'integer'})
-    def get_words_count(self, obj):
-        return obj.words.count()
+        read_only_fields = ('slug', 'words_count', 'created', 'modified')
+        list_serializer_class = ListUpdateSerializer
 
     @extend_schema_field({'type': 'string'})
     def get_last_3_words(self, obj):
-        return obj.words.order_by('-wordsincollections__created').values_list(
-            'text', flat=True
-        )[:3]
+        if hasattr(obj, 'words'):
+            return obj.words.order_by('-wordsincollections__created').values_list(
+                'text', flat=True
+            )[:3]
+        return None
 
-    @extend_schema_field(serializers.BooleanField)
-    def get_favorite(self, obj):  # метод повторяется
-        user = self.context['request'].user
-        return FavoriteCollection.objects.filter(collection=obj, user=user).exists()
+
+class CollectionShortUpdateSerializer(CollectionShortSerializer):
+    id = serializers.IntegerField(required=False)
 
 
 class FormsGroupSerializer(serializers.ModelSerializer):
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
+        # source='forms_group.author'
     )
+    language = serializers.SlugRelatedField(
+        queryset=Language.objects.all(),
+        slug_field='name',
+        required=True,
+        # source='forms_group.language'
+    )
+    # id = serializers.ReadOnlyField(source='forms_group.id')
+    # slug = serializers.ReadOnlyField(source='forms_group.slug')
+    # name = serializers.CharField(source='forms_group.name', required=True)
+    # color = serializers.CharField(source='forms_group.color', required=False)
+    # translation = serializers.CharField(source='forms_group.translation', required=False)
 
     class Meta:
         model = FormsGroup
-        fields = ('id', 'slug', 'name', 'author')
-        read_only_fields = ('id', 'slug', 'author')
+        fields = (
+            'id',
+            'slug',
+            'author',
+            'language',
+            'name',
+            'color',
+            'translation',
+            # 'word',
+        )
+        read_only_fields = ('slug', 'author')  # 'word'
+        list_serializer_class = ListUpdateSerializer
+        # foreign_key_field_name = 'word'
 
     def validate_name(self, name):
         if name.capitalize() == 'Infinitive':
@@ -264,25 +205,27 @@ class FormsGroupSerializer(serializers.ModelSerializer):
         return name
 
 
-class WordRelatedSerializer(serializers.ModelSerializer):
-    """Сериализатор для короткой демонстрации word-related объектов
-    (синонимы, антонимы, похожие слова и формы)."""
+class FormsGroupUpdateSerializer(FormsGroupSerializer):
+    id = serializers.IntegerField(required=False)
 
+
+class TagSerializer(AlreadyExistSerializerHandler):
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(), slug_field='username'
     )
-    language = serializers.SlugRelatedField(
-        queryset=Language.objects.all(),
-        slug_field='name',
-        default=WordSameLanguageDefault(),
-    )
+    name = serializers.CharField()
+
+    already_exist_detail = _('Такой тег уже есть в вашем словаре. Обновить его?')
 
     class Meta:
-        model = Word
-        fields = ('id', 'language', 'text', 'author')
+        model = Tag
+        fields = ('name', 'author')
+        list_serializer_class = ListUpdateSerializer
 
 
-class WordShortSerializer(serializers.ModelSerializer):
+class WordShortSerializer(
+    NestedSerializerMixin, AlreadyExistSerializerHandler, CountObjsSerializerMixin
+):
     """Сериализатор для записи и чтения слов в короткой форме."""
 
     language = serializers.SlugRelatedField(
@@ -291,21 +234,22 @@ class WordShortSerializer(serializers.ModelSerializer):
     types = serializers.SlugRelatedField(
         slug_field='name', queryset=Type.objects.all(), many=True, required=False
     )
-    tags = CreatableSlugRelatedField(
-        slug_field='name', queryset=Tag.objects.all(), many=True, required=False
-    )
-    notes = NoteSerializer(many=True, required=False)
-    translations_count = serializers.IntegerField(read_only=True)
+    tags = TagSerializer(many=True, required=False)
+    notes = NoteInLineSerializer(many=True, required=False)
     translations = TranslationSerializer(many=True, required=False)
-    favorite = ReadWriteSerializerMethodField(
-        method_name='get_favorite', required=False
+    translations_count = KwargsMethodField(
+        'get_objs_count', objs_related_name='translations'
     )
+    examples = UsageExampleSerializer(many=True, required=False)
+    examples_count = KwargsMethodField('get_objs_count', objs_related_name='examples')
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         serializer_class=UserSerializer,
         many=False,
     )
 
+    already_exist_detail = _('Такое слово уже есть в вашем словаре. Обновить его?')
+
     class Meta:
         model = Word
         fields = (
@@ -313,244 +257,394 @@ class WordShortSerializer(serializers.ModelSerializer):
             'slug',
             'language',
             'text',
-            'activity',
-            'is_problematic',
+            'author',
             'types',
-            'notes',
             'tags',
+            'is_problematic',
+            'activity',
             'translations_count',
             'translations',
-            'favorite',
+            'examples_count',
+            'examples',
+            'notes',
             'created',
             'modified',
+        )
+        read_only_fields = (
+            'slug',
+            'activity',
+            'translations_count',
+            'examples_count' 'created',
+            'modified',
+        )
+        list_serializer_class = ListUpdateSerializer
+        objs_related_names = {
+            'examples': 'examples',
+            'translations': 'translations',
+        }
+        amount_limit_fields = {
+            'translations': AmountLimits.MAX_TRANSLATIONS_AMOUNT,
+            'examples': AmountLimits.MAX_EXAMPLES_AMOUNT,
+            'notes': AmountLimits.MAX_NOTES_AMOUNT,
+        }
+
+
+class WordShortUpdateSerializer(UpdateSerializerMixin, WordShortSerializer):
+    id = serializers.IntegerField(required=False)
+    translations = TranslationUpdateSerializer(many=True, required=False)
+    examples = UsageExampleUpdateSerializer(many=True, required=False)
+
+
+class WordSelfRelatedSerializer(NestedSerializerMixin):
+    to_word = serializers.HiddenField(default=CurrentWordDefault())
+    from_word = WordShortSerializer(read_only=False, required=True, many=False)
+
+    validate_same_language = True
+    default_error_messages = {
+        'same_language_detail': _('Validation error.'),
+        'same_words_detail': _('Object can not be the same word.'),
+    }
+
+    class Meta:
+        abstract = True
+
+    def validate(self, attrs):
+        to_word = attrs.get('to_word', None)
+        from_word = attrs.get('from_word', None)
+        if to_word and from_word:
+            if (
+                self.validate_same_language
+                and 'language' in from_word
+                and to_word.language != from_word['language']
+            ):
+                self.fail('same_language_detail')
+            from_word_slug = Word.get_slug(**from_word)
+            if to_word.slug == from_word_slug:
+                self.fail('same_words_detail')
+        return super().validate(attrs)
+
+    def create(self, validated_data, parent_first=False):
+        return super().create(validated_data, parent_first)
+
+    def fail(self, key, **kwargs):
+        raise serializers.ValidationError(self.error_messages[key], code=key)
+
+
+class SynonymInLineSerializer(WordSelfRelatedSerializer):
+    to_word = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    default_error_messages = {
+        'same_language_detail': {
+            'synonyms': _('Синоним должен быть на том же языке, что и само слово.')
+        },
+        'same_words_detail': {
+            'synonyms': _('Само слово не может быть своим синонимом.')
+        },
+    }
+
+    class Meta:
+        model = Synonym
+        fields = (
+            'id',
+            'to_word',
+            'from_word',
+            'note',
+            'created',
+        )
+        read_only_fields = (
+            'created',
+            'to_word',
+        )
+        list_serializer_class = ListUpdateSerializer
+        foreign_key_field_name = 'to_word'
+
+
+class SynonymInLineUpdateSerializer(SynonymInLineSerializer):
+    id = serializers.IntegerField(required=False)
+    from_word = WordShortUpdateSerializer(read_only=False, required=True, many=False)
+
+
+class AntonymInLineSerializer(WordSelfRelatedSerializer):
+    to_word = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    default_error_messages = {
+        'same_language_detail': {
+            'antonyms': _('Антоним должен быть на том же языке, что и само слово.')
+        },
+        'same_words_detail': {
+            'antonyms': _('Само слово не может быть своим антонимом.')
+        },
+    }
+
+    class Meta:
+        model = Antonym
+        fields = (
+            'id',
+            'to_word',
+            'from_word',
+            'note',
+            'created',
+        )
+        read_only_fields = (
+            'created',
+            'to_word',
+        )
+        list_serializer_class = ListUpdateSerializer
+        foreign_key_field_name = 'to_word'
+
+
+class AntonymInLineUpdateSerializer(AntonymInLineSerializer):
+    id = serializers.IntegerField(required=False)
+    from_word = WordShortUpdateSerializer(read_only=False, required=True, many=False)
+
+
+class FormInLineSerializer(WordSelfRelatedSerializer):
+    to_word = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    default_error_messages = {
+        'same_language_detail': {
+            'forms': _('Форма должна быть на том же языке, что и само слово.')
+        },
+        'same_words_detail': {'forms': _('Само слово не может быть своей формой.')},
+    }
+
+    class Meta:
+        model = Form
+        fields = (
+            'id',
+            'to_word',
+            'from_word',
+            'created',
+        )
+        read_only_fields = (
+            'created',
+            'to_word',
+        )
+        list_serializer_class = ListUpdateSerializer
+        foreign_key_field_name = 'to_word'
+
+
+class FormInLineUpdateSerializer(FormInLineSerializer):
+    id = serializers.IntegerField(required=False)
+    from_word = WordShortUpdateSerializer(read_only=False, required=True, many=False)
+
+
+class SimilarInLineSerializer(WordSelfRelatedSerializer):
+    to_word = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    validate_same_language = False
+    default_error_messages = {
+        'same_words_detail': {'similars': _('Само слово нельзя добавить в похожие.')},
+    }
+
+    class Meta:
+        model = Similar
+        fields = (
+            'id',
+            'to_word',
+            'from_word',
+            'created',
+        )
+        read_only_fields = (
+            'created',
+            'to_word',
+        )
+        list_serializer_class = ListUpdateSerializer
+        foreign_key_field_name = 'to_word'
+
+
+class SimilarInLineUpdateSerializer(SimilarInLineSerializer):
+    id = serializers.IntegerField(required=False)
+    from_word = WordShortUpdateSerializer(read_only=False, required=True, many=False)
+
+
+class WordSerializer(
+    NestedSerializerMixin,
+    FavoriteSerializerMixin,
+    CountObjsSerializerMixin,
+    AlreadyExistSerializerHandler,
+):
+    """Расширенный (полный) сериализатор слова."""
+
+    language = serializers.SlugRelatedField(
+        queryset=Language.objects.all(), slug_field='name', required=True
+    )
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(),
+        serializer_class=UserSerializer,
+        many=False,
+    )
+    types = serializers.SlugRelatedField(
+        slug_field='name', queryset=Type.objects.all(), many=True, required=False
+    )
+    tags = TagSerializer(many=True, required=False)
+    forms_groups = FormsGroupSerializer(many=True, required=False)
+    translations_count = KwargsMethodField(
+        'get_objs_count', objs_related_name='translations'
+    )
+    translations = TranslationSerializer(many=True, required=False)
+    examples_count = KwargsMethodField('get_objs_count', objs_related_name='examples')
+    examples = UsageExampleSerializer(many=True, required=False)
+    definitions_count = KwargsMethodField(
+        'get_objs_count', objs_related_name='definitions'
+    )
+    definitions = DefinitionSerializer(many=True, required=False)
+    synonyms_count = KwargsMethodField('get_objs_count', objs_related_name='synonyms')
+    synonyms = SynonymInLineSerializer(
+        many=True, required=False, source='synonym_to_words'
+    )
+    antonyms_count = KwargsMethodField('get_objs_count', objs_related_name='antonyms')
+    antonyms = AntonymInLineSerializer(
+        many=True, required=False, source='antonym_to_words'
+    )
+    forms_count = KwargsMethodField('get_objs_count', objs_related_name='forms')
+    forms = FormInLineSerializer(many=True, required=False, source='form_to_words')
+    similars_count = KwargsMethodField('get_objs_count', objs_related_name='similars')
+    similars = SimilarInLineSerializer(
+        many=True, required=False, source='similar_to_words'
+    )
+    collections_count = KwargsMethodField(
+        'get_objs_count', objs_related_name='collections'
+    )
+    collections = CollectionShortSerializer(many=True, required=False)
+    notes = NoteInLineSerializer(many=True, required=False)
+
+    already_exist_detail = _('Такое слово уже есть в вашем словаре. Обновить его?')
+
+    class Meta:
+        model = Word
+        favorite_model = FavoriteWord
+        favorite_model_field = 'word'
+        fields = (
+            'id',
+            'slug',
+            'language',
+            'text',
             'author',
+            'favorite',
+            'is_problematic',
+            'types',
+            'tags',
+            'forms_groups',
+            'activity',
+            'translations_count',
+            'translations',
+            'examples_count',
+            'examples',
+            'definitions_count',
+            'definitions',
+            'synonyms_count',
+            'synonyms',
+            'antonyms_count',
+            'antonyms',
+            'forms_count',
+            'forms',
+            'similars_count',
+            'similars',
+            'collections_count',
+            'collections',
+            'notes',
+            'created',
+            'modified',
         )
-        read_only_fields = ('id', 'slug', 'translations_count')
-
-    @staticmethod
-    def max_amount_validate(obj_list, max_amount, attr):
-        """Статический метод для валидации максимального количества элементов
-        произвольного атрибута слова."""
-        if len(obj_list) > max_amount:
-            raise serializers.ValidationError(
-                AmountLimits.get_error_message(max_amount, attr)
-            )
-
-    def validate_types(self, types):
-        self.max_amount_validate(types, AmountLimits.MAX_TYPES_AMOUNT, 'типов')
-        return types
-
-    def validate_translations(self, translations):
-        self.max_amount_validate(
-            translations, AmountLimits.MAX_TRANSLATIONS_AMOUNT, 'переводов'
+        read_only_fields = (
+            'id',
+            'slug',
+            'translations_count',
+            'examples_count' 'definitions_count',
+            'synonyms_count',
+            'antonyms_count',
+            'forms_count',
+            'similars_count',
+            'collections_count',
+            'activity',
+            'created',
+            'modified',
         )
-        return translations
+        objs_related_names = {
+            'examples': 'examples',
+            'definitions': 'definitions',
+            'translations': 'translations',
+            'tags': 'tags',
+            'forms_groups': 'forms_groups',
+            'collections': 'collections',
+        }
+        amount_limit_fields = {
+            'translations': AmountLimits.MAX_TRANSLATIONS_AMOUNT,
+            'examples': AmountLimits.MAX_EXAMPLES_AMOUNT,
+            'definitions': AmountLimits.MAX_DEFINITIONS_AMOUNT,
+            'synonyms': AmountLimits.MAX_SYNONYMS_AMOUNT,
+            'antonyms': AmountLimits.MAX_ANTONYMS_AMOUNT,
+            'forms': AmountLimits.MAX_FORMS_AMOUNT,
+            'similars': AmountLimits.MAX_SIMILARS_AMOUNT,
+            'notes': AmountLimits.MAX_NOTES_AMOUNT,
+        }
 
-    def validate_tags(self, tags):
-        self.max_amount_validate(tags, AmountLimits.MAX_TAGS_AMOUNT, 'тегов')
-        return tags
+    def create(self, validated_data, parent_first=True):
+        return super().create(validated_data, parent_first)
 
-    def validate_notes(self, notes):
-        self.max_amount_validate(notes, AmountLimits.MAX_NOTES_AMOUNT, 'заметок')
-        return notes
+    def validate(self, attrs):
+        forms_groups = attrs.get('forms_groups', None)
+        for forms_group in forms_groups:
+            if 'language' in forms_group and (
+                self.instance
+                and forms_group['language'] != self.instance.language
+                or 'language' in attrs
+                and forms_group['language'] != attrs['language']
+            ):
+                raise serializers.ValidationError(
+                    {
+                        'forms_groups': _(
+                            'Группа форм должна быть на том же языке, что и само '
+                            'слово.'
+                        )
+                    }
+                )
+        return super().validate(attrs)
 
-    @extend_schema_field(serializers.BooleanField)
-    def get_favorite(self, obj):  # метод повторяется
-        user = self.context['request'].user
-        return FavoriteWord.objects.filter(word=obj, user=user).exists()
 
-    @transaction.atomic
-    def create(self, validated_data):
-        translations = validated_data.pop('translations', [])
-        word_types = validated_data.pop('types', [])
-        notes = validated_data.pop('notes', [])
-        tags = validated_data.pop('tags', [])
-        favorite = validated_data.pop('favorite', None)
-
-        word = Word.objects.create(**validated_data)
-
-        if favorite:
-            FavoriteWord.objects.create(user=self.context['request'].user, word=word)
-
-        word.tags.set(tags)
-        word.types.set(word_types)
-
-        for translation in translations:
-            current_translation, created = WordTranslation.objects.get_or_create(
-                **translation
-            )
-            WordTranslations.objects.create(word=word, translation=current_translation)
-
-        note_objs = [Note(word=word, **data) for data in notes]
-        Note.objects.bulk_create(note_objs)
-
-        return word
+class WordUpdateSerializer(WordSerializer):
+    id = serializers.IntegerField(required=False)
+    forms_groups = FormsGroupUpdateSerializer(many=True, required=False)
+    translations = TranslationUpdateSerializer(many=True, required=False)
+    examples = UsageExampleUpdateSerializer(many=True, required=False)
+    definitions = DefinitionUpdateSerializer(many=True, required=False)
+    synonyms = SynonymInLineUpdateSerializer(
+        many=True, required=False, source='synonym_to_words'
+    )
+    antonyms = AntonymInLineUpdateSerializer(
+        many=True, required=False, source='antonym_to_words'
+    )
+    forms = FormInLineUpdateSerializer(
+        many=True, required=False, source='form_to_words'
+    )
+    similars = SimilarInLineUpdateSerializer(
+        many=True, required=False, source='similar_to_words'
+    )
+    collections = CollectionShortUpdateSerializer(many=True, required=False)
 
 
 class FormSerializer(serializers.ModelSerializer):
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(), slug_field='username'
     )
-    language = serializers.HiddenField(default=WordSameLanguageDefault())
-    forms_groups = CreatableSlugRelatedField(
-        slug_field='name',
-        many=True,
-        read_only=False,
-        required=False,
-        need_author=True,
-        capitalize=True,
-        queryset=FormsGroup.objects.all(),
-    )
+    language = serializers.HiddenField(
+        default=WordSameLanguageDefault()
+    )  # убрать HiddenField
+    # forms_groups = CreatableSlugRelatedField(
+    #     slug_field='name',
+    #     many=True,
+    #     read_only=False,
+    #     required=False,
+    #     need_author=True,
+    #     capitalize=True,
+    #     queryset=FormsGroup.objects.all(),
+    # )  # убрать CreatableSlugRelatedField
 
     class Meta:
         model = Word
         fields = ('id', 'language', 'author', 'text', 'forms_groups')
         read_only_fields = ('id', 'author')
-
-
-class WordSerializer(WordShortSerializer):
-    """Расширенный (полный) сериализатор для создания слов по одному,
-    а также для просмотра слов."""
-
-    collections = RelatedSerializerField(
-        queryset=Collection.objects.all(),
-        many=True,
-        required=False,
-        serializer_class=CollectionShortSerializer,
-    )
-    collections_count = serializers.IntegerField(read_only=True)
-    examples = UsageExampleSerializer(many=True, required=False)
-    examples_count = serializers.IntegerField(read_only=True)
-    definitions = DefinitionSerializer(many=True, required=False)
-    synonyms = WordRelatedSerializer(many=True, required=False)
-    antonyms = WordRelatedSerializer(many=True, required=False)
-    forms = FormSerializer(many=True, required=False)
-    similars = WordRelatedSerializer(many=True, required=False)
-    forms_groups = CreatableSlugRelatedField(
-        slug_field='name',
-        many=True,
-        read_only=False,
-        required=False,
-        need_author=True,
-        queryset=FormsGroup.objects.all(),
-    )
-
-    class Meta:
-        model = Word
-        fields = (
-            'id',
-            'slug',
-            'language',
-            'text',
-            'favorite',
-            'translations',
-            'translations_count',
-            'examples_count',
-            'examples',
-            'definitions',
-            'types',
-            'tags',
-            'is_problematic',
-            'forms_groups',
-            'activity',
-            'collections_count',
-            'collections',
-            'created',
-            'modified',
-            'synonyms',
-            'antonyms',
-            'forms',
-            'similars',
-            'notes',
-            'author',
-        )
-        read_only_fields = ('id', 'slug', 'translations_count', 'examples_count')
-
-    def validate_examples(self, examples):
-        self.max_amount_validate(examples, AmountLimits.MAX_EXAMPLES_AMOUNT, 'примеров')
-        return examples
-
-    def validate_definitions(self, definitions):
-        self.max_amount_validate(
-            definitions, AmountLimits.MAX_DEFINITIONS_AMOUNT, 'определений'
-        )
-        return definitions
-
-    def validate_synonyms(self, synonyms):
-        self.max_amount_validate(
-            synonyms, AmountLimits.MAX_SYNONYMS_AMOUNT, 'синонимов'
-        )
-        return synonyms
-
-    def validate_antonyms(self, antonyms):
-        self.max_amount_validate(
-            antonyms, AmountLimits.MAX_ANTONYMS_AMOUNT, 'антонимов'
-        )
-        return antonyms
-
-    def validate_similars(self, similars):
-        self.max_amount_validate(
-            similars, AmountLimits.MAX_SIMILARS_AMOUNT, 'похожих слов'
-        )
-        return similars
-
-    def validate_forms(self, forms):
-        self.max_amount_validate(forms, AmountLimits.MAX_FORMS_AMOUNT, 'форм')
-        return forms
-
-    @staticmethod
-    def bulk_create_objects(objs, model_cls, related_model_cls, related_field, word):
-        """Статический метод для массового создания объектов
-        для полей many-to-many."""
-        related_objs_list = []
-        for obj_data in objs:
-            obj, _ = model_cls.objects.get_or_create(**obj_data)
-            related_objs_list.append(
-                related_model_cls(**{'word': word, related_field: obj})
-            )
-        related_model_cls.objects.bulk_create(related_objs_list)
-
-    def create_links_for_related_objs(self, cls, objs, word):
-        """Метод для создания связей между симметричными объектами слов."""
-        for obj_data in objs:
-            forms_groups = obj_data.pop('forms_groups', [])
-            obj_word, created = Word.objects.get_or_create(**obj_data)
-            obj_word.forms_groups.set(forms_groups)
-            cls.objects.create(
-                to_word=word, from_word=obj_word, author=self.context['request'].user
-            )
-            cls.objects.create(
-                to_word=obj_word, from_word=word, author=self.context['request'].user
-            )
-
-    @transaction.atomic
-    def create(self, validated_data):
-        collections = validated_data.pop('collections', [])
-        examples = validated_data.pop('examples', [])
-        definitions = validated_data.pop('definitions', [])
-        synonyms = validated_data.pop('synonyms', [])
-        antonyms = validated_data.pop('antonyms', [])
-        forms = validated_data.pop('forms', [])
-        similars = validated_data.pop('similars', [])
-        forms_groups = validated_data.pop('forms_groups', [])
-
-        word = super().create(validated_data)
-        word.collections.set(collections)
-        word.forms_groups.set(forms_groups)
-
-        self.bulk_create_objects(
-            examples, UsageExample, WordUsageExamples, 'example', word
-        )
-        self.bulk_create_objects(
-            definitions, Definition, WordDefinitions, 'definition', word
-        )
-
-        self.create_links_for_related_objs(Synonym, synonyms, word)
-        self.create_links_for_related_objs(Antonym, antonyms, word)
-        self.create_links_for_related_objs(Form, forms, word)
-        self.create_links_for_related_objs(Similar, similars, word)
-
-        return word
 
 
 class TypeSerializer(serializers.ModelSerializer):
@@ -583,12 +677,101 @@ class CollectionSerializer(CollectionShortSerializer):
             'author',
             'title',
             'description',
-            'favorite',
+            # 'favorite',
             'created',
             'modified',
             'words',
         )
         read_only_fields = ('id', 'slug', 'author', 'created', 'modified')
+
+
+class NoteSerializer(serializers.ModelSerializer):
+    word = ReadableHiddenField(default=CurrentWordDefault(), slug_field='slug')
+    author = ReadableHiddenField(
+        default=serializers.CurrentUserDefault(), slug_field='username'
+    )
+
+    class Meta:
+        model = Note
+        fields = ('id', 'text', 'created', 'word', 'author')
+        read_only_fields = ('id', 'created')
+
+
+class SynonymSerializer(WordSelfRelatedSerializer):
+    same_language_detail = 'Синоним должен быть на том же языке, что и само слово.'
+
+    class Meta:
+        model = Synonym
+        fields = (
+            'to_word',
+            'from_word',
+            'note',
+            'created',
+        )
+        read_only_fields = ('created',)
+
+
+class SynonymDetailSerializer(SynonymSerializer):
+    to_word = WordSerializer(read_only=True, many=False)
+    from_word = WordSerializer(read_only=True, many=False)
+
+    class Meta(SynonymSerializer.Meta):
+        read_only_fields = (
+            'to_word',
+            'from_word',
+            'created',
+        )
+
+
+class AntonymSerializer(WordSelfRelatedSerializer):
+    same_language_detail = 'Антоним должен быть на том же языке, что и само слово.'
+
+    class Meta:
+        model = Antonym
+        fields = (
+            'to_word',
+            'from_word',
+            'note',
+            'created',
+        )
+        read_only_fields = ('created',)
+
+
+class AntonymDetailSerializer(AntonymSerializer):
+    to_word = WordSerializer(read_only=True, many=False)
+    from_word = WordSerializer(read_only=True, many=False)
+
+    class Meta(AntonymSerializer.Meta):
+        read_only_fields = (
+            'to_word',
+            'from_word',
+            'created',
+        )
+
+
+class SimilarSerializer(WordSelfRelatedSerializer):
+    validate_same_language = False
+
+    class Meta:
+        model = Similar
+        fields = (
+            'to_word',
+            'from_word',
+            'created',
+        )
+        read_only_fields = ('created',)
+
+
+class SimilarDetailSerializer(SimilarSerializer):
+    to_word = WordSerializer(many=False, required=True)
+    from_word = WordSerializer(many=False, required=True)
+
+    class Meta(SimilarSerializer.Meta):
+        read_only_fields = (
+            'to_word',
+            'from_word',
+            'created',
+        )
 
 
 class CollectionsListSerializer(serializers.Serializer):
@@ -601,58 +784,128 @@ class CollectionsListSerializer(serializers.Serializer):
     )
 
 
-class SynonymSerializer(serializers.ModelSerializer):
+class WordsListSerializer(serializers.Serializer):  # *
+    words = serializers.SlugRelatedField(
+        slug_field='slug',
+        many=True,
+        queryset=Word.objects.all(),
+        read_only=False,
+        required=True,
+    )
+
+
+class WordRelatedSerializer(serializers.ModelSerializer):
+    word = serializers.HiddenField(default=CurrentWordDefault())
+
+    @transaction.atomic
+    def create(self, validated_data):
+        word = validated_data.pop('word', [])
+        _objs = validated_data.pop(self.objs_source_name, [])
+        word.__getattribute__(self.objs_related_name).add(*_objs)
+        return _objs
+
+
+class ExamplesListSerializer(WordRelatedSerializer):  # use hyperlinks
+    # examples = serializers.SlugRelatedField(
+    #     slug_field='slug',
+    #     many=True,
+    #     queryset=UsageExample.objects.all(),
+    #     read_only=False,
+    #     required=True,
+    # )
+    examples = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=UsageExample.objects.all(),
+        read_only=False,
+        required=True,
+        source='example',
+    )
+
+    objs_related_name = 'examples'
+    objs_source_name = 'example'
+
+    class Meta:
+        model = WordUsageExamples
+        fields = ('word', 'examples')
+
+
+class DefinitionsListSerializer(WordRelatedSerializer):
+    definitions = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=Definition.objects.all(),
+        read_only=False,
+        required=True,
+        source='definition',
+    )
+
+    objs_related_name = 'definitions'
+    objs_source_name = 'definition'
+
+    class Meta:
+        model = WordDefinitions
+        fields = ('word', 'definitions')
+
+
+class TranslationsListSerializer(WordRelatedSerializer):
+    translations = serializers.PrimaryKeyRelatedField(
+        many=True,
+        queryset=WordTranslation.objects.all(),
+        read_only=False,
+        required=True,
+        source='translation',
+    )
+
+    objs_related_name = 'translations'
+    objs_source_name = 'translation'
+
+    class Meta:
+        model = WordTranslations
+        fields = ('word', 'translations')
+
+
+class WordSelfRelatedListSerializerMixin(serializers.ModelSerializer):
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(), slug_field='username'
     )
     to_word = serializers.HiddenField(default=CurrentWordDefault())
-    text = serializers.CharField(source='from_word.text')
-    slug = serializers.SerializerMethodField()
+    words = serializers.SlugRelatedField(
+        slug_field='slug',
+        many=True,
+        queryset=Word.objects.all(),
+        read_only=False,
+        required=True,
+        source='from_word',
+    )
+
+    @transaction.atomic
+    def create(self, validated_data):
+        word = validated_data.pop('to_word', [])
+        _objs = validated_data.pop('from_word', [])
+        word.__getattribute__(self.objs_related_name).add(
+            *_objs, through_defaults=validated_data
+        )
+        return _objs
+
+
+class SynonymsListSerializer(WordSelfRelatedListSerializerMixin):
+    objs_related_name = 'synonyms'
 
     class Meta:
         model = Synonym
-        fields = (
-            'id',
-            'to_word',
-            'text',
-            'difference',
-            'author',
-            'slug',
-            'created',
-            'modified',
-        )
-        read_only_fields = ('id', 'author', 'slug', 'created', 'modified')
-
-    def validate_text(self, value):
-        if self.instance:
-            raise serializers.ValidationError('Это поле нельзя редактировать.')
-        return value
-
-    def validate(
-        self, attrs, validationerror_msg='Нельзя добавить к синонимам то же слово.'
-    ):
-        if not self.instance:
-            attrs['from_word'], created = Word.objects.get_or_create(
-                text__iexact=attrs['from_word']['text'],
-                author=self.context['request'].user,
-                defaults={'text': attrs['from_word']['text']},
-            )
-            if attrs['from_word'] == attrs['to_word']:
-                raise serializers.ValidationError({'text': [validationerror_msg]})
-        return super().validate(attrs)
-
-    @extend_schema_field({'type': 'string'})
-    def get_slug(self, obj):
-        return obj.from_word.slug
+        fields = ('author', 'to_word', 'words')
 
 
-class AntonymSerializer(SynonymSerializer):
+class AntonymsListSerializer(WordSelfRelatedListSerializerMixin):
+    objs_related_name = 'antonyms'
+
     class Meta:
         model = Antonym
-        fields = ('id', 'to_word', 'text', 'author', 'slug', 'created')
-        read_only_fields = ('id', 'author', 'slug', 'created')
+        fields = ('author', 'to_word', 'words')
 
-    def validate(
-        self, attrs, validationerror_msg='Нельзя добавить к антонимам то же слово.'
-    ):
-        return super().validate(attrs, validationerror_msg)
+
+class SimilarsListSerializer(WordSelfRelatedListSerializerMixin):
+    objs_related_name = 'similars'
+
+    class Meta:
+        model = Similar
+        fields = ('author', 'to_word', 'words')

@@ -14,10 +14,10 @@ class AmountLimits:
     MAX_SIMILARS_AMOUNT = 16
 
     @staticmethod
-    def get_error_message(limit_amount, limit_name):
-        return (
-            f'Лимит достигнут: нельзя добавить больше чем {limit_amount} {limit_name}.'
-        )
+    def get_error_message(limit, attr_name=None):
+        if attr_name:
+            return f'{attr_name}: достигнуто максимальное кол-во ({limit}).'
+        return f'Достигнуто максимальное кол-во ({limit}).'
 
 
 class LengthLimits:
@@ -42,9 +42,12 @@ class LengthLimits:
 
 
 REGEX_TEXT_MASK = r"^([A-Za-zА-Яа-яёЁ]+)([A-Za-zА-Яа-я-!?.,:'()ёЁ ]*)$"
-REGEX_MESSAGE = (
+REGEX_TEXT_MASK_DETAIL = (
     'Acceptable characters: Latin letters (A-Z, a-z), '
     'Cyrillic letters (А-Я, а-я), Hyphen, '
     'Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe. '
     'Make sure word begin with a letter.'
 )
+
+REGEX_HEXCOLOR_MASK = r'^#[\w]+$'
+REGEX_HEXCOLOR_MASK_DETAIL = 'Color must be in hex format.'
