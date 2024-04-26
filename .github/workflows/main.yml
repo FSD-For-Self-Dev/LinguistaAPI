@@ -34,6 +34,8 @@ jobs:
         image: postgres
         env:
           POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_NAME: postgres
         options: >-
           --health-cmd pg_isready
           --health-interval 10s
@@ -57,5 +59,6 @@ jobs:
       run: |
         poetry run pytest -vv
       env:
-        POSTGRES_HOST: postgres
-        POSTGRES_PORT: 5432
+        DB_HOST: postgres
+        DB_PORT: 5432
+        DB_USER: postgres
