@@ -86,38 +86,54 @@ class WordAdmin(admin.ModelAdmin):
 
 @admin.register(Type)
 class TypeAdmin(TranslationAdmin):
+    prepopulated_fields = {'slug': ('name',)}
     list_display = ('name', 'words_count')
     list_display_links = ('name',)
 
 
-class WordInLine(admin.TabularInline):
+class CollectionWordInLine(admin.TabularInline):
     model = WordsInCollections
 
 
 @admin.register(Collection)
 class CollectionAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('title', 'author')}
-    list_display = ('id', 'title', 'author', 'words_count')
+    list_display = ('title', 'author', 'words_count')
     list_display_links = ('title',)
-    inlines = (WordInLine,)
+    inlines = (CollectionWordInLine,)
+
+
+@admin.register(Tag)
+class TagAdmin(admin.ModelAdmin):
+    list_display = ('name', 'author', 'words_count')
+    list_display_links = ('name',)
 
 
 @admin.register(FormsGroup)
 class FormsGroupAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name', 'author')}
-    list_display = ('id', 'name', 'author')
+    list_display = ('id', 'name', 'author', 'words_count')
     list_display_links = ('name',)
-
-
-@admin.register(UsageExample)
-class UsageExampleAdmin(admin.ModelAdmin):
-    list_display = ('id', 'text', 'translation')
-    list_display_links = ('text',)
 
 
 @admin.register(WordTranslation)
 class WordTranslationAdmin(admin.ModelAdmin):
-    list_display = ('id', 'text', 'language')
+    prepopulated_fields = {'slug': ('text', 'author')}
+    list_display = ('id', 'text', 'language', 'words_count')
+    list_display_links = ('text',)
+
+
+@admin.register(UsageExample)
+class UsageExampleAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('text', 'author')}
+    list_display = ('id', 'text', 'translation', 'words_count')
+    list_display_links = ('text',)
+
+
+@admin.register(Definition)
+class DefinitionAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('text', 'author')}
+    list_display = ('id', 'text', 'translation', 'words_count')
     list_display_links = ('text',)
 
 
@@ -135,9 +151,7 @@ class NoteAdmin(admin.ModelAdmin):
 
 admin.site.register(WordTranslations)
 admin.site.register(WordUsageExamples)
-admin.site.register(Definition)
 admin.site.register(WordDefinitions)
-admin.site.register(Tag)
 admin.site.register(WordsInCollections)
 admin.site.register(Antonym)
 admin.site.register(Form)
@@ -145,4 +159,3 @@ admin.site.register(Similar)
 admin.site.register(ImageAssociation)
 admin.site.register(FavoriteWord)
 admin.site.register(FavoriteCollection)
-admin.site.register(WordsFormGroups)

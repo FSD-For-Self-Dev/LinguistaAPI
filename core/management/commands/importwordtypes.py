@@ -49,9 +49,5 @@ class Command(BaseCommand):
                 if created:
                     cnt += 1
             except Exception as e:
-                raise CommandError(
-                    'Error adding type %s{type}: %s{error}'.format(
-                        type=word_type, error=e
-                    )
-                )
+                raise CommandError('Error adding type: %s{error}'.format(error=e))
         self.stdout.write('Added %d types' % cnt)

@@ -3,7 +3,12 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import User
+from .models import (
+    User,
+    UserDefaultWordsView,
+    UserLearningLanguage,
+    UserNativeLanguage,
+)
 
 
 @admin.register(User)
@@ -16,7 +21,6 @@ class CustomUserAdmin(UserAdmin):
         'is_active',
         'is_staff',
         'date_joined',
-        'words_in_vocabulary',
     )
     list_filter = (
         'username',
@@ -27,7 +31,6 @@ class CustomUserAdmin(UserAdmin):
         'email',
     )
     ordering = ('-date_joined',)
-    prepopulated_fields = {'slug': ('username',)}
 
     fieldsets = (
         (None, {'fields': ('username', 'password')}),
@@ -70,3 +73,8 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+
+
+admin.site.register(UserDefaultWordsView)
+admin.site.register(UserLearningLanguage)
+admin.site.register(UserNativeLanguage)

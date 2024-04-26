@@ -22,11 +22,13 @@ python-dotenv = "^1.0.0"
 Pillow = "^10.0.1"
 django-modeltranslation = "^0.18.11"
 django-cleanup = "^8.0.0"
+drf-extra-fields = "^3.7.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.0"
 pytest-django = "^4.4.0"
 pytest-pythonpath = "^0.7.3"
+model-bakery = "^1.17.0"
 factory-boy = "^3.3.0"
 pre-commit = "^3.5.0"
 ruff="^0.1.6"
@@ -82,8 +84,36 @@ line-ending = "auto"
 
 [tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["E402"]
-"**/{tests,docs,tools}/*" = ["E402"]
+"**/{tests,docs,tools}/*" = ["E402", "F841"]
 "/settings.py" = ["E501"]
 
 [tool.ruff.lint.flake8-quotes]
 docstring-quotes = "single"
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+addopts = "-vv"
+python_files = "test_*.py *_test.py *_tests.py"
+markers = [
+    "unit: tests that are isolated from the db, external api calls and other mockable internal code.",
+    "e2e",
+    "utils",
+    "signals",
+    "vocabulary",
+    "word_types",
+    "word_tags",
+    "word_form_groups",
+    "word_translations",
+    "word_usage_examples",
+    "word_definitions",
+    "word_synonyms",
+    "word_antonyms",
+    "word_similars",
+    "word_images",
+    "word_quotes",
+    "word_collections",
+    "main_page",
+    "associations",
+    "languages",
+    "exercises",
+]

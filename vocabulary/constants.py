@@ -1,23 +1,22 @@
 """Константы приложения vocabulary."""
 
+from core.constants import AmountLimits
 
-class AmountLimits:
+
+class VocabularyAmountLimits(AmountLimits):
     MAX_TYPES_AMOUNT = 3
     MAX_TAGS_AMOUNT = 10
-    MAX_TRANSLATIONS_AMOUNT = 16
+    MAX_TRANSLATIONS_AMOUNT = 24
     MAX_NOTES_AMOUNT = 10
     MAX_EXAMPLES_AMOUNT = 10
     MAX_DEFINITIONS_AMOUNT = 10
     MAX_FORMS_AMOUNT = 10
+    MAX_IMAGES_AMOUNT = 10
+    MAX_QUOTES_AMOUNT = 10
     MAX_SYNONYMS_AMOUNT = 16
     MAX_ANTONYMS_AMOUNT = 16
     MAX_SIMILARS_AMOUNT = 16
-
-    @staticmethod
-    def get_error_message(limit, attr_name=None):
-        if attr_name:
-            return f'{attr_name}: достигнуто максимальное кол-во ({limit}).'
-        return f'Достигнуто максимальное кол-во ({limit}).'
+    MAX_FORMS_GROUPS_AMOUNT = 4
 
 
 class LengthLimits:
@@ -29,16 +28,18 @@ class LengthLimits:
     MIN_DEFINITION_LENGTH = 2
     MAX_EXAMPLE_LENGTH = 1024
     MIN_EXAMPLE_LENGTH = 2
-    MAX_NOTE_LENGTH = 4096
+    MAX_NOTE_LENGTH = 1024
     MIN_NOTE_LENGTH = 1
     MAX_COLLECTION_NAME_LENGTH = 32
     MIN_COLLECTION_NAME_LENGTH = 1
-    MAX_COLLECTION_DESCRIPTION_LENGTH = 512
+    MAX_COLLECTION_DESCRIPTION_LENGTH = 128
     MAX_TAG_LENGTH = 32
     MIN_TAG_LENGTH = 1
     MAX_FORMSGROUP_NAME_LENGTH = 64
     MIN_FORMSGROUP_NAME_LENGTH = 1
     MAX_IMAGE_NAME_LENGTH = 64
+    MAX_QUOTE_TEXT_LENGTH = 256
+    MAX_QUOTE_AUTHOR_LENGTH = 64
 
 
 REGEX_TEXT_MASK = r"^([A-Za-zА-Яа-яёЁ]+)([A-Za-zА-Яа-я-!?.,:'()ёЁ ]*)$"

@@ -1,4 +1,4 @@
-''' Custom command for quick admin creation '''
+""" Custom command for quick admin creation """
 
 import os
 
@@ -14,9 +14,9 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    '''
+    """
     Command to create admin
-    '''
+    """
 
     def handle(self, *args, **options):
         username = 'admin'
@@ -27,23 +27,21 @@ class Command(BaseCommand):
                 not User.objects.filter(username=username).exists()
                 and not User.objects.filter(is_superuser=True).exists()
             ):
-                print("Admin user not found, creating one")
+                self.stdout.write('Admin user not found, creating one')
 
                 new_password = os.getenv(
                     'DJANGO_SUPERUSER_PASSWORD', default=get_random_string(10)
                 )
 
-                u = User.objects.create_superuser(
-                    username, email, new_password
-                )
-                print("===================================")
-                print(
+                u = User.objects.create_superuser(username, email, new_password)
+                self.stdout.write('===================================')
+                self.stdout.write(
                     f"A superuser '{username}' was created with email "
                     f"'{email}' and password '{new_password}'"
                 )
-                print("===================================")
+                self.stdout.write('===================================')
             else:
-                print("Admin user found. Skipping super user creation")
-                print(u)
+                self.stdout.write('Admin user found. Skipping super user creation')
+                self.stdout.write(u)
         except Exception as e:
-            print(f"There was an error: {e}")
+            self.stdout.write(f'There was an error: {e}')

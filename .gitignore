@@ -132,6 +132,9 @@ dmypy.json
 static/
 staticfiles/
 
+# local media files
+media/
+
 # IDE folders
 .vscode/
 .idea/

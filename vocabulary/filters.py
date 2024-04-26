@@ -1,6 +1,7 @@
 """Фильтры приложения vocabulary."""
 
 import django_filters as df
+from django.db.models import Q
 
 from .models import Collection, Word
 
@@ -44,10 +45,10 @@ class WordFilter(df.FilterSet):
     language = df.CharFilter(field_name='language__isocode')
     is_problematic = df.BooleanFilter(field_name='is_problematic')
     tags = CustomFilterList(field_name='tags__name', lookup_expr='in')
-    activity = df.ChoiceFilter(choices=Word.ACTIVITY)
+    activity_status = df.ChoiceFilter(choices=Word.ACTIVITY)
     types = CustomFilterList(field_name='types__slug', lookup_expr='in')
     first_letter = df.CharFilter(field_name='text', lookup_expr='istartswith')
-    # have_associations = df.BooleanFilter(method='filter_have_associations')
+    have_associations = df.BooleanFilter(method='filter_have_associations')
     translations_count = df.NumberFilter(
         field_name='translations_count', lookup_expr='exact'
     )
@@ -65,9 +66,20 @@ class WordFilter(df.FilterSet):
         model = Word
         fields = {
             'created': [
-                'exact',
-                'gt',
-                'lt',
+                'date',
+                'date__gt',
+                'date__lt',
+                'year',
+                'year__gt',
+                'year__lt',
+                'month',
+                'month__gt',
+                'month__lt',
+            ],
+            'last_exercise_date': [
+                'date',
+                'date__gt',
+                'date__lt',
                 'year',
                 'year__gt',
                 'year__lt',
@@ -76,3 +88,15 @@ class WordFilter(df.FilterSet):
                 'month__lt',
             ],
         }
+
+    def filter_have_associations(self, queryset, name, value):
+        if value:
+            return queryset.filter(
+                Q(images_associations__isnull=False)
+                | Q(quotes_associations__isnull=False)
+            )
+        else:
+            return queryset.filter(
+                Q(images_associations__isnull=True)
+                & Q(quotes_associations__isnull=True)
+            )

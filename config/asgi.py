@@ -1,4 +1,4 @@
-''' ASGI config '''
+""" ASGI config """
 
 import os
 

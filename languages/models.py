@@ -1,12 +1,11 @@
-""" Languages models """
+"""Languages models."""
+
+import uuid
 
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
 from core.models import CreatedModel, ModifiedModel
-
-User = get_user_model()
 
 
 class Language(models.Model):
@@ -30,7 +29,24 @@ class Language(models.Model):
         'nl': 1,
         'ro': 1,
     }
+    LEARN_AVAILABLE = {
+        'en': True,
+        'ru': True,
+        'fr': True,
+        'de': True,
+        'it': True,
+        'es': True,
+    }
+    INTERFACE_AVAILABLE = {
+        'en': True,
+        'ru': True,
+    }
 
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
     name = models.CharField(_('Language name'), max_length=256, null=False, blank=False)
     name_local = models.CharField(
         _('Language name (in that language)'),
@@ -54,6 +70,18 @@ class Language(models.Model):
         default=0,
         help_text=_('increase to show at top of the list'),
     )
+    learning_available = models.BooleanField(
+        _('Is the language available for user to add to learning ones.'), default=False
+    )
+    interface_available = models.BooleanField(
+        _('Is the language available as interface language.'), default=False
+    )
+    flag_icon = models.ImageField(
+        _('Language flag icon'),
+        upload_to='languages/flag_icons/',
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         verbose_name = _('Language')
@@ -65,7 +93,7 @@ class Language(models.Model):
 
     @classmethod
     def get_default_pk(cls):
-        lang, created = cls.objects.get_or_create(
+        lang, _ = cls.objects.get_or_create(
             isocode='en',
             defaults={
                 'name': 'English',
@@ -75,23 +103,28 @@ class Language(models.Model):
         return lang.pk
 
 
-class UserLanguage(CreatedModel, ModifiedModel):
-    """
-    Users native and target languages
-    """
+class LanguageImage(CreatedModel, ModifiedModel):
+    """Image for language."""
 
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
     language = models.ForeignKey(
         Language,
         verbose_name=_('Language'),
         on_delete=models.CASCADE,
-        related_name='speakers',
+        related_name='images',
     )
-    is_native = models.BooleanField(default=False)
-    user = models.ForeignKey(
-        User, verbose_name=_('User'), on_delete=models.CASCADE, related_name='languages'
+    image = models.ImageField(
+        _('Language image'),
+        upload_to='languages/images/',
+        blank=False,
+        null=False,
     )
 
-    def __str__(self):
-        if self.is_native:
-            return '%s is native for %s' % (self.language, self.user)
-        return '%s studies %s' % (self.user, self.language)
+    class Meta:
+        verbose_name = _('Language image')
+        verbose_name_plural = _('Language images')
+        ordering = ('-created', '-modified')
