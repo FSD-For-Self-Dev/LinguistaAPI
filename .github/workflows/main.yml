@@ -27,6 +27,7 @@ jobs:
         tags: fsdforselfdev/linguista:latest
 
   tests:
+    name: Run tests
     runs-on: ubuntu-latest
     steps:
     - name: Check out the repo
@@ -39,7 +40,8 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install poetry
+        poetry env use python3.11
         poetry install
     - name: Test with pytest
       run: |
-        poetry run pytest
+        poetry run pytest -vv
