@@ -1318,6 +1318,7 @@ class TestVocabularyEndpoints:
             data=source_data,
             format='json',
         )
+        print(response.data)
 
         assert response.status_code == 201
         assert response.data[f'{objs_related_name}_count'] == objs_quantity
