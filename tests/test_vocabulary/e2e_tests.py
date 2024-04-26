@@ -2797,6 +2797,7 @@ class TestWordCollectionsEndpoints:
         self,
         auth_api_client,
         user,
+        learning_language,
         collections,
         objs_related_name,
         fixture_name,
@@ -2804,9 +2805,12 @@ class TestWordCollectionsEndpoints:
         request,
     ):
         collections_objs = collections(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        language = learning_language(user)
+        word = baker.make(Word, author=user, language=language)
         word.__getattribute__(self.objs_related_name).set(collections_objs)
-        objs = request.getfixturevalue(fixture_name)(user, make=True, data=False)
+        objs = request.getfixturevalue(fixture_name)(
+            user, make=True, data=False, language=language
+        )
         word.__getattribute__(objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
@@ -3032,7 +3036,7 @@ class TestLanguagesEndpoints:
             name=False, extra_data={'learning_available': True}, _quantity=2
         )
         UserLearningLanguage.objects.create(user=user, language=objs[0])
-        languages(user, data=False, _quantity=3)
+        languages(user, data=False, _quantity=1)
 
         response = auth_api_client(user).get(f'{self.endpoint}learning-available/')
 

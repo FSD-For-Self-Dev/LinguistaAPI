@@ -22,7 +22,7 @@ from users.models import UserNativeLanguage, UserLearningLanguage
 @pytest.fixture
 def language(request):
     def get_language(data=False, **kwargs):
-        language = baker.make(Language, _fill_optional=True)
+        language = baker.make(Language)
         return language.name if data else language
 
     return get_language
@@ -31,7 +31,7 @@ def language(request):
 @pytest.fixture
 def learning_language(request):
     def get_learning_language(user, data=False, **kwargs):
-        language = baker.make(Language, _fill_optional=True)
+        language = baker.make(Language)
         UserLearningLanguage.objects.create(user=user, language=language)
         if data:
             return language.name
@@ -43,7 +43,7 @@ def learning_language(request):
 @pytest.fixture
 def native_language(request):
     def get_native_language(user, data=False, **kwargs):
-        language = baker.make(Language, _fill_optional=True)
+        language = baker.make(Language)
         UserNativeLanguage.objects.create(user=user, language=language)
         if data:
             return language.name
@@ -66,7 +66,7 @@ def languages(request):
 @pytest.fixture
 def learning_languages(request):
     def get_learning_languages(user, data=False, _quantity=1, **kwargs):
-        languages = baker.make(Language, _quantity=_quantity, _fill_optional=True)
+        languages = baker.make(Language, _quantity=_quantity)
         learning_languages = [
             baker.make(UserLearningLanguage, language=language, user=user)
             for language in languages
@@ -89,7 +89,7 @@ def learning_languages(request):
 @pytest.fixture
 def native_languages(request):
     def get_native_languages(user, data=False, _quantity=1, **kwargs):
-        languages = baker.make(Language, _quantity=_quantity, _fill_optional=True)
+        languages = baker.make(Language, _quantity=_quantity)
         native_languages = [
             baker.make(UserNativeLanguage, language=language, user=user)
             for language in languages
@@ -114,7 +114,7 @@ def words_simple_data(request):
     def get_words_simple_data(user, data=False, make=False, _quantity=1, **kwargs):
         language = kwargs.get('language', None)
         if not language:
-            language = baker.make(Language, _fill_optional=True)
+            language = baker.make(Language)
             UserLearningLanguage.objects.create(user=user, language=language)
         if make:
             objs = baker.make(
@@ -193,7 +193,7 @@ def word_forms_groups(request):
     def get_word_forms_groups(user, data=False, _quantity=1, make=False, **kwargs):
         language = kwargs.get('language', None)
         if not language:
-            language = baker.make(Language, _fill_optional=True)
+            language = baker.make(Language)
             UserLearningLanguage.objects.create(user=user, language=language)
         if make:
             objs = baker.make(
@@ -241,7 +241,7 @@ def word_translations(request):
     def get_word_translation(user, data=False, _quantity=1, make=False, **kwargs):
         language = kwargs.get('language', None)
         if not language:
-            language = baker.make(Language, _fill_optional=True)
+            language = baker.make(Language)
             UserNativeLanguage.objects.create(user=user, language=language)
         if make:
             objs = baker.make(
@@ -285,7 +285,7 @@ def word_usage_examples(request):
     def get_word_usage_example(user, data=False, _quantity=1, make=False, **kwargs):
         language = kwargs.get('language', None)
         if not language:
-            language = baker.make(Language, _fill_optional=True)
+            language = baker.make(Language)
             UserLearningLanguage.objects.create(user=user, language=language)
         if make:
             objs = baker.make(
@@ -331,7 +331,7 @@ def word_definitions(request):
     def get_word_definition(user, data=False, _quantity=1, make=False, **kwargs):
         language = kwargs.get('language', None)
         if not language:
-            language = baker.make(Language, _fill_optional=True)
+            language = baker.make(Language)
             UserLearningLanguage.objects.create(user=user, language=language)
         if make:
             objs = baker.make(
@@ -514,7 +514,7 @@ def related_words_data(request):
     def get_related_words_data(user, data=False, _quantity=1, make=False, **kwargs):
         language = kwargs.get('language', None)
         if not language:
-            language = baker.make(Language, _fill_optional=True)
+            language = baker.make(Language)
             UserLearningLanguage.objects.create(user=user, language=language)
         if make:
             objs = baker.make(
@@ -561,7 +561,7 @@ def related_words_data(request):
 @pytest.fixture
 def word(request):
     def get_word(user, data=False, _quantity=1, make=False, fields={}, **kwargs):
-        language = baker.make(Language, _fill_optional=True)
+        language = baker.make(Language)
         UserLearningLanguage.objects.create(user=user, language=language)
         if make:
             word = baker.make(
