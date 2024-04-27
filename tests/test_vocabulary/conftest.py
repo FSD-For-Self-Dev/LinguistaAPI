@@ -536,17 +536,18 @@ def related_words_data(request):
             source = [
                 {
                     'from_word': {
-                        'text': obj.text,
                         'language': obj.language.name,
+                        'text': obj.text,
                     },
+                    'note': 'test_note',
                 }
                 for obj in objs
             ]
             expected = [
                 {
                     'from_word': {
-                        'text': obj.text,
                         'language': obj.language.name,
+                        'text': obj.text,
                     },
                     'note': 'test_note',
                 }
