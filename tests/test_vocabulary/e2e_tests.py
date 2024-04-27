@@ -1310,7 +1310,7 @@ class TestVocabularyEndpoints:
         word = baker.make(Word, author=user, language=language)
         objs_quantity = 2
         _, source_data, _ = request.getfixturevalue(fixture_name)(
-            user, data=True, language=language, _quantity=objs_quantity
+            user, data=True, make=False, language=language, _quantity=objs_quantity
         )
 
         response = auth_api_client(user).post(
@@ -1318,7 +1318,6 @@ class TestVocabularyEndpoints:
             data=source_data,
             format='json',
         )
-        print(response.data)
 
         assert response.status_code == 201
         assert response.data[f'{objs_related_name}_count'] == objs_quantity
