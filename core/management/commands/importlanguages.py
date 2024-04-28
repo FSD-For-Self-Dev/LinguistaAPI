@@ -6,6 +6,8 @@ from django.conf.locale import LANG_INFO
 from django.core.management.base import BaseCommand, CommandError
 from django.core.files.images import ImageFile
 
+from tqdm import tqdm
+
 from languages.models import Language, LanguageImage
 
 
@@ -22,9 +24,8 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        self.stdout.write('Importing languages...')
         cnt = 0
-        for isocode in LANG_INFO:
+        for isocode in tqdm(LANG_INFO, desc='Importing languages'):
             # we only care about the 2 letter iso codes
             if len(isocode) == 2:
                 try:

@@ -2,6 +2,8 @@
 
 from django.core.management.base import BaseCommand, CommandError
 
+from tqdm import tqdm
+
 from vocabulary.models import Type
 
 TYPE_CHOICES = [
@@ -38,9 +40,8 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        self.stdout.write('Importing types...')
         cnt = 0
-        for type_info in TYPE_CHOICES:
+        for type_info in tqdm(TYPE_CHOICES, desc='Importing types'):
             try:
                 word_type, created = Type.objects.get_or_create(
                     slug=type_info[0].lower(),

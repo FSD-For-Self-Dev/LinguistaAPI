@@ -3,6 +3,8 @@
 from django.core.management.base import BaseCommand, CommandError
 from django.core.files.images import ImageFile
 
+from tqdm import tqdm
+
 from exercises.models import Exercise, Hint
 
 
@@ -67,9 +69,10 @@ class Command(BaseCommand):
         pass
 
     def handle(self, *args, **options):
-        self.stdout.write('Importing exercises hints...')
         cnt = 0
-        for code, data in self.HINTS_INFO.items():
+        for code, data in tqdm(
+            self.HINTS_INFO.items(), desc='Importing exercises hints'
+        ):
             try:
                 hint, created = Hint.objects.get_or_create(code=code, **data)
                 if created:
@@ -78,8 +81,7 @@ class Command(BaseCommand):
                 raise CommandError('Error adding hint %s: %s' % (hint, e))
         self.stdout.write('Added %d exercises hints' % cnt)
         cnt = 0
-        self.stdout.write('Importing exercises...')
-        for code, data in self.EXERCISES_INFO.items():
+        for code, data in tqdm(self.EXERCISES_INFO.items(), desc='Importing exercises'):
             try:
                 hints_available = data.pop('hints_available')
                 exercise, created = Exercise.objects.get_or_create(**data)
@@ -87,14 +89,14 @@ class Command(BaseCommand):
                     icon_url = self.icons_path + code + '.svg'
                     exercise_icon = ImageFile(open(icon_url, 'rb'))
                     exercise.icon = exercise_icon
+                    exercise.save()
                 except FileNotFoundError:
                     pass
-                exercise.save()
                 if created:
                     cnt += 1
                 if exercise.available:
                     for hint_code in hints_available:
                         exercise.hints_available.add(Hint.objects.get(code=hint_code))
             except Exception as e:
-                raise CommandError('Error adding exercise %s: %s' % (exercise, e))
+                raise CommandError('Error adding exercise %s' % (e,))
         self.stdout.write('Added %d exercises' % cnt)

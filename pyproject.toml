@@ -32,6 +32,9 @@ model-bakery = "^1.17.0"
 pre-commit = "^3.5.0"
 ruff="^0.1.6"
 
+[tool.poetry.group.dev.dependencies]
+tqdm = "^4.66.2"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
