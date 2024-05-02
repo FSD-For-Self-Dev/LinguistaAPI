@@ -23,6 +23,7 @@ Pillow = "^10.3.0"
 django-modeltranslation = "^0.18.11"
 django-cleanup = "^8.0.0"
 drf-extra-fields = "^3.7.0"
+pymysql = "^1.1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2.0"
