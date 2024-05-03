@@ -49,7 +49,7 @@ services:
       - ./.env
 
   nginx:
-    image: fsdforselfdev/linguista-frontend:latest
+    image: nginx:1.26.0
     ports:
       - 80:80
     volumes:

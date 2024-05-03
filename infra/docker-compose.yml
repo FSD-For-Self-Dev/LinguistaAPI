@@ -32,7 +32,16 @@ services:
     build:
       context: ..
       dockerfile: ./Dockerfile
-    command: bash -c "python manage.py migrate && python manage.py loaddata data_dump.json && python manage.py collectstatic --no-input"
+    command:
+    - /bin/sh
+    - -c
+    - |
+      python manage.py migrate
+      python manage.py collectstatic --no-input
+      python manage.py importexercises
+      python manage.py importlanguages
+      python manage.py importwordtypes
+      python manage.py makesuperuser
     volumes:
       - static_value:/app/static/
     depends_on:
