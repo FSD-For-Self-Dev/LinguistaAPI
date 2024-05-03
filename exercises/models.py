@@ -92,7 +92,7 @@ class Hint(CreatedModel):
     )
     code = models.CharField(
         _('Hint short code'),
-        max_length=16,
+        max_length=32,
         unique=True,
     )
 
