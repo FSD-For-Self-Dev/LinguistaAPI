@@ -22,7 +22,6 @@ class Command(BaseCommand):
         username = 'admin'
         email = 'admin@example.com'
         try:
-            u = None
             if (
                 not User.objects.filter(username=username).exists()
                 and not User.objects.filter(is_superuser=True).exists()
@@ -33,7 +32,7 @@ class Command(BaseCommand):
                     'DJANGO_SUPERUSER_PASSWORD', default=get_random_string(10)
                 )
 
-                u = User.objects.create_superuser(username, email, new_password)
+                User.objects.create_superuser(username, email, new_password)
                 self.stdout.write('===================================')
                 self.stdout.write(
                     f"A superuser '{username}' was created with email "
@@ -42,6 +41,5 @@ class Command(BaseCommand):
                 self.stdout.write('===================================')
             else:
                 self.stdout.write('Admin user found. Skipping super user creation')
-                self.stdout.write(u)
         except Exception as e:
             self.stdout.write(f'There was an error: {e}')

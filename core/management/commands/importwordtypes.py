@@ -43,8 +43,7 @@ class Command(BaseCommand):
         cnt = 0
         for type_info in tqdm(TYPE_CHOICES, desc='Importing types'):
             try:
-                word_type, created = Type.objects.get_or_create(
-                    slug=type_info[0].lower(),
+                _, created = Type.objects.get_or_create(
                     name=type_info[1],
                 )
                 if created:
