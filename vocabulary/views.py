@@ -916,7 +916,7 @@ class WordViewSet(
     @action(
         methods=('get', 'patch', 'delete'),
         detail=True,
-        url_path=r'images/(?P<image_id>[^/.]+)',
+        url_path=r'images/(?P<image_id>[\w\d-]+)',
         serializer_class=ImageForWordSerializer,
     )
     def images_detail(self, request, *args, **kwargs):
@@ -938,7 +938,7 @@ class WordViewSet(
     @action(
         methods=('get', 'patch', 'delete'),
         detail=True,
-        url_path=r'quotes/(?P<quote_id>[^/.]+)',
+        url_path=r'quotes/(?P<quote_id>[\w\d-]+)',
         serializer_class=QuoteForWordSerializer,
     )
     def quotes_detail(self, request, *args, **kwargs):
