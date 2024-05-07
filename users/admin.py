@@ -39,7 +39,6 @@ class CustomUserAdmin(UserAdmin):
             {
                 'fields': (
                     'email',
-                    'slug',
                     'gender',
                 )
             },
@@ -68,7 +67,6 @@ class CustomUserAdmin(UserAdmin):
                     'email',
                     'password1',
                     'password2',
-                    'slug',
                 ),
             },
         ),
