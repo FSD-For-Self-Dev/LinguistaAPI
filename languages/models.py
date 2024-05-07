@@ -47,7 +47,12 @@ class Language(models.Model):
         default=uuid.uuid4,
         editable=False,
     )
-    name = models.CharField(_('Language name'), max_length=256, null=False, blank=False)
+    name = models.CharField(
+        _('Language name'),
+        max_length=256,
+        null=False,
+        blank=False,
+    )
     name_local = models.CharField(
         _('Language name (in that language)'),
         max_length=256,
@@ -57,7 +62,7 @@ class Language(models.Model):
     )
     isocode = models.CharField(
         _('ISO 639-1 Language code'),
-        max_length=2,
+        max_length=8,
         null=False,
         blank=False,
         unique=True,
