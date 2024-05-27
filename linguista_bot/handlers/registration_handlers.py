@@ -33,8 +33,8 @@ async def cancel_operation(message: Message, state: FSMContext):
 async def register_me(message: Message, state: FSMContext):
     await state.set_state(RegistrationForm.username)
     await message.answer(
-        'Операция отменена. Зарегистрируйтесь или войдите для продолжения.',
-        reply_markup=initial_kb
+        'Введите логин/юзернейм для своего аккаунта или нажмите "Отмена".',
+        reply_markup=cancel_kb
     )
 
 
