@@ -3,7 +3,7 @@ import requests
 from aiogram import F
 from aiogram.types import Message
 from aiogram.filters import CommandStart
-from keyboards import initial_kb
+from keyboards.keyboards import initial_kb
 from http import HTTPStatus
 from aiogram import Router
 from aiogram.fsm.context import FSMContext

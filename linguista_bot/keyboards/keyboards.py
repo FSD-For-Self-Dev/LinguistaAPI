@@ -1,4 +1,4 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 initial_kb = ReplyKeyboardMarkup(
@@ -18,6 +18,15 @@ def auth_kb(text: str | list):
         text = [text]
     [builder.button(txt) for txt in text]
     return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
+
+
+cancel_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text='Отмена')]
+    ],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+)
 
 
 rmk = ReplyKeyboardRemove()

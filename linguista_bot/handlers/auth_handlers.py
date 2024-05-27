@@ -4,8 +4,9 @@ from aiogram.types import Message
 from http import HTTPStatus
 from aiogram import Router, F
 from aiogram.fsm.context import FSMContext
-from states import AuthForm
-from linguista_bot.constants import AUTHORIZATION_ENDPOINT
+from states.states import AuthForm
+from .constants import AUTHORIZATION_ENDPOINT
+from keyboards.keyboards import cancel_kb, rmk, initial_kb
 
 logging.basicConfig(
     level=logging.INFO,
@@ -15,19 +16,28 @@ logging.basicConfig(
 router = Router()
 
 
+@router.message(F.text == 'Отмена')
+async def cancel_operation(message: Message, state: FSMContext):
+    await state.clear()
+    await message.answer(
+        'Операция отменена. Зарегистрируйтесь или войдите для продолжения.',
+        reply_markup=initial_kb
+    )
+
+
 # @router.message(Command('auth'))
 @router.message(F.text == 'Войти в аккаунт')
 async def authorize_me(message: Message, state: FSMContext):
     # await state.clear()
     await state.set_state(AuthForm.username)
-    await message.answer('Введите логин/юзернейм')
+    await message.answer('Введите логин/юзернейм или нажмите "Отмена" для отмены операции.', reply_markup=cancel_kb)
 
 
 @router.message(AuthForm.username)
 async def auth_form_username(message: Message, state: FSMContext):
     await state.update_data(username=message.text)
     await state.set_state(AuthForm.password)
-    await message.answer('Теперь введите пароль')
+    await message.answer('Теперь введите пароль или нажмите "Отмена" для отмены операции.', reply_markup=cancel_kb)
 
 
 @router.message(AuthForm.password)

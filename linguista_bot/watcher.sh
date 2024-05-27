@@ -9,9 +9,9 @@ do
 
     if [ "$current_code_md5" != "$last_code_md5" ]; then
         echo "Code has changed, restarting program..."
-        pkill -f "python $source_code"  # Команда для убийства процесса Python
+        pkill -f "python $source_code"
 
-        python $source_code &  # Запуск Python в фоновом режиме
+        python $source_code &
         last_code_md5=$current_code_md5
     fi
 
@@ -20,7 +20,7 @@ done
 
 !/bin/bash
 
-# dir_path=$(dirname "$0")  # Получаем путь к директории, в которой находится скрипт
+# dir_path=$(dirname "$0")
 # last_md5=""
 
 # while true
@@ -29,9 +29,9 @@ done
 
 #     if [ "$current_md5" != "$last_md5" ]; then
 #         echo "Files have changed, restarting program..."
-#         pkill -f "python $dir_path/*.py"  # Команда для убийства всех процессов Python в данной директории
+#         pkill -f "python $dir_path/*.py"
 
-#         python $dir_path/main.py &  # Запуск main.py в фоновом режиме
+#         python $dir_path/main.py &
 #         last_md5=$current_md5
 #     fi
 
