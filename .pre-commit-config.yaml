@@ -35,7 +35,7 @@ repos:
   - id: pytest
     name: pytest
     description: 'Run tests with pytest'
-    entry: pytest
+    entry: venv/bin/pytest
     language: python
     types: [python]
     require_serial: true
