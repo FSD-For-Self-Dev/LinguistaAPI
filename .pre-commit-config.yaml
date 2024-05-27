@@ -40,3 +40,5 @@ repos:
     types: [python]
     require_serial: true
     pass_filenames: false
+    args:
+      - "-vvv"
