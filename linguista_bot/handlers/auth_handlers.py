@@ -1,12 +1,15 @@
 import logging
-import requests
-from aiogram.types import Message
 from http import HTTPStatus
-from aiogram import Router, F
+
+import requests
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
+
+from keyboards.keyboards import cancel_kb, initial_kb
 from states.states import AuthForm
+
 from .constants import AUTHORIZATION_ENDPOINT
-from keyboards.keyboards import cancel_kb, rmk, initial_kb
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,14 +33,20 @@ async def cancel_operation(message: Message, state: FSMContext):
 async def authorize_me(message: Message, state: FSMContext):
     # await state.clear()
     await state.set_state(AuthForm.username)
-    await message.answer('Введите логин/юзернейм или нажмите "Отмена" для отмены операции.', reply_markup=cancel_kb)
+    await message.answer(
+        'Введите логин/юзернейм или нажмите "Отмена" для отмены операции.',
+        reply_markup=cancel_kb
+    )
 
 
 @router.message(AuthForm.username)
 async def auth_form_username(message: Message, state: FSMContext):
     await state.update_data(username=message.text)
     await state.set_state(AuthForm.password)
-    await message.answer('Теперь введите пароль или нажмите "Отмена" для отмены операции.', reply_markup=cancel_kb)
+    await message.answer(
+        'Теперь введите пароль или нажмите "Отмена" для отмены операции.',
+        reply_markup=cancel_kb
+    )
 
 
 @router.message(AuthForm.password)
@@ -59,7 +68,9 @@ async def auth_form_password(message: Message, state: FSMContext):
             print(data)
             await message.answer('Вы успешно авторизовались!')
         else:
-            await message.answer('Не удалось получить токен из ответа сервера.')
+            await message.answer(
+                'Не удалось получить токен из ответа сервера.'
+            )
     else:
         await message.answer(
             f'Ошибка при запросе на сервер. Код: {response.status_code}'

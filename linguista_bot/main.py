@@ -1,10 +1,12 @@
-import logging
 import asyncio
+import logging
+
 from aiogram import Bot, Dispatcher
-from constants import API_TOKEN
-import handlers.registration_handlers
+
 import handlers.auth_handlers
 import handlers.common_handlers
+import handlers.registration_handlers
+from constants import API_TOKEN
 
 logging.basicConfig(
     level=logging.INFO,

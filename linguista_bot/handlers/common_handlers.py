@@ -1,15 +1,17 @@
 import logging
-import requests
-from aiogram import F
-from aiogram.types import Message
-from aiogram.filters import CommandStart
-from keyboards.keyboards import initial_kb
 from http import HTTPStatus
-from aiogram import Router
+
+import requests
+from aiogram import F, Router
+from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
+
+from keyboards.keyboards import initial_kb
 
 logging.basicConfig(
-    level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
 router = Router()
@@ -28,7 +30,7 @@ async def languages_interface_available(message: Message):
     url = 'http://localhost:8000/ru/api/languages/interface/'
     response = requests.get(url)
     logging.info(
-        f"Статус-код для languages_interface_available '{response.status_code}'"
+        f"Статус-код для languages_interface_available {response.status_code}"
     )
     if response.status_code == HTTPStatus.OK:
         data: dict = response.json()
@@ -67,7 +69,9 @@ async def get_my_languages(message: Message, state: FSMContext):
     logging.info(f"////////////'{data}'///////////////")
     token = data.get('token')
     if not token:
-        await message.answer('Токен не найден. Пожалуйста, пройдите аутентификацию.')
+        await message.answer(
+            'Токен не найден. Пожалуйста, пройдите аутентификацию.'
+        )
         return
     url = 'http://localhost:8000/ru/api/languages/'
     headers = {'Authorization': f'Token {token}'}

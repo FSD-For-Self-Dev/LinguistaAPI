@@ -1,12 +1,15 @@
 import logging
-import requests
-from aiogram.types import Message
 from http import HTTPStatus
-from aiogram import Router, F
+
+import requests
+from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
+from aiogram.types import Message
+
+from keyboards.keyboards import cancel_kb, initial_kb
 from states.states import RegistrationForm
+
 from .constants import REGISTRATION_ENDPOINT
-from keyboards.keyboards import cancel_kb, rmk, initial_kb
 
 logging.basicConfig(
     level=logging.INFO,
@@ -19,8 +22,10 @@ router = Router()
 @router.message(F.text == 'Отмена')
 async def cancel_operation(message: Message, state: FSMContext):
     await state.clear()
-    await message.answer('Операция отменена. Введите /auth или "Войти в аккаунт" для начала новой авторизации.', reply_markup=initial_kb)
-
+    await message.answer(
+        'Операция отменена. Зарегистрируйтесь или войдите для продолжения.',
+        reply_markup=initial_kb
+    )
 
 
 # @router.message(Command('register'))
@@ -37,14 +42,20 @@ async def register_me(message: Message, state: FSMContext):
 async def registration_username(message: Message, state: FSMContext):
     await state.update_data(username=message.text)
     await state.set_state(RegistrationForm.password1)
-    await message.answer('Введите пароль или нажмите "Отмена" для отмены операции.', reply_markup=cancel_kb)
+    await message.answer(
+        'Введите пароль или нажмите "Отмена" для отмены операции.',
+        reply_markup=cancel_kb
+    )
 
 
 @router.message(RegistrationForm.password1)
 async def registration_password1(message: Message, state: FSMContext):
     await state.update_data(password1=message.text)
     await state.set_state(RegistrationForm.password2)
-    await message.answer('Повторите пароль или нажмите "Отмена" для отмены операции.', reply_markup=cancel_kb)
+    await message.answer(
+        'Повторите пароль или нажмите "Отмена" для отмены операции.',
+        reply_markup=cancel_kb
+    )
 
 
 @router.message(RegistrationForm.password2)
