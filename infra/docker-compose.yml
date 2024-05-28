@@ -38,10 +38,7 @@ services:
     - |
       python manage.py migrate
       python manage.py collectstatic --no-input
-      python manage.py importexercises
-      python manage.py importlanguages
-      python manage.py importwordtypes
-      python manage.py makesuperuser
+      python manage.py loaddata dump.json
     volumes:
       - static_volume:/app/static/
     depends_on:
