@@ -96,17 +96,6 @@ class Language(models.Model):
     def __str__(self):
         return '%s (%s)' % (self.name, self.name_local)
 
-    @classmethod
-    def get_default_pk(cls):
-        lang, _ = cls.objects.get_or_create(
-            isocode='en',
-            defaults={
-                'name': 'English',
-                'name_local': 'English',
-            },
-        )
-        return lang.pk
-
 
 class LanguageImage(CreatedModel, ModifiedModel):
     """Image for language."""

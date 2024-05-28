@@ -81,9 +81,9 @@ class Word(
     language = models.ForeignKey(
         Language,
         verbose_name=_('Language'),
-        on_delete=models.SET_DEFAULT,
+        on_delete=models.SET_NULL,
         related_name='words',
-        default=Language.get_default_pk,
+        null=True,
     )
     text = models.CharField(
         _('Word or phrase'),
@@ -305,9 +305,9 @@ class FormsGroup(
     language = models.ForeignKey(
         Language,
         verbose_name=_('Language'),
-        on_delete=models.SET_DEFAULT,
+        on_delete=models.SET_NULL,
         related_name='forms_groups',
-        default=Language.get_default_pk,
+        null=True,
     )
     color = models.CharField(
         _('Group color'),
@@ -374,9 +374,9 @@ class WordTranslation(
     language = models.ForeignKey(
         Language,
         verbose_name=_('Language'),
-        on_delete=models.SET_DEFAULT,
+        on_delete=models.SET_NULL,
         related_name='word_translations',
-        default=Language.get_default_pk,
+        null=True,
     )
 
     slugify_fields = ('text', ('author', 'username'))
@@ -421,9 +421,9 @@ class Definition(
     language = models.ForeignKey(
         Language,
         verbose_name=_('Language'),
-        on_delete=models.SET_DEFAULT,
+        on_delete=models.SET_NULL,
         related_name='definitions',
-        default=Language.get_default_pk,
+        null=True,
     )
     translation = models.CharField(
         _('A translation of the definition'),
@@ -479,9 +479,9 @@ class UsageExample(
     language = models.ForeignKey(
         Language,
         verbose_name=_('Language'),
-        on_delete=models.SET_DEFAULT,
+        on_delete=models.SET_NULL,
         related_name='examples',
-        default=Language.get_default_pk,
+        null=True,
     )
     translation = models.CharField(
         _('A translation of the example'),

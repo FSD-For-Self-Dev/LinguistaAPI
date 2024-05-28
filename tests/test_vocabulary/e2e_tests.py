@@ -637,7 +637,7 @@ class TestVocabularyEndpoints:
         """Язык слова должен быть из изучаемых языков пользователя."""
         word = baker.make(Word, author=user)
         source_json = {
-            'language': word.language.name,
+            'language': getattr(word.language, 'name', None),
             'text': word.text,
         }
 
@@ -662,7 +662,7 @@ class TestVocabularyEndpoints:
             'text': word.text,
             'translations': [
                 {
-                    'language': translation.language.name,
+                    'language': getattr(translation.language, 'name', None),
                     'text': translation.text,
                 }
             ],
