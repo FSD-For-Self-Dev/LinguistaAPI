@@ -637,7 +637,7 @@ class TestVocabularyEndpoints:
         """Язык слова должен быть из изучаемых языков пользователя."""
         word = baker.make(Word, author=user)
         source_json = {
-            'language': word.language.name,
+            'language': getattr(word.language, 'name', None),
             'text': word.text,
         }
 
@@ -662,7 +662,7 @@ class TestVocabularyEndpoints:
             'text': word.text,
             'translations': [
                 {
-                    'language': translation.language.name,
+                    'language': getattr(translation.language, 'name', None),
                     'text': translation.text,
                 }
             ],
@@ -2995,11 +2995,11 @@ class TestLanguagesEndpoints:
         response = auth_api_client(user).get(f'{self.endpoint}all/')
 
         assert response.status_code == 200
-        assert response.data['count'] == len(objs) + 1, (
+        assert response.data['count'] == len(objs), (
             f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются правильные данные. '
             f'Значение параметра `count` неправильное'
         )
-        assert len(response.data['results']) == len(objs) + 1
+        assert len(response.data['results']) == len(objs)
 
     def test_list_learning_available(self, auth_api_client, user, languages):
         objs = languages(
