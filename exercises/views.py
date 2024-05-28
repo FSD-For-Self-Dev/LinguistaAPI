@@ -239,7 +239,7 @@ class ExerciseViewSet(
         permission_classes=(IsAuthenticated,),
     )
     def translator_default_settings(self, request, *args, **kwargs):
-        serializer = self.get_serializer(request.user.translator_settings.first())
+        serializer = self.get_serializer(request.user.translator_settings)
         return Response(serializer.data)
 
     @extend_schema(
@@ -247,7 +247,7 @@ class ExerciseViewSet(
     )
     @translator_default_settings.mapping.patch
     def update_translator_default_settings(self, request, *args, **kwargs):
-        instance = request.user.translator_settings.first()
+        instance = request.user.translator_settings
         serializer = self.get_serializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()

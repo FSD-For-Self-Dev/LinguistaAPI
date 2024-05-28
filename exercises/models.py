@@ -318,7 +318,7 @@ class TranslatorUserDefaultSettings(models.Model):
         default=uuid.uuid4,
         editable=False,
     )
-    user = models.ForeignKey(
+    user = models.OneToOneField(
         User,
         verbose_name=_('User'),
         on_delete=models.CASCADE,
@@ -349,9 +349,6 @@ class TranslatorUserDefaultSettings(models.Model):
     class Meta:
         verbose_name = _('Translator exercise saved user settings')
         verbose_name_plural = _('Translator exercise saved users settings')
-        constraints = [
-            models.UniqueConstraint('user', name='unique_user_translator_settings')
-        ]
 
     def __str__(self):
         return "%s's `Translator` exercise saved settings" % (self.user,)
