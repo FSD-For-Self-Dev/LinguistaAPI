@@ -6,8 +6,8 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from keyboards.keyboards import cancel_kb, initial_kb
-from states.states import AuthForm
+from keyboards.keyboards import cancel_kb, initial_kb, main_kb
+from states.auth_states import AuthForm
 
 from .constants import AUTHORIZATION_ENDPOINT
 
@@ -54,24 +54,28 @@ async def auth_form_password(message: Message, state: FSMContext):
     await state.update_data(password=message.text)
 
     data = await state.get_data()
-    logging.info(f"////////////'{data}'///////////////")
+    logging.info(f"{auth_form_password.__name__} '{data}'")
     response = requests.post(AUTHORIZATION_ENDPOINT, data=data)
     if response.status_code == HTTPStatus.OK:
         response_data = response.json()
-        logging.info(f"////////////'{response_data}'///////////////")
+        logging.info(f"{auth_form_password.__name__} '{response_data}'")
         token = response_data.get('key')
-        logging.info(f"////////////'{token}'///////////////")
+        logging.info(f"{auth_form_password.__name__} '{token}'")
         if token:
             data = await state.update_data(token=token)
-            print(data)
+            # print(data)
             data = await state.get_data()
-            print(data)
-            await message.answer('Вы успешно авторизовались!')
+            # print(data)
+            await message.answer(
+                'Вы успешно авторизовались!',
+                reply_markup=main_kb,
+            )
+            return
         else:
             await message.answer(
-                'Не удалось получить токен из ответа сервера.'
+                f'{auth_form_password.__name__} Не удалось получить токен из ответа сервера.'
             )
     else:
         await message.answer(
-            f'Ошибка при запросе на сервер. Код: {response.status_code}'
+            f'{auth_form_password.__name__} Ошибка при запросе на сервер. Код: {response.status_code}'
         )

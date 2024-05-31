@@ -12,6 +12,26 @@ initial_kb = ReplyKeyboardMarkup(
     input_field_placeholder='Авторизуйтесь или создайте учётную запись',
 )
 
+main_kb = ReplyKeyboardMarkup(
+    keyboard = [
+        [KeyboardButton(text='Мой профиль')]
+    ],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+    input_field_placeholder='Выберите пункт меню'
+)
+
+profile_kb = ReplyKeyboardMarkup(
+    keyboard = [
+        [KeyboardButton(text='Учить новый язык')],
+        [KeyboardButton(text='Посмотреть список моих языков')],
+        [KeyboardButton(text='Доступные для изучения языки')],
+    ],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+    input_field_placeholder='Выберите пункт меню'
+)
+
 
 def auth_kb(text: str | list):
     builder = ReplyKeyboardBuilder()

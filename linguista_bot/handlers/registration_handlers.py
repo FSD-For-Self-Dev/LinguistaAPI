@@ -1,13 +1,13 @@
 import logging
 from http import HTTPStatus
-
+import aiohttp
 import requests
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-
-from keyboards.keyboards import cancel_kb, initial_kb
-from states.states import RegistrationForm
+import json
+from keyboards.keyboards import cancel_kb, initial_kb, main_kb
+from states.auth_states import RegistrationForm
 
 from .constants import REGISTRATION_ENDPOINT
 
@@ -63,15 +63,18 @@ async def registration_password2(message: Message, state: FSMContext):
     await state.update_data(password2=message.text)
 
     data = await state.get_data()
-    response = requests.post(REGISTRATION_ENDPOINT, data=data)
-    logging.info(f"////////////'{response.status_code}'///////////////")
-    if response.status_code == HTTPStatus.NO_CONTENT:
-        await message.answer('Вы успешно зарегистрировались!')
-        await state.clear()
-    else:
-        await message.answer(
-            f'Ошибка при запросе на сервер. Код: {response.status_code}'
-        )
-        response_json = response.json()
-        logging.error(f"////////////'{response_json}'///////////////")
-        await state.clear()
+    # data_json = json.dumps(data)
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url=REGISTRATION_ENDPOINT, data=data) as response:
+            if response.status == HTTPStatus.NO_CONTENT:
+                await message.answer(
+                    'Вы успешно зарегистрировались!'
+                )
+                await state.clear()
+            else:
+                await message.answer(
+                    f'Ошибка при запросе на сервер. Код: {response.status}'
+                )
+                response_json = await response.json()
+                logging.error(f"////////////'{response_json}'///////////////")
+                await state.clear()

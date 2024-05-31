@@ -3,14 +3,17 @@ import logging
 
 from aiogram import Bot, Dispatcher
 
-import handlers.auth_handlers
-import handlers.common_handlers
-import handlers.registration_handlers
+from handlers import (
+    auth_handlers,
+    common_handlers,
+    profile_handlers,
+    registration_handlers,
+)
 from constants import API_TOKEN
 
 logging.basicConfig(
     level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
 
 
@@ -20,9 +23,10 @@ async def main():
     dp.include_routers(
         # порядок расположения важен, т.к. может приводить
         # к нежелательным перехватам
-        handlers.common_handlers.router,
-        handlers.registration_handlers.router,
-        handlers.auth_handlers.router,
+        profile_handlers.router,
+        registration_handlers.router,
+        auth_handlers.router,
+        common_handlers.router,
     )
     await bot.delete_webhook(
         drop_pending_updates=True
