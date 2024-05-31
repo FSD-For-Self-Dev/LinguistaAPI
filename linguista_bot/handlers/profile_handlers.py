@@ -8,7 +8,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
 from .constants import AVAILABLE_LANGUAGES, MY_LANGUAGES
-from keyboards.keyboards import cancel_kb, initial_kb, profile_kb
+from keyboards.keyboards import initial_kb, profile_kb
 from states.languages_states import NewLanguage
 
 
@@ -27,7 +27,9 @@ async def my_profile(message: Message):
 async def get_available_languages(message: Message):
     url = AVAILABLE_LANGUAGES
     response = requests.get(url)
-    logging.info(f"///{get_available_languages.__name__}///'{response.status_code}'///////////////")
+    logging.info(
+        f"///{get_available_languages.__name__}///'{response.status_code}'///////////////"
+    )
     if response.status_code == HTTPStatus.OK:
         data = response.json()
         # logging.info(f"////////////'{data}'///////////////")
@@ -37,9 +39,13 @@ async def get_available_languages(message: Message):
             language_names.append(languages[i]['name'])
         x = ','.join(language_names)
         # language_name = languages[0]['name']
-        await message.answer(f'{get_available_languages.__name__} Доступные языки: <b>{x}</b>')
+        await message.answer(
+            f'{get_available_languages.__name__} Доступные языки: <b>{x}</b>'
+        )
     else:
-        await message.answer(f'{get_available_languages.__name__} Что-то пошло не так. Попробуйте позже.')
+        await message.answer(
+            f'{get_available_languages.__name__} Что-то пошло не так. Попробуйте позже.'
+        )
 
 
 @router.message(F.text == 'Посмотреть список моих языков')
@@ -93,18 +99,22 @@ async def get_new_language(message: Message, state: FSMContext):
         await state.clear()
         await message.answer(
             'Токен не найден. Пожалуйста, пройдите аутентификацию.',
-            reply_markup=initial_kb
+            reply_markup=initial_kb,
         )
         return
     language_data = [{'language': language_to_learn, 'level': 'string'}]
     language_data_json = json.dumps(language_data)
     headers = {'Authorization': f'Token {token}', 'Content-Type': 'application/json'}
-    
+
     async with aiohttp.ClientSession() as session:
-        async with session.post(url=MY_LANGUAGES, headers=headers, data=language_data_json) as response:
+        async with session.post(
+            url=MY_LANGUAGES, headers=headers, data=language_data_json
+        ) as response:
             if response.status == HTTPStatus.CREATED:
                 await message.answer('Вы успешно добавили новый язык!')
                 # await state.clear()
             else:
                 response_data = await response.json()
-                await message.answer(f'Что-то пошло не так: {response.status}, {response_data}')
+                await message.answer(
+                    f'Что-то пошло не так: {response.status}, {response_data}'
+                )

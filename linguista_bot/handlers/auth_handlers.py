@@ -24,7 +24,7 @@ async def cancel_operation(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
         'Операция отменена. Зарегистрируйтесь или войдите для продолжения.',
-        reply_markup=initial_kb
+        reply_markup=initial_kb,
     )
 
 
@@ -35,7 +35,7 @@ async def authorize_me(message: Message, state: FSMContext):
     await state.set_state(AuthForm.username)
     await message.answer(
         'Введите логин/юзернейм или нажмите "Отмена" для отмены операции.',
-        reply_markup=cancel_kb
+        reply_markup=cancel_kb,
     )
 
 
@@ -45,7 +45,7 @@ async def auth_form_username(message: Message, state: FSMContext):
     await state.set_state(AuthForm.password)
     await message.answer(
         'Теперь введите пароль или нажмите "Отмена" для отмены операции.',
-        reply_markup=cancel_kb
+        reply_markup=cancel_kb,
     )
 
 

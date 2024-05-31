@@ -1,12 +1,10 @@
 import logging
 from http import HTTPStatus
 import aiohttp
-import requests
 from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
-import json
-from keyboards.keyboards import cancel_kb, initial_kb, main_kb
+from keyboards.keyboards import cancel_kb, initial_kb
 from states.auth_states import RegistrationForm
 
 from .constants import REGISTRATION_ENDPOINT
@@ -24,7 +22,7 @@ async def cancel_operation(message: Message, state: FSMContext):
     await state.clear()
     await message.answer(
         'Операция отменена. Зарегистрируйтесь или войдите для продолжения.',
-        reply_markup=initial_kb
+        reply_markup=initial_kb,
     )
 
 
@@ -34,7 +32,7 @@ async def register_me(message: Message, state: FSMContext):
     await state.set_state(RegistrationForm.username)
     await message.answer(
         'Введите логин/юзернейм для своего аккаунта или нажмите "Отмена".',
-        reply_markup=cancel_kb
+        reply_markup=cancel_kb,
     )
 
 
@@ -44,7 +42,7 @@ async def registration_username(message: Message, state: FSMContext):
     await state.set_state(RegistrationForm.password1)
     await message.answer(
         'Введите пароль или нажмите "Отмена" для отмены операции.',
-        reply_markup=cancel_kb
+        reply_markup=cancel_kb,
     )
 
 
@@ -54,7 +52,7 @@ async def registration_password1(message: Message, state: FSMContext):
     await state.set_state(RegistrationForm.password2)
     await message.answer(
         'Повторите пароль или нажмите "Отмена" для отмены операции.',
-        reply_markup=cancel_kb
+        reply_markup=cancel_kb,
     )
 
 
@@ -67,9 +65,7 @@ async def registration_password2(message: Message, state: FSMContext):
     async with aiohttp.ClientSession() as session:
         async with session.post(url=REGISTRATION_ENDPOINT, data=data) as response:
             if response.status == HTTPStatus.NO_CONTENT:
-                await message.answer(
-                    'Вы успешно зарегистрировались!'
-                )
+                await message.answer('Вы успешно зарегистрировались!')
                 await state.clear()
             else:
                 await message.answer(

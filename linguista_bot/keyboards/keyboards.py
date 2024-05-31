@@ -1,5 +1,4 @@
-from aiogram.types import (KeyboardButton, ReplyKeyboardMarkup,
-                           ReplyKeyboardRemove)
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup, ReplyKeyboardRemove
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 
 initial_kb = ReplyKeyboardMarkup(
@@ -13,23 +12,21 @@ initial_kb = ReplyKeyboardMarkup(
 )
 
 main_kb = ReplyKeyboardMarkup(
-    keyboard = [
-        [KeyboardButton(text='Мой профиль')]
-    ],
+    keyboard=[[KeyboardButton(text='Мой профиль')]],
     resize_keyboard=True,
     one_time_keyboard=True,
-    input_field_placeholder='Выберите пункт меню'
+    input_field_placeholder='Выберите пункт меню',
 )
 
 profile_kb = ReplyKeyboardMarkup(
-    keyboard = [
+    keyboard=[
         [KeyboardButton(text='Учить новый язык')],
         [KeyboardButton(text='Посмотреть список моих языков')],
         [KeyboardButton(text='Доступные для изучения языки')],
     ],
     resize_keyboard=True,
     one_time_keyboard=True,
-    input_field_placeholder='Выберите пункт меню'
+    input_field_placeholder='Выберите пункт меню',
 )
 
 
@@ -42,9 +39,7 @@ def auth_kb(text: str | list):
 
 
 cancel_kb = ReplyKeyboardMarkup(
-    keyboard=[
-        [KeyboardButton(text='Отмена')]
-    ],
+    keyboard=[[KeyboardButton(text='Отмена')]],
     resize_keyboard=True,
     one_time_keyboard=True,
 )

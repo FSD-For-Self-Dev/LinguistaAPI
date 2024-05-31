@@ -10,8 +10,7 @@ from aiogram.types import Message
 from keyboards.keyboards import initial_kb
 
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 
 router = Router()
@@ -29,9 +28,7 @@ async def echo_hi(message: Message):
 async def languages_interface_available(message: Message):
     url = 'http://localhost:8000/ru/api/languages/interface/'
     response = requests.get(url)
-    logging.info(
-        f"Статус-код для languages_interface_available {response.status_code}"
-    )
+    logging.info(f'Статус-код для languages_interface_available {response.status_code}')
     if response.status_code == HTTPStatus.OK:
         data: dict = response.json()
         available_languages = data.get('results')
@@ -69,9 +66,7 @@ async def get_my_languages(message: Message, state: FSMContext):
     logging.info(f"////////////'{data}'///////////////")
     token = data.get('token')
     if not token:
-        await message.answer(
-            'Токен не найден. Пожалуйста, пройдите аутентификацию.'
-        )
+        await message.answer('Токен не найден. Пожалуйста, пройдите аутентификацию.')
         return
     url = 'http://localhost:8000/ru/api/languages/'
     headers = {'Authorization': f'Token {token}'}
