@@ -1961,10 +1961,10 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             amount_limit = kwargs.get(
                 'amount_limit', UsersAmountLimits.MAX_LEARNING_LANGUAGES_AMOUNT
             )
-            if (
-                request.user.learning_languages.count() + len(serializer.validated_data)
-                > amount_limit
-            ):
+            current_amount = kwargs.get(
+                'current_amount', request.user.learning_languages.count()
+            )
+            if current_amount + len(serializer.validated_data) > amount_limit:
                 return Response(
                     {'detail': UsersAmountLimits.get_error_message(limit=amount_limit)},
                     status=status.HTTP_409_CONFLICT,
@@ -2064,6 +2064,7 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             request,
             integrityerror_detail='Этот язык уже добавлен в родные.',
             amount_limit=UsersAmountLimits.MAX_NATIVE_LANGUAGES_AMOUNT,
+            current_amount=request.user.native_languages.count(),
         )
 
     @extend_schema(operation_id='all_languages_list', methods=('get',))
