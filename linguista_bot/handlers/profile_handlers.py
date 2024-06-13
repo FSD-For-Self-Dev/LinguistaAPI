@@ -7,7 +7,12 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from .constants import AVAILABLE_LANGUAGES, MY_LANGUAGES, LANGUAGE_TO_REMOVE
+from .constants import (
+    AVAILABLE_LANGUAGES,
+    LANGUAGE_TO_REMOVE,
+    MY_LANGUAGES,
+    MY_PROFILE_ENDPOINT
+)
 from keyboards.keyboards import initial_kb, profile_kb
 from states.languages_states import Language
 
@@ -15,68 +20,41 @@ from states.languages_states import Language
 router = Router()
 
 
-@router.message(F.text == 'Мой профиль')
-async def my_profile(message: Message):
+@router.message(F.text == 'Профиль')
+async def main_profile(message: Message):
     await message.answer(
         'Выберите пункт меню',
         reply_markup=profile_kb,
     )
 
 
-@router.message(F.text == 'Доступные для изучения языки')
-async def get_available_languages(message: Message):
-    url = AVAILABLE_LANGUAGES
-    response = requests.get(url)
-    logging.info(
-        f"///{get_available_languages.__name__}///'{response.status_code}'///////////////"
-    )
-    if response.status_code == HTTPStatus.OK:
-        data = response.json()
-        # logging.info(f"////////////'{data}'///////////////")
-        languages = data['results']
-        language_names = []
-        for i in range(len(languages)):
-            language_names.append(languages[i]['name'])
-        x = ','.join(language_names)
-        # language_name = languages[0]['name']
-        await message.answer(
-            f'Доступные языки: <b>{x}</b>'
-        )
-    else:
-        await message.answer(
-            f'{get_available_languages.__name__} Что-то пошло не так. Попробуйте позже.'
-        )
-
-
-@router.message(F.text == 'Посмотреть список моих языков')
-async def get_my_languages(message: Message, state: FSMContext):
+@router.message(F.text == 'Просмотр профиля')
+async def my_profile(message: Message, state: FSMContext):
+    url = MY_PROFILE_ENDPOINT
     data = await state.get_data()
-    logging.info(f"////////////'{data}'///////////////")
     token = data.get('token')
-    if not token:
-        await message.answer(
-            'Токен не найден. Пожалуйста, пройдите аутентификацию.',
-            reply_markup=initial_kb,
-        )
-        return
-    url = MY_LANGUAGES
-    headers = {'Authorization': f'Token {token}'}
-    response = requests.get(url, headers=headers)
-    logging.info(f"////////////'{response.status_code}'///////////////")
-    data = response.json()
-    languages = data['results']
-    language_names = []
+    headers = {'Authorization': f'Token {token}', 'Content-Type': 'application/json'}
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url=url, headers=headers) as response:
+            if response.status == HTTPStatus.OK:
+                response_data = await response.json()
+                await message.answer(f'{response_data}')
+            else:
+                response_data = await response.json()
+                await message.answer(
+                    f'Что-то пошло не так: {response.status}, {response_data}',
+                    reply_markup=initial_kb,
+                )
 
-    for language_data in languages:
-        language_name = language_data['language']['name']
-        language_names.append(language_name)
 
-    languages_str = ', '.join(language_names)
+@router.message(F.text == 'Добавить родной язык')
+async def add_native_language(message: Message, state: FSMContext):
+    await message.answer('Функция добавления родного языка ещё не готова, но мы обязательно её сделаем!')
 
-    await message.answer(f'{languages_str}')
 
 
 @router.message(F.text == 'Добавить изучаемый язык')
+# region Добавить изучаемый язык
 async def learn_new_language(message: Message, state: FSMContext):
     await state.set_state(Language.language_to_learn)
     await message.answer(
@@ -116,7 +94,9 @@ async def get_new_language(message: Message, state: FSMContext):
                 await message.answer(
                     f'Что-то пошло не так: {response.status}, {response_data}'
                 )
+# endregion
 
+# region Временно/постоянно деактивированные хендлеры
 
 # @router.message(F.text == 'Удалить изучаемый язык')
 # async def learn_new_language(message: Message, state: FSMContext):
@@ -163,3 +143,58 @@ async def get_new_language(message: Message, state: FSMContext):
 #                 await message.answer(
 #                     f'Что-то пошло не так: {response.status}, {response_data}'
 #                 )
+
+
+@router.message(F.text == 'Доступные для изучения языки')
+async def get_available_languages(message: Message):
+    url = AVAILABLE_LANGUAGES
+    response = requests.get(url)
+    logging.info(
+        f"///{get_available_languages.__name__}///'{response.status_code}'"
+    )
+    if response.status_code == HTTPStatus.OK:
+        data = response.json()
+        # logging.info(f"////////////'{data}'///////////////")
+        languages = data['results']
+        language_names = []
+        for i in range(len(languages)):
+            language_names.append(languages[i]['name'])
+        x = ','.join(language_names)
+        # language_name = languages[0]['name']
+        await message.answer(
+            f'Доступные языки: <b>{x}</b>'
+        )
+    else:
+        await message.answer(
+            f'{get_available_languages.__name__} Что-то пошло не так. Попробуйте позже.'
+        )
+
+
+@router.message(F.text == 'Посмотреть список моих языков')
+async def get_my_languages(message: Message, state: FSMContext):
+    data = await state.get_data()
+    logging.info(f"////////////'{data}'///////////////")
+    token = data.get('token')
+    if not token:
+        await message.answer(
+            'Токен не найден. Пожалуйста, пройдите аутентификацию.',
+            reply_markup=initial_kb,
+        )
+        return
+    url = MY_LANGUAGES
+    headers = {'Authorization': f'Token {token}'}
+    response = requests.get(url, headers=headers)
+    logging.info(f"////////////'{response.status_code}'///////////////")
+    data = response.json()
+    languages = data['results']
+    language_names = []
+
+    for language_data in languages:
+        language_name = language_data['language']['name']
+        language_names.append(language_name)
+
+    languages_str = ', '.join(language_names)
+
+    await message.answer(f'{languages_str}')
+
+# endregion
