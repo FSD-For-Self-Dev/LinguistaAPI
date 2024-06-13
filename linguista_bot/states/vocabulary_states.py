@@ -1,5 +1,6 @@
 from aiogram.fsm.state import State, StatesGroup
 
 
-class NewWord(StatesGroup):
+class Word(StatesGroup):
+    language = State()
     new_word = State()

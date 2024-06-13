@@ -12,7 +12,12 @@ initial_kb = ReplyKeyboardMarkup(
 )
 
 main_kb = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text='Мой профиль')]],
+    keyboard=[
+        [KeyboardButton(text='Профиль')],
+        [KeyboardButton(text='Словарь')],
+        [KeyboardButton(text='Коллекции')],
+        [KeyboardButton(text='Упражнения')],
+    ],
     resize_keyboard=True,
     one_time_keyboard=True,
     input_field_placeholder='Выберите пункт меню',
@@ -20,9 +25,9 @@ main_kb = ReplyKeyboardMarkup(
 
 profile_kb = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text='Учить новый язык')],
-        [KeyboardButton(text='Посмотреть список моих языков')],
-        [KeyboardButton(text='Доступные для изучения языки')],
+        [KeyboardButton(text='Добавить родной язык')],
+        [KeyboardButton(text='Добавить изучаемый язык')],
+        [KeyboardButton(text='Просмотр профиля')],
     ],
     resize_keyboard=True,
     one_time_keyboard=True,

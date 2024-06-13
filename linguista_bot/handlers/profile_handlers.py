@@ -7,9 +7,9 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from .constants import AVAILABLE_LANGUAGES, MY_LANGUAGES
+from .constants import AVAILABLE_LANGUAGES, MY_LANGUAGES, LANGUAGE_TO_REMOVE
 from keyboards.keyboards import initial_kb, profile_kb
-from states.languages_states import NewLanguage
+from states.languages_states import Language
 
 
 router = Router()
@@ -40,7 +40,7 @@ async def get_available_languages(message: Message):
         x = ','.join(language_names)
         # language_name = languages[0]['name']
         await message.answer(
-            f'{get_available_languages.__name__} Доступные языки: <b>{x}</b>'
+            f'Доступные языки: <b>{x}</b>'
         )
     else:
         await message.answer(
@@ -76,9 +76,9 @@ async def get_my_languages(message: Message, state: FSMContext):
     await message.answer(f'{languages_str}')
 
 
-@router.message(F.text == 'Учить новый язык')
+@router.message(F.text == 'Добавить изучаемый язык')
 async def learn_new_language(message: Message, state: FSMContext):
-    await state.set_state(NewLanguage.new_language)
+    await state.set_state(Language.language_to_learn)
     await message.answer(
         'Напишите язык, который бы хотели изучить или введите'
         '"Доступные для изучения языки", чтобы узнать,'
@@ -86,15 +86,13 @@ async def learn_new_language(message: Message, state: FSMContext):
     )
 
 
-@router.message(NewLanguage.new_language)
+@router.message(Language.language_to_learn)
 async def get_new_language(message: Message, state: FSMContext):
-    await state.update_data(new_language=message.text)
+    await state.update_data(language_to_learn=message.text)
 
     data = await state.get_data()
-    language_to_learn = data.get('new_language')
+    language_to_learn = data.get('language_to_learn')
     token = data.get('token')
-    print(language_to_learn)
-    print(token)
     if not token:
         await state.clear()
         await message.answer(
@@ -112,9 +110,56 @@ async def get_new_language(message: Message, state: FSMContext):
         ) as response:
             if response.status == HTTPStatus.CREATED:
                 await message.answer('Вы успешно добавили новый язык!')
-                # await state.clear()
+                await state.clear()
             else:
                 response_data = await response.json()
                 await message.answer(
                     f'Что-то пошло не так: {response.status}, {response_data}'
                 )
+
+
+# @router.message(F.text == 'Удалить изучаемый язык')
+# async def learn_new_language(message: Message, state: FSMContext):
+#     await state.set_state(Language.language_to_remove)
+#     await message.answer(
+#         'Напишите язык, который хотели бы удалить или введите'
+#         '"Посмотреть список моих языков", чтобы узнать,'
+#         'какие языки вы изучаете'
+#     )
+
+
+# @router.message(Language.language_to_remove)
+# async def delete_my_language(message: Message, state: FSMContext):
+#     await state.update_data(language_to_remove=message.text)
+    
+#     data = await state.get_data()
+#     language_to_remove = data.get('language_to_remove')
+#     token = data.get('token')
+#     logging.info(
+#         f"///{delete_my_language.__name__}///'{language_to_remove}'///////"
+#     )
+#     logging.info(
+#         f"///{delete_my_language.__name__}///'{token}'///////"
+#     )
+#     if not token:
+#         await state.clear()
+#         await message.answer(
+#             'Токен не найден. Пожалуйста, пройдите аутентификацию.',
+#             reply_markup=initial_kb,
+#         )
+#         return
+#     headers = {'Authorization': f'Token {token}', 'Content-Type': 'application/json'}
+#     url = LANGUAGE_TO_REMOVE + language_to_remove.lower() + '/'
+#     print(url)
+#     async with aiohttp.ClientSession() as session:
+#         async with session.delete(
+#             url=url, headers=headers,
+#         ) as response:
+#             if response.status == HTTPStatus.NO_CONTENT:
+#                 await message.answer('Вы успешно удалили язык!')
+#                 await state.clear()
+#             else:
+#                 response_data = await response.json()
+#                 await message.answer(
+#                     f'Что-то пошло не так: {response.status}, {response_data}'
+#                 )
