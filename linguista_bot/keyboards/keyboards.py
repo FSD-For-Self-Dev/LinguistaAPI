@@ -31,6 +31,7 @@ profile_kb = ReplyKeyboardMarkup(
         [KeyboardButton(text='Добавить родной язык')],
         [KeyboardButton(text='Добавить изучаемый язык')],
         [KeyboardButton(text='Просмотр профиля')],
+        [KeyboardButton(text='Вернуться в главное меню')],
     ],
     resize_keyboard=True,
     one_time_keyboard=True,

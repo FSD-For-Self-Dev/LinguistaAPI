@@ -63,9 +63,7 @@ async def auth_form_password(message: Message, state: FSMContext):
         logging.info(f"{auth_form_password.__name__} '{token}'")
         if token:
             data = await state.update_data(token=token)
-            # print(data)
             data = await state.get_data()
-            # print(data)
             await message.answer(
                 'Вы успешно авторизовались!',
                 reply_markup=main_kb,

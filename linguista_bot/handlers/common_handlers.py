@@ -7,7 +7,7 @@ from aiogram.filters import CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 
-from keyboards.keyboards import initial_kb
+from keyboards.keyboards import initial_kb, main_kb
 
 logging.basicConfig(
     level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -41,23 +41,10 @@ async def languages_interface_available(message: Message):
         await message.answer('Что-то пошло не так. Попробуйте позже.')
 
 
-# @router.message(F.text == 'Доступные языки')
-# async def show_all_languages(message: Message):
-#     url = 'http://localhost:8000/ru/api/languages/all/'
-#     response = requests.get(url)
-#     logging.info(f"////////////'{response.status_code}'///////////////")
-#     if response.status_code == HTTPStatus.OK:
-#         data = response.json()
-#         # logging.info(f"////////////'{data}'///////////////")
-#         languages = data['results']
-#         language_names = []
-#         for i in range(len(languages)):
-#             language_names.append(languages[i]['name'])
-#         x = ','.join(language_names)
-#         # language_name = languages[0]['name']
-#         await message.answer(f'Доступные языки: <b>{x}</b>')
-#     else:
-#         await message.answer('Что-то пошло не так. Попробуйте позже.')
+@router.message(F.text == 'Вернуться в главное меню')
+async def go_to_menu(message: Message, state: FSMContext):
+    await state.get_data()
+    await message.answer(text='Выберите пункт меню', reply_markup=main_kb)
 
 
 @router.message(F.text == 'Выведи список изучаемых мною языков')
