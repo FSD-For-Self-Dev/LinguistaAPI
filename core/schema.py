@@ -5,6 +5,7 @@ from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiTypes,
+    OpenApiResponse,
 )
 
 from vocabulary.serializers import (
@@ -103,7 +104,7 @@ class CustomSchema(AutoSchema):
         except KeyError:
             return None
 
-    def get_responses(self):
+    def get_response_serializers(self):
         try:
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'responses'
@@ -141,39 +142,61 @@ data = {
             ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: WordStandartCardSerializer,
+                status.HTTP_200_OK: OpenApiResponse(
+                    response=WordStandartCardSerializer,
+                    description='Success response via ?view=standart query param',
+                ),
+                # status.HTTP_200_OK: OpenApiResponse(
+                #     response=WordShortCardSerializer,
+                #     description='Success response via ?view=short query param'
+                # ),
+                # status.HTTP_200_OK: OpenApiResponse(
+                #     response=WordLongCardSerializer,
+                #     description='Success response via ?view=long query param'
+                # ),
             },
             'parameters': [
                 OpenApiParameter(
-                    'created__date',
-                    OpenApiTypes.DATETIME,
+                    'activity_status',
+                    OpenApiTypes.STR,
                     OpenApiParameter.QUERY,
                     description=(
-                        'Фильтр по дате добавления. Включая сравнение больше и '
+                        'Фильтр по статусу активности. Принимает варианты '
+                        'I (для Неактивных (Inactive)), '
+                        'A (для Активных (Active)), '
+                        'M (для Усвоенных (Mastered)).'
+                    ),
+                ),
+                OpenApiParameter(
+                    'created__date',
+                    OpenApiTypes.DATE,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Фильтр по дате добавления слова. Включая сравнение больше и '
                         'меньше: created__date__gt и created__date__lt.'
                     ),
                 ),
                 OpenApiParameter(
                     'created__year',
-                    OpenApiTypes.INT,
+                    OpenApiTypes.NUMBER,
                     OpenApiParameter.QUERY,
                     description=(
-                        'Фильтр по году добавления. Включая сравнение больше и '
+                        'Фильтр по году добавления слова. Включая сравнение больше и '
                         'меньше: created__year__gt и created__year__lt.'
                     ),
                 ),
                 OpenApiParameter(
                     'created__month',
-                    OpenApiTypes.INT,
+                    OpenApiTypes.NUMBER,
                     OpenApiParameter.QUERY,
                     description=(
-                        'Фильтр по месяцу добавления. Включая сравнение больше и '
+                        'Фильтр по месяцу добавления слова. Включая сравнение больше и '
                         'меньше: created__month__gt и created__month__lt.'
                     ),
                 ),
                 OpenApiParameter(
                     'last_exercise_date__date',
-                    OpenApiTypes.DATETIME,
+                    OpenApiTypes.DATE,
                     OpenApiParameter.QUERY,
                     description=(
                         'Фильтр по дате последней тренировки с этим словом. '
@@ -183,7 +206,7 @@ data = {
                 ),
                 OpenApiParameter(
                     'last_exercise_date__year',
-                    OpenApiTypes.INT,
+                    OpenApiTypes.NUMBER,
                     OpenApiParameter.QUERY,
                     description=(
                         'Фильтр по году последней тренировки с этим словом. '
@@ -193,7 +216,7 @@ data = {
                 ),
                 OpenApiParameter(
                     'last_exercise_date__month',
-                    OpenApiTypes.INT,
+                    OpenApiTypes.NUMBER,
                     OpenApiParameter.QUERY,
                     description=(
                         'Фильтр по месяцу последней тренировки с этим словом. '
@@ -229,15 +252,6 @@ data = {
                     ),
                 ),
                 OpenApiParameter(
-                    'activity_status',
-                    OpenApiTypes.STR,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по статусу активности. Принимает варианты '
-                        'INACTIVE, ACTIVE, MASTERED.'
-                    ),
-                ),
-                OpenApiParameter(
                     'types',
                     OpenApiTypes.STR,
                     OpenApiParameter.QUERY,
@@ -254,7 +268,7 @@ data = {
                 ),
                 OpenApiParameter(
                     'translations_count',
-                    OpenApiTypes.INT,
+                    OpenApiTypes.NUMBER,
                     OpenApiParameter.QUERY,
                     description=(
                         'Фильтр по кол-ву переводов. Включая сравнение больше и '
@@ -263,11 +277,20 @@ data = {
                 ),
                 OpenApiParameter(
                     'examples_count',
-                    OpenApiTypes.INT,
+                    OpenApiTypes.NUMBER,
                     OpenApiParameter.QUERY,
                     description=(
                         'Фильтр по кол-ву примеров. Включая сравнение больше и '
                         'меньше: examples_count__gt и examples_count__lt.'
+                    ),
+                ),
+                OpenApiParameter(
+                    'view',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Смена вида карточек слов (сериализатора слов), '
+                        'принимает значения: standart, long, short.'
                     ),
                 ),
             ],
@@ -1205,7 +1228,7 @@ data = {
             'summary': 'Добавление родного языка',
             'request': NativeLanguageSerailizer,
             'responses': {
-                status.HTTP_201_CREATED: NativeLanguageSerailizer,
+                status.HTTP_201_CREATED: NativeLanguageSerailizer(many=True),
             },
         },
         'all_languages_list': {
