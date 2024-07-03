@@ -1,6 +1,7 @@
 """Users views."""
 
 from django.contrib.auth import get_user_model
+from django.db.models.query import QuerySet
 
 from drf_spectacular.utils import (
     extend_schema,
@@ -29,6 +30,6 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet:
         """Исключение админов из выборки."""
         return User.objects.filter(is_staff=False)

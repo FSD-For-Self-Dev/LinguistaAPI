@@ -2,6 +2,7 @@
 
 import django_filters as df
 from django.db.models import Q
+from django.db.models.query import QuerySet
 
 from .models import Collection, Word
 
@@ -32,7 +33,7 @@ class CollectionFilter(df.FilterSet):
 class CustomFilterList(df.Filter):
     """Фильтрация по списку значений."""
 
-    def filter(self, qs, value):
+    def filter(self, qs: QuerySet, value: str) -> QuerySet:
         if value not in (None, ''):
             values = [v for v in value.split(',')]
             return qs.filter(**{'%s__%s' % (self.field_name, self.lookup_expr): values})
@@ -50,13 +51,16 @@ class WordFilter(df.FilterSet):
     first_letter = df.CharFilter(field_name='text', lookup_expr='istartswith')
     have_associations = df.BooleanFilter(method='filter_have_associations')
     translations_count = df.NumberFilter(
-        field_name='translations_count', lookup_expr='exact'
+        field_name='translations_count',
+        lookup_expr='exact',
     )
     translations_count__gt = df.NumberFilter(
-        field_name='translations_count', lookup_expr='gt'
+        field_name='translations_count',
+        lookup_expr='gt',
     )
     translations_count__lt = df.NumberFilter(
-        field_name='translations_count', lookup_expr='lt'
+        field_name='translations_count',
+        lookup_expr='lt',
     )
     examples_count = df.NumberFilter(field_name='examples_count', lookup_expr='exact')
     examples_count__gt = df.NumberFilter(field_name='examples_count', lookup_expr='gt')
@@ -89,7 +93,9 @@ class WordFilter(df.FilterSet):
             ],
         }
 
-    def filter_have_associations(self, queryset, name, value):
+    def filter_have_associations(
+        self, queryset: QuerySet, name: str, value: str
+    ) -> QuerySet:
         if value:
             return queryset.filter(
                 Q(images_associations__isnull=False)

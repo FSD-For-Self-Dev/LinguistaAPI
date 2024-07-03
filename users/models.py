@@ -13,11 +13,7 @@ from core.models import CreatedModel, ModifiedModel, SlugModel, slug_filler
 from languages.models import Language
 
 
-class User(
-    AbstractUser,
-    CreatedModel,
-    ModifiedModel,
-):
+class User(AbstractUser, CreatedModel, ModifiedModel):
     last_name = None
 
     id = models.UUIDField(
@@ -63,7 +59,7 @@ class User(
         verbose_name_plural = _('Users')
         ordering = ('-date_joined',)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.username
 
     def words_in_vocabulary(self) -> int:
@@ -101,7 +97,7 @@ class UserDefaultWordsView(CreatedModel):
         get_latest_by = ('created',)
         constraints = [models.UniqueConstraint('user', name='unique_user_words_view')]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'Default words view for user {self.user} is {self.words_view}'
 
 
@@ -151,7 +147,7 @@ class UserLearningLanguage(SlugModel, CreatedModel, ModifiedModel):
             )
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.user} studies {self.language}'
 
 
@@ -189,11 +185,11 @@ class UserNativeLanguage(SlugModel, CreatedModel):
             )
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.user}'s native language is {self.language}"
 
 
 @receiver(pre_save, sender=UserLearningLanguage)
 @receiver(pre_save, sender=UserNativeLanguage)
-def fill_slug(sender, instance, *args, **kwargs):
+def fill_slug(sender, instance, *args, **kwargs) -> None:
     return slug_filler(sender, instance, *args, **kwargs)

@@ -76,10 +76,12 @@ class Language(models.Model):
         help_text=_('increase to show at top of the list'),
     )
     learning_available = models.BooleanField(
-        _('Is the language available for user to add to learning ones.'), default=False
+        _('Is the language available for user to add to learning ones.'),
+        default=False,
     )
     interface_available = models.BooleanField(
-        _('Is the language available as interface language.'), default=False
+        _('Is the language available as interface language.'),
+        default=False,
     )
     flag_icon = models.ImageField(
         _('Language flag icon'),
@@ -93,7 +95,7 @@ class Language(models.Model):
         verbose_name_plural = _('Languages')
         ordering = ('-sorting', 'name', 'isocode')
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '%s (%s)' % (self.name, self.name_local)
 
 

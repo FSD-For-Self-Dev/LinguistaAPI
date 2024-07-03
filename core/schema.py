@@ -1,6 +1,7 @@
 """Custom schema generator."""
 
 from rest_framework import status
+from rest_framework.serializers import Serializer
 from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import (
     OpenApiParameter,
@@ -70,17 +71,17 @@ from users.serializers import (
     NativeLanguageSerailizer,
     UserShortSerializer,
 )
-from languages.serializers import LanguageSerailizer
+from languages.serializers import LanguageSerializer
 
 
 class CustomSchema(AutoSchema):
-    def get_tags(self):
+    def get_tags(self) -> list[str]:
         try:
             return data[self.view.__class__.__name__]['tags']
         except KeyError:
             return data['default']['tags']
 
-    def get_description(self):
+    def get_description(self) -> str | None:
         try:
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'description'
@@ -88,7 +89,7 @@ class CustomSchema(AutoSchema):
         except KeyError:
             return None
 
-    def get_summary(self):
+    def get_summary(self) -> str | None:
         try:
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'summary'
@@ -96,7 +97,7 @@ class CustomSchema(AutoSchema):
         except KeyError:
             return None
 
-    def get_request_serializer(self):
+    def get_request_serializer(self) -> Serializer | None:
         try:
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'request'
@@ -104,7 +105,7 @@ class CustomSchema(AutoSchema):
         except KeyError:
             return None
 
-    def get_response_serializers(self):
+    def get_response_serializers(self) -> dict[int, OpenApiResponse]:
         try:
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'responses'
@@ -112,7 +113,7 @@ class CustomSchema(AutoSchema):
         except KeyError:
             return {}
 
-    def get_override_parameters(self):
+    def get_override_parameters(self) -> list[OpenApiParameter]:
         try:
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'parameters'
@@ -1235,14 +1236,14 @@ data = {
             'summary': 'Просмотр списка всех языков',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LanguageSerailizer,
+                status.HTTP_200_OK: LanguageSerializer,
             },
         },
         'languages_available_for_learning_list': {
             'summary': 'Просмотр всех языков доступных для изучения',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LanguageSerailizer,
+                status.HTTP_200_OK: LanguageSerializer,
             },
         },
         'learning_and_available_languages_list': {
@@ -1256,7 +1257,7 @@ data = {
             'summary': 'Просмотр всех языков доступных для перевода интерфейса',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LanguageSerailizer,
+                status.HTTP_200_OK: LanguageSerializer,
             },
         },
         'language_images_choice_retrieve': {

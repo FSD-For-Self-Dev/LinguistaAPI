@@ -1,16 +1,21 @@
 """Сериализаторы приложения vocabulary."""
 
 from itertools import chain
+from collections import OrderedDict
 
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 from django.db.models import Count
-from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.query import QuerySet
 
 from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.fields import HybridImageField
 from drf_extra_fields.relations import PresentablePrimaryKeyRelatedField
 from rest_framework import serializers
+from rest_framework.fields import Field
+from rest_framework.utils.serializer_helpers import ReturnDict
+from rest_framework.serializers import Serializer
 
 from core.serializers_fields import (
     ReadableHiddenField,
@@ -31,7 +36,7 @@ from users.serializers import (
 )
 from users.constants import UsersAmountLimits
 from languages.models import LanguageImage
-from languages.serializers import LanguageSerailizer
+from languages.serializers import LanguageSerializer
 
 from .constants import VocabularyAmountLimits
 from .models import (
@@ -69,14 +74,14 @@ class CurrentWordDefault:
 
     requires_context = True
 
-    def __call__(self, serializer_field):
+    def __call__(self, serializer_field: Field) -> QuerySet[Word] | Word:
         request_word_slug = serializer_field.context['view'].kwargs.get('slug')
         try:
             return Word.objects.get(slug=request_word_slug)
         except KeyError or ObjectDoesNotExist:
-            return None
+            return Word.objects.none()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s()' % self.__class__.__name__
 
 
@@ -85,14 +90,14 @@ class NativeLanguageDefault:
 
     requires_context = True
 
-    def __call__(self, serializer_field):
+    def __call__(self, serializer_field: Field) -> QuerySet[Language] | Language:
         request_user = serializer_field.context['request'].user
         try:
             return request_user.native_languages.latest()
         except KeyError:
-            return None
+            return Language.objects.none()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s()' % self.__class__.__name__
 
 
@@ -102,31 +107,36 @@ class ValidateLanguageMixin:
     (принадлежит родным/изучаемым языкам пользователя).
     """
 
-    def validate_language_is_native_or_learning(self, language):
+    def validate_language_is_native_or_learning(
+        self, language: Language
+    ) -> Language | None:
+        """Язык является изучаемым или родным для пользователя."""
         user = self.context.get('request').user
         if not (
             language in user.native_languages.all()
             or language in user.learning_languages.all()
         ):
-            raise ValidationError(
+            raise serializers.ValidationError(
                 _('Language must be in your learning or native languages.'),
                 code='invalid_language',
             )
         return language
 
-    def validate_language_is_learning(self, language):
+    def validate_language_is_learning(self, language: Language) -> Language | None:
+        """Язык является изучаемым для пользователя."""
         user = self.context.get('request').user
         if language not in user.learning_languages.all():
-            raise ValidationError(
+            raise serializers.ValidationError(
                 _('Language must be in your learning languages.'),
                 code='invalid_language',
             )
         return language
 
-    def validate_language_is_native(self, language):
+    def validate_language_is_native(self, language: Language) -> Language | None:
+        """Язык является родным для пользователя."""
         user = self.context.get('request').user
         if language not in user.native_languages.all():
-            raise ValidationError(
+            raise serializers.ValidationError(
                 _('Language must be in your native languages.'), code='invalid_language'
             )
         return language
@@ -137,7 +147,8 @@ class NoteInLineSerializer(AlreadyExistSerializerHandler, serializers.ModelSeria
 
     id = serializers.IntegerField(required=False)
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     word = serializers.HiddenField(default=None)
 
@@ -171,7 +182,8 @@ class WordTranslationInLineSerializer(
 
     id = serializers.IntegerField(required=False)
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
@@ -200,7 +212,7 @@ class WordTranslationInLineSerializer(
         )
         list_serializer_class = ListUpdateSerializer
 
-    def validate_language(self, language):
+    def validate_language(self, language: Language) -> Language | None:
         return self.validate_language_is_native_or_learning(language)
 
 
@@ -211,7 +223,8 @@ class UsageExampleInLineSerializer(
 
     id = serializers.IntegerField(required=False)
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
@@ -249,7 +262,8 @@ class DefinitionInLineSerializer(
 
     id = serializers.IntegerField(required=False)
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
@@ -292,9 +306,13 @@ class CollectionShortSerializer(
 
     id = serializers.IntegerField(required=False)
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
-    words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
+    words_count = KwargsMethodField(
+        'get_objs_count',
+        objs_related_name='words',
+    )
     last_3_words = serializers.SerializerMethodField('get_last_3_words')
 
     already_exist_detail = _('Такая коллекция уже есть в вашем словаре. Обновить её?')
@@ -325,7 +343,7 @@ class CollectionShortSerializer(
         list_serializer_class = ListUpdateSerializer
 
     @extend_schema_field({'type': 'object'})
-    def get_last_3_words(self, obj):
+    def get_last_3_words(self, obj: Collection) -> QuerySet[Word]:
         return obj.words.order_by('-wordsincollections__created').values_list(
             'text', flat=True
         )[:3]
@@ -366,7 +384,7 @@ class FormsGroupInLineSerializer(
         )
         list_serializer_class = ListUpdateSerializer
 
-    def validate_name(self, name):
+    def validate_name(self, name: str) -> str:
         if name.capitalize() == 'Infinitive':
             raise serializers.ValidationError(
                 _('The forms group `Infinitive` already exists.')
@@ -427,7 +445,9 @@ class TagSerializer(AlreadyExistSerializerHandler, serializers.ModelSerializer):
     """Сериализатор тегов слов."""
 
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username', write_only=True
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
+        write_only=True,
     )
     name = serializers.CharField()
 
@@ -443,7 +463,7 @@ class WordSuperShortSerializer(serializers.ModelSerializer):
     """Сериализатор для отображения слов (минимальная форма)."""
 
     author = serializers.SlugRelatedField(slug_field='username', read_only=True)
-    language = LanguageSerailizer(many=False, read_only=True)
+    language = LanguageSerializer(many=False, read_only=True)
 
     class Meta:
         model = Word
@@ -474,12 +494,12 @@ class WordSuperShortWithTranslations(WordSuperShortSerializer):
         )
 
     @extend_schema_field({'type': 'integer'})
-    def get_other_translations_count(self, obj):
+    def get_other_translations_count(self, obj: Word) -> int:
         translations_count = obj.translations.count()
         return translations_count - 4 if translations_count > 4 else 0
 
     @extend_schema_field({'type': 'string'})
-    def get_last_4_translations(self, obj):
+    def get_last_4_translations(self, obj: Word) -> QuerySet[WordTranslation]:
         return obj.translations.order_by('-wordtranslations__created').values('text')[
             :4
         ]
@@ -494,7 +514,9 @@ class WordShortCardSerializer(
     types = serializers.SlugRelatedField(slug_field='name', read_only=True, many=True)
     tags = serializers.SlugRelatedField(slug_field='name', read_only=True, many=True)
     forms_groups = serializers.SlugRelatedField(
-        slug_field='name', read_only=True, many=True
+        slug_field='name',
+        read_only=True,
+        many=True,
     )
     language = serializers.SlugRelatedField(slug_field='name', read_only=True)
     activity_status = serializers.SerializerMethodField('get_activity_status_display')
@@ -513,7 +535,7 @@ class WordShortCardSerializer(
         )
 
     @extend_schema_field({'type': 'string'})
-    def get_activity_status_display(self, obj):
+    def get_activity_status_display(self, obj: Word) -> str:
         return obj.get_activity_status_display()
 
 
@@ -523,7 +545,7 @@ class GetImagesSerializerMixin(serializers.ModelSerializer):
     images = serializers.SerializerMethodField('get_images')
 
     @extend_schema_field({'type': 'object'})
-    def get_images(self, obj):
+    def get_images(self, obj: Word) -> QuerySet[ImageAssociation]:
         return obj.images_associations.values_list('image', flat=True)
 
 
@@ -535,7 +557,8 @@ class WordLongCardSerializer(
     """Сериализатор для отображения длинных карточек слов."""
 
     images_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='images_associations'
+        'get_objs_count',
+        objs_related_name='images_associations',
     )
     other_translations_count = serializers.SerializerMethodField(
         'get_other_translations_count'
@@ -551,12 +574,12 @@ class WordLongCardSerializer(
         )
 
     @extend_schema_field({'type': 'integer'})
-    def get_other_translations_count(self, obj):
+    def get_other_translations_count(self, obj: Word) -> int:
         translations_count = obj.translations.count()
         return translations_count - 6 if translations_count > 6 else 0
 
     @extend_schema_field({'type': 'string'})
-    def get_last_6_translations(self, obj):
+    def get_last_6_translations(self, obj: Word) -> QuerySet[WordTranslation]:
         return obj.translations.order_by('-wordtranslations__created').values_list(
             'text', flat=True
         )[:6]
@@ -570,10 +593,12 @@ class WordStandartCardSerializer(
     """Сериализатор для отображения стандартных карточек слов."""
 
     images_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='images_associations'
+        'get_objs_count',
+        objs_related_name='images_associations',
     )
     translations_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='translations'
+        'get_objs_count',
+        objs_related_name='translations',
     )
     translations = serializers.SerializerMethodField('get_translations')
 
@@ -586,7 +611,7 @@ class WordStandartCardSerializer(
         )
 
     @extend_schema_field({'type': 'string'})
-    def get_translations(self, obj):
+    def get_translations(self, obj: Word) -> QuerySet[WordTranslation]:
         return obj.translations.order_by('-wordtranslations__created').values_list(
             'text', flat=True
         )
@@ -606,34 +631,66 @@ class WordShortCreateSerializer(
 
     id = serializers.IntegerField(required=False)
     language = serializers.SlugRelatedField(
-        queryset=Language.objects.all(), slug_field='name', required=True
+        queryset=Language.objects.all(),
+        slug_field='name',
+        required=True,
     )
     types = serializers.SlugRelatedField(
-        slug_field='name', queryset=Type.objects.all(), many=True, required=False
+        slug_field='name',
+        queryset=Type.objects.all(),
+        many=True,
+        required=False,
     )
-    tags = TagSerializer(many=True, required=False)
-    forms_groups = FormsGroupInLineSerializer(many=True, required=False)
+    tags = TagSerializer(
+        many=True,
+        required=False,
+    )
+    forms_groups = FormsGroupInLineSerializer(
+        many=True,
+        required=False,
+    )
     translations_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='translations'
+        'get_objs_count',
+        objs_related_name='translations',
     )
-    translations = WordTranslationInLineSerializer(many=True, required=False)
-    examples_count = KwargsMethodField('get_objs_count', objs_related_name='examples')
-    examples = UsageExampleInLineSerializer(many=True, required=False)
+    translations = WordTranslationInLineSerializer(
+        many=True,
+        required=False,
+    )
+    examples_count = KwargsMethodField(
+        'get_objs_count',
+        objs_related_name='examples',
+    )
+    examples = UsageExampleInLineSerializer(
+        many=True,
+        required=False,
+    )
     definitions_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='definitions'
+        'get_objs_count',
+        objs_related_name='definitions',
     )
-    definitions = DefinitionInLineSerializer(many=True, required=False)
+    definitions = DefinitionInLineSerializer(
+        many=True,
+        required=False,
+    )
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         serializer_class=UserShortSerializer,
         many=False,
     )
-    notes_count = KwargsMethodField('get_objs_count', objs_related_name='notes')
-    notes = NoteInLineSerializer(many=True, required=False)
+    notes_count = KwargsMethodField(
+        'get_objs_count',
+        objs_related_name='notes',
+    )
+    notes = NoteInLineSerializer(
+        many=True,
+        required=False,
+    )
     associations_count = serializers.SerializerMethodField('get_associations_count')
     associations = serializers.SerializerMethodField('get_associations')
     images_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='images_associations'
+        'get_objs_count',
+        objs_related_name='images_associations',
     )
     images_associations = serializers.PrimaryKeyRelatedField(
         queryset=ImageAssociation.objects.all(),
@@ -669,6 +726,7 @@ class WordShortCreateSerializer(
 
     class Meta:
         model = Word
+        list_serializer_class = ListUpdateSerializer
         favorite_model = FavoriteWord
         favorite_model_field = 'word'
         fields = (
@@ -714,6 +772,8 @@ class WordShortCreateSerializer(
             'created',
             'modified',
         )
+        # Связанные объекты, которые при создании объекта слова необходимо добавить
+        # через related manager; используется в NestedSerializerMixin
         objs_related_names = {
             'translations': 'translations',
             'examples': 'examples',
@@ -722,6 +782,7 @@ class WordShortCreateSerializer(
             'forms_groups': 'forms_groups',
             'quotes_associations': 'quotes_associations',
         }
+        # Ограничения по кол-ву связанных объектов
         amount_limit_fields = {
             'tags': VocabularyAmountLimits.MAX_TAGS_AMOUNT,
             'types': VocabularyAmountLimits.MAX_TYPES_AMOUNT,
@@ -733,23 +794,23 @@ class WordShortCreateSerializer(
             'images_associations': VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
             'quotes_associations': VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
         }
+        # Связанные объекты, язык которых должен совпадать с языком самого слова
         objs_with_same_language = [
             'examples',
             'definitions',
             'forms_groups',
         ]
-        list_serializer_class = ListUpdateSerializer
 
-    def create(self, validated_data, parent_first=True):
+    def create(self, validated_data: OrderedDict, parent_first: bool = True) -> Word:
         return super().create(validated_data, parent_first)
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Word, validated_data: OrderedDict) -> Word:
         instance = super().update(instance, validated_data)
         # Удалить связанные объекты, если они больше не используются
         clear_extra_objects(sender=Word)
         return instance
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> OrderedDict:
         for attr_name in self.Meta.objs_with_same_language:
             objs_data = attrs.get(attr_name, [])
             for data in objs_data:
@@ -762,15 +823,15 @@ class WordShortCreateSerializer(
                     self.fail(attr_name + '_same_language_detail')
         return super().validate(attrs)
 
-    def fail(self, key, *args, **kwargs):
+    def fail(self, key: str, *args, **kwargs) -> None:
         raise serializers.ValidationError(self.error_messages[key], code=key)
 
     @extend_schema_field({'type': 'integer'})
-    def get_associations_count(self, obj):
+    def get_associations_count(self, obj: Word) -> int:
         return obj.images_associations.count() + obj.quotes_associations.count()
 
     @extend_schema_field({'type': 'object'})
-    def get_associations(self, obj):
+    def get_associations(self, obj: Word) -> list:
         images = ImageInLineSerializer(
             obj.images_associations.all(),
             many=True,
@@ -789,10 +850,10 @@ class WordShortCreateSerializer(
         return result_list
 
     @extend_schema_field({'type': 'string'})
-    def get_activity_status_display(self, obj):
+    def get_activity_status_display(self, obj: Word) -> str:
         return obj.get_activity_status_display()
 
-    def validate_language(self, language):
+    def validate_language(self, language: Language) -> Language | None:
         return self.validate_language_is_learning(language)
 
 
@@ -811,7 +872,7 @@ class WordSelfRelatedSerializer(NestedSerializerMixin, serializers.ModelSerializ
     class Meta:
         abstract = True
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> OrderedDict:
         to_word = attrs.get('to_word', None)
         from_word = attrs.get('from_word', None)
         if to_word and from_word:
@@ -826,10 +887,12 @@ class WordSelfRelatedSerializer(NestedSerializerMixin, serializers.ModelSerializ
                 self.fail('same_words_detail')
         return super().validate(attrs)
 
-    def create(self, validated_data, parent_first=False, *args, **kwargs):
+    def create(
+        self, validated_data: OrderedDict, parent_first: bool = False, *args, **kwargs
+    ) -> Synonym | Antonym | Form | Similar:
         return super().create(validated_data, parent_first)
 
-    def fail(self, key, *args, **kwargs):
+    def fail(self, key: str, *args, **kwargs) -> None:
         raise serializers.ValidationError(self.error_messages[key], code=key)
 
 
@@ -946,7 +1009,9 @@ class WordSerializer(WordShortCreateSerializer):
 
     id = serializers.IntegerField(required=False)
     language = serializers.SlugRelatedField(
-        queryset=Language.objects.all(), slug_field='name', required=True
+        queryset=Language.objects.all(),
+        slug_field='name',
+        required=True,
     )
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
@@ -962,31 +1027,43 @@ class WordSerializer(WordShortCreateSerializer):
     tags = TagSerializer(many=True, required=False)
     forms_groups = FormsGroupInLineSerializer(many=True, required=False)
     translations_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='translations'
+        'get_objs_count',
+        objs_related_name='translations',
     )
     translations = WordTranslationInLineSerializer(many=True, required=False)
-    examples_count = KwargsMethodField('get_objs_count', objs_related_name='examples')
+    examples_count = KwargsMethodField(
+        'get_objs_count',
+        objs_related_name='examples',
+    )
     examples = UsageExampleInLineSerializer(many=True, required=False)
     definitions_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='definitions'
+        'get_objs_count',
+        objs_related_name='definitions',
     )
     definitions = DefinitionInLineSerializer(many=True, required=False)
     synonyms_count = KwargsMethodField('get_objs_count', objs_related_name='synonyms')
     synonyms = SynonymInLineSerializer(
-        many=True, required=False, source='synonym_to_words'
+        many=True,
+        required=False,
+        source='synonym_to_words',
     )
     antonyms_count = KwargsMethodField('get_objs_count', objs_related_name='antonyms')
     antonyms = AntonymInLineSerializer(
-        many=True, required=False, source='antonym_to_words'
+        many=True,
+        required=False,
+        source='antonym_to_words',
     )
     forms_count = KwargsMethodField('get_objs_count', objs_related_name='forms')
     forms = FormInLineSerializer(many=True, required=False, source='form_to_words')
     similars_count = KwargsMethodField('get_objs_count', objs_related_name='similars')
     similars = SimilarInLineSerializer(
-        many=True, required=False, source='similar_to_words'
+        many=True,
+        required=False,
+        source='similar_to_words',
     )
     collections_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='collections'
+        'get_objs_count',
+        objs_related_name='collections',
     )
     collections = CollectionShortSerializer(many=True, required=False)
     notes_count = KwargsMethodField('get_objs_count', objs_related_name='notes')
@@ -995,6 +1072,7 @@ class WordSerializer(WordShortCreateSerializer):
     already_exist_detail = _('Такое слово уже есть в вашем словаре. Обновить его?')
 
     class Meta(WordShortCreateSerializer.Meta):
+        list_serializer_class = serializers.ListSerializer
         fields = (
             'id',
             'slug',
@@ -1053,6 +1131,8 @@ class WordSerializer(WordShortCreateSerializer):
             'created',
             'modified',
         )
+        # Связанные объекты, которые при создании объекта слова необходимо добавить
+        # через related manager; используется в NestedSerializerMixin
         objs_related_names = {
             'examples': 'examples',
             'definitions': 'definitions',
@@ -1062,6 +1142,7 @@ class WordSerializer(WordShortCreateSerializer):
             'collections': 'collections',
             'quotes_associations': 'quotes_associations',
         }
+        # Ограничения по кол-ву связанных объектов
         amount_limit_fields = {
             'tags': VocabularyAmountLimits.MAX_TAGS_AMOUNT,
             'types': VocabularyAmountLimits.MAX_TYPES_AMOUNT,
@@ -1077,9 +1158,8 @@ class WordSerializer(WordShortCreateSerializer):
             'images_associations': VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
             'quotes_associations': VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
         }
-        list_serializer_class = serializers.ListSerializer
 
-    def validate(self, attrs, *args, **kwargs):
+    def validate(self, attrs: dict, *args, **kwargs) -> OrderedDict:
         return super().validate(attrs)
 
 
@@ -1089,7 +1169,7 @@ class MultipleWordsSerializer(serializers.Serializer):
     words = WordShortCreateSerializer(many=True, required=True)
     collections = CollectionShortSerializer(many=True, required=False)
 
-    def create(self, validated_data):
+    def create(self, validated_data: OrderedDict) -> dict:
         _new_words = WordSerializer(
             many=True, context={'request': self.context['request']}
         ).create(validated_data['words'])
@@ -1107,7 +1187,7 @@ class OtherWordsSerializerMixin:
     """Миксин для просмотра других слов с этим дополнением."""
 
     @extend_schema_field(WordShortCardSerializer(many=True))
-    def get_other_words(self, obj, related_attr=''):
+    def get_other_words(self, obj, related_attr: str, *args, **kwargs) -> ReturnDict:
         other_words = obj.__getattribute__(related_attr).words.exclude(pk=obj.word.id)
         return WordShortCardSerializer(
             other_words,
@@ -1116,7 +1196,9 @@ class OtherWordsSerializerMixin:
         ).data
 
     @extend_schema_field(WordShortCardSerializer(many=True))
-    def get_other_self_related_words(self, obj, related_attr=''):
+    def get_other_self_related_words(
+        self, obj, related_attr: str, *args, **kwargs
+    ) -> ReturnDict:
         other_words = obj.from_word.__getattribute__(related_attr).exclude(
             pk=obj.to_word.id
         )
@@ -1127,7 +1209,7 @@ class OtherWordsSerializerMixin:
         ).data
 
     @extend_schema_field({'type': 'integer'})
-    def get_other_words_count(self, obj, attr=None, *args, **kwargs):
+    def get_other_words_count(self, obj, attr: str, *args, **kwargs) -> int:
         words_attr = kwargs.get('words_attr', 'words')
         if attr:
             return obj.__getattribute__(attr).__getattribute__(words_attr).count() - 1
@@ -1274,13 +1356,13 @@ class AddSelfRelatedWordsThroughDefaultsMixin(NestedSerializerMixin):
 
     def create(
         self,
-        validated_data,
-        related_name,
-        response_related_name,
-        parent_first=False,
+        validated_data: OrderedDict,
+        related_name: str,
+        response_related_name: str,
+        parent_first: bool = False,
         *args,
         **kwargs,
-    ):
+    ) -> Word:
         to_word = validated_data.pop('to_word')
         from_word_data = validated_data.pop('from_word')
         serializer = self.get_fields()['from_word']
@@ -1300,7 +1382,9 @@ class SynonymForWordListSerializer(
 
     to_word = serializers.HiddenField(default=CurrentWordDefault())
 
-    def create(self, validated_data, parent_first=False, *args, **kwargs):
+    def create(
+        self, validated_data: OrderedDict, parent_first: bool = False, *args, **kwargs
+    ) -> Word:
         return super().create(validated_data, 'synonyms', 'synonym_to_words')
 
 
@@ -1312,10 +1396,13 @@ class SynonymForWordSerializer(
     synonym = WordShortCreateSerializer(many=False, read_only=False, source='from_word')
     word = WordSuperShortWithTranslations(many=False, read_only=True, source='to_word')
     other_words = KwargsMethodField(
-        'get_other_self_related_words', related_attr='synonyms'
+        'get_other_self_related_words',
+        related_attr='synonyms',
     )
     other_words_count = KwargsMethodField(
-        'get_other_words_count', attr='from_word', words_attr='synonyms'
+        'get_other_words_count',
+        attr='from_word',
+        words_attr='synonyms',
     )
 
     class Meta:
@@ -1344,7 +1431,9 @@ class AntonymForWordListSerializer(
 
     to_word = serializers.HiddenField(default=CurrentWordDefault())
 
-    def create(self, validated_data, parent_first=False, *args, **kwargs):
+    def create(
+        self, validated_data: OrderedDict, parent_first: bool = False, *args, **kwargs
+    ) -> Word:
         return super().create(validated_data, 'antonyms', 'antonym_to_words')
 
 
@@ -1356,10 +1445,13 @@ class AntonymForWordSerializer(
     antonym = WordShortCreateSerializer(many=False, read_only=False, source='from_word')
     word = WordSuperShortWithTranslations(many=False, read_only=True, source='to_word')
     other_words = KwargsMethodField(
-        'get_other_self_related_words', related_attr='antonyms'
+        'get_other_self_related_words',
+        related_attr='antonyms',
     )
     other_words_count = KwargsMethodField(
-        'get_other_words_count', attr='from_word', words_attr='antonyms'
+        'get_other_words_count',
+        attr='from_word',
+        words_attr='antonyms',
     )
 
     class Meta:
@@ -1388,7 +1480,9 @@ class FormForWordListSerializer(
 
     to_word = serializers.HiddenField(default=CurrentWordDefault())
 
-    def create(self, validated_data, parent_first=False, *args, **kwargs):
+    def create(
+        self, validated_data: OrderedDict, parent_first: bool = False, *args, **kwargs
+    ) -> Word:
         return super().create(validated_data, 'forms', 'form_to_words')
 
 
@@ -1400,10 +1494,13 @@ class FormForWordSerializer(
     form = WordShortCreateSerializer(many=False, read_only=False, source='from_word')
     word = WordSuperShortWithTranslations(many=False, read_only=True, source='to_word')
     other_words = KwargsMethodField(
-        'get_other_self_related_words', related_attr='forms'
+        'get_other_self_related_words',
+        related_attr='forms',
     )
     other_words_count = KwargsMethodField(
-        'get_other_words_count', attr='from_word', words_attr='forms'
+        'get_other_words_count',
+        attr='from_word',
+        words_attr='forms',
     )
 
     class Meta:
@@ -1431,7 +1528,9 @@ class SimilarForWordListSerializer(
 
     to_word = serializers.HiddenField(default=CurrentWordDefault())
 
-    def create(self, validated_data, parent_first=False, *args, **kwargs):
+    def create(
+        self, validated_data: OrderedDict, parent_first: bool = False, *args, **kwargs
+    ) -> Word:
         return super().create(validated_data, 'similars', 'similar_to_words')
 
 
@@ -1443,10 +1542,13 @@ class SimilarForWordSerailizer(
     similar = WordShortCreateSerializer(many=False, read_only=False, source='from_word')
     word = WordSuperShortWithTranslations(many=False, read_only=True, source='to_word')
     other_words = KwargsMethodField(
-        'get_other_self_related_words', related_attr='similars'
+        'get_other_self_related_words',
+        related_attr='similars',
     )
     other_words_count = KwargsMethodField(
-        'get_other_words_count', attr='from_word', words_attr='similars'
+        'get_other_words_count',
+        attr='from_word',
+        words_attr='similars',
     )
 
     class Meta:
@@ -1484,7 +1586,8 @@ class WordTranslationSerializer(
     """Сериализатор перевода (полный)."""
 
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         slug_field='name',
@@ -1507,7 +1610,7 @@ class WordTranslationSerializer(
             'slug',
         )
 
-    def validate_language(self, language):
+    def validate_language(self, language: Language) -> Language | None:
         return self.validate_language_is_native_or_learning(language)
 
 
@@ -1538,7 +1641,8 @@ class WordTranslationListSerializer(serializers.ModelSerializer):
     """Сериализатор списка переводов."""
 
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
@@ -1546,7 +1650,8 @@ class WordTranslationListSerializer(serializers.ModelSerializer):
         required=True,
     )
     other_words_count = KwargsMethodField(
-        'get_other_words_count', objs_related_name='words'
+        'get_other_words_count',
+        objs_related_name='words',
     )
     last_4_words = serializers.SerializerMethodField('get_last_4_words')
 
@@ -1565,12 +1670,14 @@ class WordTranslationListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     @extend_schema_field({'type': 'integer'})
-    def get_other_words_count(self, obj, objs_related_name=''):
+    def get_other_words_count(
+        self, obj: WordTranslation, objs_related_name: str = ''
+    ) -> int:
         words_count = obj.__getattribute__(objs_related_name).count()
         return words_count - 4 if words_count > 4 else 0
 
     @extend_schema_field({'type': 'string'})
-    def get_last_4_words(self, obj):
+    def get_last_4_words(self, obj: WordTranslation) -> QuerySet[Word]:
         return obj.words.order_by('-wordtranslations__created').values(
             'text', 'language__name'
         )[:4]
@@ -1582,7 +1689,8 @@ class DefinitionSerializer(
     """Сериализатор определения (полный)."""
 
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         slug_field='name',
@@ -1640,7 +1748,7 @@ class DefinitionCreateSerializer(
             'words': 'words',
         }
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> OrderedDict:
         objs_data = attrs.get('words', [])
         for data in objs_data:
             if 'language' in data and (
@@ -1652,10 +1760,10 @@ class DefinitionCreateSerializer(
                 self.fail('words_same_language_detail')
         return super().validate(attrs)
 
-    def fail(self, key, *args, **kwargs):
+    def fail(self, key: str, *args, **kwargs) -> None:
         raise serializers.ValidationError(self.error_messages[key], code=key)
 
-    def validate_language(self, language):
+    def validate_language(self, language: Language) -> Language | None:
         return self.validate_language_is_learning(language)
 
 
@@ -1663,7 +1771,8 @@ class DefinitionListSerializer(serializers.ModelSerializer):
     """Сериализатор списка определений."""
 
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
@@ -1671,7 +1780,8 @@ class DefinitionListSerializer(serializers.ModelSerializer):
         required=True,
     )
     other_words_count = KwargsMethodField(
-        'get_other_words_count', objs_related_name='words'
+        'get_other_words_count',
+        objs_related_name='words',
     )
     last_4_words = serializers.SerializerMethodField('get_last_4_words')
 
@@ -1689,12 +1799,14 @@ class DefinitionListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     @extend_schema_field({'type': 'integer'})
-    def get_other_words_count(self, obj, objs_related_name=''):
+    def get_other_words_count(
+        self, obj: Definition, objs_related_name: str = ''
+    ) -> int:
         words_count = obj.__getattribute__(objs_related_name).count()
         return words_count - 4 if words_count > 4 else 0
 
     @extend_schema_field({'type': 'string'})
-    def get_last_4_words(self, obj):
+    def get_last_4_words(self, obj: Definition) -> QuerySet[Word]:
         return obj.words.order_by('-worddefinitions__created').values_list(
             'text', flat=True
         )[:4]
@@ -1706,7 +1818,8 @@ class UsageExampleSerializer(
     """Сериализатор примера использования (полный)."""
 
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         slug_field='name',
@@ -1762,7 +1875,7 @@ class UsageExampleCreateSerializer(
             'words': 'words',
         }
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> OrderedDict:
         objs_data = attrs.get('words', [])
         for data in objs_data:
             if 'language' in data and (
@@ -1774,10 +1887,10 @@ class UsageExampleCreateSerializer(
                 self.fail('words_same_language_detail')
         return super().validate(attrs)
 
-    def fail(self, key, *args, **kwargs):
+    def fail(self, key: str, *args, **kwargs) -> None:
         raise serializers.ValidationError(self.error_messages[key], code=key)
 
-    def validate_language(self, language):
+    def validate_language(self, language: Language) -> Language | None:
         return self.validate_language_is_learning(language)
 
 
@@ -1785,7 +1898,8 @@ class UsageExampleListSerializer(serializers.ModelSerializer):
     """Сериализатор списка примеров использования."""
 
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
@@ -1793,7 +1907,8 @@ class UsageExampleListSerializer(serializers.ModelSerializer):
         required=True,
     )
     other_words_count = KwargsMethodField(
-        'get_other_words_count', objs_related_name='words'
+        'get_other_words_count',
+        objs_related_name='words',
     )
     last_4_words = serializers.SerializerMethodField('get_last_4_words')
 
@@ -1811,12 +1926,14 @@ class UsageExampleListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     @extend_schema_field({'type': 'integer'})
-    def get_other_words_count(self, obj, objs_related_name=''):
+    def get_other_words_count(
+        self, obj: UsageExample, objs_related_name: str = ''
+    ) -> int:
         words_count = obj.__getattribute__(objs_related_name).count()
         return words_count - 4 if words_count > 4 else 0
 
     @extend_schema_field({'type': 'string'})
-    def get_last_4_words(self, obj):
+    def get_last_4_words(self, obj: UsageExample) -> QuerySet[Word]:
         return obj.words.order_by('-wordusageexamples').values_list('text', flat=True)[
             :4
         ]
@@ -1826,11 +1943,13 @@ class ImageListSerializer(serializers.ModelSerializer):
     """Сериализатор списка ассоциаций-картинок."""
 
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     image = HybridImageField()
     other_words_count = KwargsMethodField(
-        'get_other_words_count', objs_related_name='words'
+        'get_other_words_count',
+        objs_related_name='words',
     )
     last_4_words = serializers.SerializerMethodField('get_last_4_words')
 
@@ -1851,12 +1970,16 @@ class ImageListSerializer(serializers.ModelSerializer):
         )
 
     @extend_schema_field({'type': 'integer'})
-    def get_other_words_count(self, obj, objs_related_name=''):
+    def get_other_words_count(
+        self,
+        obj: ImageAssociation,
+        objs_related_name: str = '',
+    ) -> int:
         words_count = obj.__getattribute__(objs_related_name).count()
         return words_count - 4 if words_count > 4 else 0
 
     @extend_schema_field({'type': 'string'})
-    def get_last_4_words(self, obj):
+    def get_last_4_words(self, obj: ImageAssociation) -> QuerySet[Word]:
         return obj.words.order_by('-wordimageassociations').values_list(
             'text', flat=True
         )[:4]
@@ -1895,7 +2018,7 @@ class AssociationsCreateSerializer(serializers.Serializer):
         presentation_serializer=ImageInLineSerializer,
     )
 
-    def create(self, validated_data):
+    def create(self, validated_data: OrderedDict) -> dict:
         _quotes_data = self.get_fields()['quotes_associations'].create(
             validated_data['quotes_associations']
         )
@@ -1916,14 +2039,16 @@ class SynonymSerializer(
     """Сериализатор синонима (полный)."""
 
     author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(), slug_field='username'
+        default=serializers.CurrentUserDefault(),
+        slug_field='username',
     )
     language = serializers.SlugRelatedField(
         slug_field='name',
         read_only=True,
     )
     images_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='images_associations'
+        'get_objs_count',
+        objs_related_name='images_associations',
     )
 
     already_exist_detail = _('Такое слово уже есть в вашем словаре.')
@@ -1946,7 +2071,7 @@ class SynonymSerializer(
             'images',
         )
 
-    def validate_language(self, language):
+    def validate_language(self, language: Language) -> Language | None:
         return self.validate_language_is_learning(language)
 
 
@@ -2023,7 +2148,7 @@ class FormsGroupListSerializer(
             'words_count',
         )
 
-    def validate_language(self, language):
+    def validate_language(self, language: Language) -> Language | None:
         return self.validate_language_is_learning(language)
 
 
@@ -2068,17 +2193,17 @@ class CollectionSerializer(CollectionShortSerializer):
         )
 
     @extend_schema_field({'type': 'object'})
-    def get_words_languages(self, obj):
+    def get_words_languages(self, obj: Collection) -> QuerySet[Word]:
         return (
             obj.words.values('language__name').annotate(words_count=Count('language'))
         ).order_by('-words_count')
 
     @extend_schema_field({'type': 'integer'})
-    def get_words_images_count(self, obj):
+    def get_words_images_count(self, obj: Collection) -> int:
         return obj.words.filter(images_associations__isnull=False).count()
 
     @extend_schema_field({'type': 'object'})
-    def get_words_images(self, obj):
+    def get_words_images(self, obj: Collection) -> QuerySet[Word]:
         return obj.words.filter(images_associations__isnull=False).values_list(
             'images_associations__image', flat=True
         )
@@ -2119,7 +2244,7 @@ class LearningLanguageWithLastWordsSerailizer(LearningLanguageShortSerailizer):
         )
 
     @extend_schema_field(WordStandartCardSerializer(many=True))
-    def get_last_10_words(self, obj):
+    def get_last_10_words(self, obj: UserLearningLanguage) -> ReturnDict:
         words = obj.user.words.filter(language=obj.language)[:10]
         return WordStandartCardSerializer(
             words, many=True, context={'request': self.context['request']}
@@ -2136,13 +2261,16 @@ class UserDetailsSerializer(
         queryset=Language.objects.all(),
         required=False,
         many=True,
-        presentation_serializer=LanguageSerailizer,
+        presentation_serializer=LanguageSerializer,
     )
     learning_languages_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='learning_languages'
+        'get_objs_count',
+        objs_related_name='learning_languages',
     )
     learning_languages = LearningLanguageShortSerailizer(
-        read_only=True, many=True, source='learning_languages_detail'
+        read_only=True,
+        many=True,
+        source='learning_languages_detail',
     )
     words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
     last_10_words = serializers.SerializerMethodField('get_last_10_words')
@@ -2168,9 +2296,11 @@ class UserDetailsSerializer(
             'last_10_words',
         )
 
-    def validate_native_languages(self, languages):
+    def validate_native_languages(
+        self, languages: QuerySet[Language]
+    ) -> QuerySet[Language]:
         if len(languages) > UsersAmountLimits.MAX_NATIVE_LANGUAGES_AMOUNT:
-            raise ValidationError(
+            raise serializers.ValidationError(
                 UsersAmountLimits.get_error_message(
                     limit=UsersAmountLimits.MAX_NATIVE_LANGUAGES_AMOUNT
                 ),
@@ -2179,7 +2309,7 @@ class UserDetailsSerializer(
         return languages
 
     @extend_schema_field(WordStandartCardSerializer(many=True))
-    def get_last_10_words(self, obj):
+    def get_last_10_words(self, obj) -> ReturnDict:
         words = obj.words.all()[:10]
         return WordStandartCardSerializer(
             words, many=True, context={'request': self.context['request']}
@@ -2188,25 +2318,30 @@ class UserDetailsSerializer(
 
 class MainPageSerailizer(UserDetailsSerializer):
     collections_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='collections'
+        'get_objs_count',
+        objs_related_name='collections',
     )
     last_10_collections = serializers.SerializerMethodField('get_last_10_collections')
     tags_count = KwargsMethodField('get_objs_count', objs_related_name='tags')
     last_10_tags = serializers.SerializerMethodField('get_last_10_tags')
     images_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='imageassociations'
+        'get_objs_count',
+        objs_related_name='imageassociations',
     )
     last_10_images = serializers.SerializerMethodField('get_last_10_images')
     definitions_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='definitions'
+        'get_objs_count',
+        objs_related_name='definitions',
     )
     last_10_definitions = serializers.SerializerMethodField('get_last_10_definitions')
     examples_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='usageexamples'
+        'get_objs_count',
+        objs_related_name='usageexamples',
     )
     last_10_examples = serializers.SerializerMethodField('get_last_10_examples')
     translations_count = KwargsMethodField(
-        'get_objs_count', objs_related_name='wordtranslations'
+        'get_objs_count',
+        objs_related_name='wordtranslations',
     )
     last_10_translations = serializers.SerializerMethodField('get_last_10_translations')
 
@@ -2235,7 +2370,9 @@ class MainPageSerailizer(UserDetailsSerializer):
         )
         read_only_fields = fields
 
-    def get_last_10_objs(self, obj, objs_related_name, serializer_class):
+    def get_last_10_objs(
+        self, obj, objs_related_name: str, serializer_class: Serializer
+    ) -> ReturnDict:
         return serializer_class(
             obj.__getattribute__(objs_related_name).all()[:10],
             many=True,
@@ -2243,27 +2380,27 @@ class MainPageSerailizer(UserDetailsSerializer):
         ).data
 
     @extend_schema_field(CollectionShortSerializer(many=True))
-    def get_last_10_collections(self, obj):
+    def get_last_10_collections(self, obj) -> ReturnDict:
         return self.get_last_10_objs(obj, 'collections', CollectionShortSerializer)
 
     @extend_schema_field(TagListSerializer(many=True))
-    def get_last_10_tags(self, obj):
+    def get_last_10_tags(self, obj) -> ReturnDict:
         return self.get_last_10_objs(obj, 'tags', TagListSerializer)
 
     @extend_schema_field(ImageListSerializer(many=True))
-    def get_last_10_images(self, obj):
+    def get_last_10_images(self, obj) -> ReturnDict:
         return self.get_last_10_objs(obj, 'imageassociations', ImageListSerializer)
 
     @extend_schema_field(DefinitionListSerializer(many=True))
-    def get_last_10_definitions(self, obj):
+    def get_last_10_definitions(self, obj) -> ReturnDict:
         return self.get_last_10_objs(obj, 'definitions', DefinitionListSerializer)
 
     @extend_schema_field(UsageExampleListSerializer(many=True))
-    def get_last_10_examples(self, obj):
+    def get_last_10_examples(self, obj) -> ReturnDict:
         return self.get_last_10_objs(obj, 'usageexamples', UsageExampleListSerializer)
 
     @extend_schema_field(WordTranslationListSerializer(many=True))
-    def get_last_10_translations(self, obj):
+    def get_last_10_translations(self, obj) -> ReturnDict:
         return self.get_last_10_objs(
             obj, 'wordtranslations', WordTranslationListSerializer
         )

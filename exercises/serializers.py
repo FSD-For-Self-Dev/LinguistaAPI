@@ -1,11 +1,16 @@
 """Exercises serializers."""
 
+from datetime import timedelta
+
 from django.utils.translation import gettext as _
 from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.db.models.query import QuerySet
 
 from rest_framework import serializers
+from rest_framework.fields import Field
 from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.relations import PresentablePrimaryKeyRelatedField
+from rest_framework.utils.serializer_helpers import ReturnDict
 
 from core.serializers_mixins import (
     CountObjsSerializerMixin,
@@ -19,7 +24,7 @@ from vocabulary.serializers import (
     WordTranslationSerializer,
     CollectionShortSerializer,
 )
-from vocabulary.models import Word
+from vocabulary.models import Word, Collection
 
 from .models import (
     Exercise,
@@ -39,14 +44,14 @@ class CurrentExerciseDefault:
 
     requires_context = True
 
-    def __call__(self, serializer_field):
+    def __call__(self, serializer_field: Field) -> QuerySet[Exercise] | Exercise:
         request_word_slug = serializer_field.context['view'].kwargs.get('slug')
         try:
             return Exercise.objects.get(slug=request_word_slug)
         except KeyError:
-            return None
+            return Exercise.objects.none()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '%s()' % self.__class__.__name__
 
 
@@ -73,7 +78,7 @@ class ExerciseListSerializer(FavoriteSerializerMixin, serializers.ModelSerialize
         read_only_fields = fields
 
     @extend_schema_field({'type': 'boolean'})
-    def get_new_for_user(self, obj):
+    def get_new_for_user(self, obj: Exercise) -> bool:
         user = self.context.get('request').user
         return (
             user.is_authenticated and not obj.users_history.filter(user=user).exists()
@@ -138,7 +143,7 @@ class SetListSerializer(SetSerializer):
         read_only_fields = fields
 
     @extend_schema_field({'type': 'string'})
-    def get_last_3_words(self, obj):
+    def get_last_3_words(self, obj: WordSet) -> QuerySet[Word]:
         return obj.words.order_by('-last_exercise_date').values_list('text', flat=True)[
             :3
         ]
@@ -193,7 +198,7 @@ class TranslatorHistoryDetailsSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     @extend_schema_field({'type': 'string'})
-    def get_verdict_display(self, obj):
+    def get_verdict_display(self, obj: TranslatorHistoryDetails) -> str:
         return obj.get_verdict_display()
 
 
@@ -224,7 +229,7 @@ class LastApproachShortSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     @extend_schema_field({'type': 'string'})
-    def get_mode_display(self, obj):
+    def get_mode_display(self, obj: UsersExercisesHistory) -> str:
         return obj.get_mode_display()
 
 
@@ -263,7 +268,7 @@ class ExerciseProfileSerializer(
         read_only_fields = fields
 
     @extend_schema_field({'type': 'object'})
-    def get_word_sets(self, obj):
+    def get_word_sets(self, obj: Exercise) -> dict:
         user = self.context.get('request').user
         queryset = user.wordsets.filter(exercise=obj)
         return {
@@ -275,7 +280,7 @@ class ExerciseProfileSerializer(
         }
 
     @extend_schema_field(LastApproachShortSerializer(many=False))
-    def get_last_approach_preview(self, obj):
+    def get_last_approach_preview(self, obj: Exercise) -> ReturnDict | list:
         user = self.context.get('request').user
         try:
             return LastApproachShortSerializer(
@@ -326,15 +331,15 @@ class LastApproachProfileSerializer(LastApproachShortSerializer):
         )
 
     @extend_schema_field({'type': 'object'})
-    def get_status_counters(self, obj):
+    def get_status_counters(self, obj: UsersExercisesHistory) -> dict:
         new_statuses = obj.words_updates.values_list('new_activity_status', flat=True)
-        res = {}
+        result = {}
         for status in new_statuses:
-            if status in res:
-                res[status] += 1
+            if status in result:
+                result[status] += 1
             else:
-                res[status] = 1
-        return res
+                result[status] = 1
+        return result
 
 
 class CollectionWithAvailableWordsSerializer(CollectionShortSerializer):
@@ -350,7 +355,7 @@ class CollectionWithAvailableWordsSerializer(CollectionShortSerializer):
         fields = CollectionShortSerializer.Meta.fields + ('available_words_count',)
 
     @extend_schema_field({'type': 'integer'})
-    def get_available_words_count(self, obj):
+    def get_available_words_count(self, obj: Collection) -> int:
         return obj.words.filter(translations__isnull=False).count()
 
 
@@ -373,14 +378,14 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
         )
 
     @extend_schema_field({'type': 'string'})
-    def get_from_language_display(self, obj):
+    def get_from_language_display(self, obj: TranslatorUserDefaultSettings) -> str:
         return obj.get_from_language_display()
 
     @extend_schema_field({'type': 'string'})
-    def get_mode_display(self, obj):
+    def get_mode_display(self, obj: TranslatorUserDefaultSettings) -> str:
         return obj.get_mode_display()
 
-    def validate_set_time_limit(self, set_time_limit):
+    def validate_set_time_limit(self, set_time_limit: timedelta) -> timedelta:
         min_limit = ExercisesAmountLimits.TRANSLATOR_MIN_TIME_LIMIT
         max_limit = ExercisesAmountLimits.TRANSLATOR_MAX_TIME_LIMIT
         if not (min_limit <= set_time_limit <= max_limit):
@@ -390,7 +395,7 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
             )
         return set_time_limit
 
-    def validate_repetitions_amount(self, repetitions_amount):
+    def validate_repetitions_amount(self, repetitions_amount: int) -> int:
         min_amount = ExercisesAmountLimits.EXERCISE_MIN_REPETITIONS_AMOUNT
         max_amount = ExercisesAmountLimits.EXERCISE_MAX_REPETITIONS_AMOUNT
         if not (min_amount <= repetitions_amount <= max_amount):

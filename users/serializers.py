@@ -1,5 +1,7 @@
 """Users serializers."""
 
+from collections import OrderedDict
+
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 
@@ -9,7 +11,7 @@ from drf_extra_fields.relations import PresentableSlugRelatedField
 from drf_spectacular.utils import extend_schema_field
 
 from languages.models import Language
-from languages.serializers import LanguageSerailizer
+from languages.serializers import LanguageSerializer
 from core.serializers_mixins import CountObjsSerializerMixin
 from core.serializers_fields import KwargsMethodField
 
@@ -49,23 +51,13 @@ class LearningLanguageShortSerailizer(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
-        presentation_serializer=LanguageSerailizer,
+        presentation_serializer=LanguageSerializer,
     )
-    user = serializers.HiddenField(
-        default=serializers.CurrentUserDefault(),
-    )
-    words_count = serializers.SerializerMethodField(
-        'get_words_count',
-    )
-    inactive_words_count = serializers.SerializerMethodField(
-        'get_inactive_words_count',
-    )
-    active_words_count = serializers.SerializerMethodField(
-        'get_active_words_count',
-    )
-    mastered_words_count = serializers.SerializerMethodField(
-        'get_mastered_words_count',
-    )
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    words_count = serializers.SerializerMethodField('get_words_count')
+    inactive_words_count = serializers.SerializerMethodField('get_inactive_words_count')
+    active_words_count = serializers.SerializerMethodField('get_active_words_count')
+    mastered_words_count = serializers.SerializerMethodField('get_mastered_words_count')
 
     class Meta:
         model = UserLearningLanguage
@@ -87,19 +79,19 @@ class LearningLanguageShortSerailizer(
         )
 
     @extend_schema_field({'type': 'integer'})
-    def get_words_count(self, obj):
+    def get_words_count(self, obj: UserLearningLanguage) -> int:
         return obj.user.words.filter(language=obj.language).count()
 
     @extend_schema_field({'type': 'integer'})
-    def get_inactive_words_count(self, obj):
+    def get_inactive_words_count(self, obj: UserLearningLanguage) -> int:
         return obj.user.words.filter(language=obj.language, activity_status='I').count()
 
     @extend_schema_field({'type': 'integer'})
-    def get_active_words_count(self, obj):
+    def get_active_words_count(self, obj: UserLearningLanguage) -> int:
         return obj.user.words.filter(language=obj.language, activity_status='A').count()
 
     @extend_schema_field({'type': 'integer'})
-    def get_mastered_words_count(self, obj):
+    def get_mastered_words_count(self, obj: UserLearningLanguage) -> int:
         return obj.user.words.filter(language=obj.language, activity_status='M').count()
 
 
@@ -130,7 +122,7 @@ class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
             'mastered_words_count',
         )
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> OrderedDict:
         if attrs.get('language', None) in Language.objects.filter(
             learning_available=True
         ):
@@ -147,7 +139,7 @@ class NativeLanguageSerailizer(serializers.ModelSerializer):
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
-        presentation_serializer=LanguageSerailizer,
+        presentation_serializer=LanguageSerializer,
     )
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 

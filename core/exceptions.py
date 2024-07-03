@@ -1,6 +1,9 @@
 """Core exceptions."""
 
+from typing import Any
+
 from django.utils.translation import gettext as _
+from django.http import HttpRequest, HttpResponse
 
 from rest_framework.exceptions import APIException
 from rest_framework import status
@@ -20,18 +23,18 @@ class ObjectAlreadyExist(APIException):
 
     def __init__(
         self,
-        detail=None,
-        code=None,
-        existing_object=None,
-        serializer_class=None,
-        passed_data=None,
-    ):
+        detail: str = None,
+        code: str = None,
+        existing_object: Any = None,
+        serializer_class: Any = None,
+        passed_data: dict = None,
+    ) -> None:
         self.existing_object = existing_object
         self.serializer_class = serializer_class
         self.passed_data = passed_data
         super().__init__(detail, code)
 
-    def get_detail_response(self, request):
+    def get_detail_response(self, request: HttpRequest) -> HttpResponse:
         if self.serializer_class:
             return Response(
                 {

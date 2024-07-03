@@ -38,7 +38,10 @@ class WordsCountMixin:
 
 class UserRelatedModel(CreatedModel):
     user = models.ForeignKey(
-        User, verbose_name=_('User'), on_delete=models.CASCADE, related_name='%(class)s'
+        User,
+        verbose_name=_('User'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s',
     )
 
     class Meta:
@@ -341,10 +344,10 @@ class FormsGroup(
             models.UniqueConstraint(Lower('name'), 'author', name='unique_group_name')
         ]
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.name}'
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         self.name = self.name.capitalize()
         super(FormsGroup, self).save(*args, **kwargs)
 
@@ -893,10 +896,14 @@ class WordsInCollections(GetObjectModelMixin, WordRelatedModel):
 
 class WordSelfRelatedModel(GetObjectModelMixin, CreatedModel):
     to_word = models.ForeignKey(
-        Word, related_name='%(class)s_to_words', on_delete=models.CASCADE
+        Word,
+        related_name='%(class)s_to_words',
+        on_delete=models.CASCADE,
     )
     from_word = models.ForeignKey(
-        Word, related_name='%(class)s_from_words', on_delete=models.CASCADE
+        Word,
+        related_name='%(class)s_from_words',
+        on_delete=models.CASCADE,
     )
 
     get_object_by_fields = ('to_word', 'from_word')
@@ -904,7 +911,7 @@ class WordSelfRelatedModel(GetObjectModelMixin, CreatedModel):
     class Meta:
         abstract = True
 
-    def get_classname(self):
+    def get_classname(self) -> str:
         return self.__class__.__name__
 
     def __str__(self) -> str:
@@ -1056,7 +1063,9 @@ class Note(
         null=False,
     )
     text = models.CharField(
-        _('Note text'), max_length=LengthLimits.MAX_NOTE_LENGTH, blank=False
+        _('Note text'),
+        max_length=LengthLimits.MAX_NOTE_LENGTH,
+        blank=False,
     )
 
     slugify_fields = ('text', ('word', 'text'))
@@ -1145,12 +1154,12 @@ class FavoriteCollection(GetObjectModelMixin, UserRelatedModel):
 @receiver(pre_save, sender=Definition)
 @receiver(pre_save, sender=UsageExample)
 @receiver(pre_save, sender=Note)
-def fill_slug(sender, instance, *args, **kwargs):
+def fill_slug(sender, instance, *args, **kwargs) -> None:
     return slug_filler(sender, instance, *args, **kwargs)
 
 
 @receiver(post_delete, sender=Word)
-def clear_extra_objects(sender, *args, **kwargs):
+def clear_extra_objects(sender, *args, **kwargs) -> None:
     """
     Delete word related objects if related to no words.
     (Удалить связанные объекты, если они больше не используются.)

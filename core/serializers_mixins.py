@@ -1,5 +1,8 @@
 """Core serializer mixins."""
 
+from typing import Any
+from collections import OrderedDict
+
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
@@ -18,7 +21,7 @@ class AlreadyExistSerializerHandler:
 
     already_exist_detail = 'Object already exist.'
 
-    def check_existing_obj(self, data, *args, **kwargs):
+    def check_existing_obj(self, data: dict, *args, **kwargs) -> Any:
         meta_model = self.Meta.model
         if hasattr(meta_model, 'get_object'):
             _existing_obj = meta_model.get_object(data)
@@ -47,7 +50,7 @@ class AlreadyExistSerializerHandler:
                 )
         return None
 
-    def create(self, validated_data, *args, **kwargs):
+    def create(self, validated_data: OrderedDict, *args, **kwargs) -> Any:
         """Check if there is already existing object with same data before create."""
         _existing_obj = self.check_existing_obj(validated_data)
         return (
@@ -56,7 +59,9 @@ class AlreadyExistSerializerHandler:
             else super().create(validated_data, *args, **kwargs)
         )
 
-    def update(self, instance, validated_data, *args, **kwargs):
+    def update(
+        self, instance: Any, validated_data: OrderedDict, *args, **kwargs
+    ) -> Any:
         """Check if there is other word with that data before update current."""
         meta_model = self.Meta.model
         if hasattr(meta_model, 'get_object'):
@@ -75,7 +80,7 @@ class AlreadyExistSerializerHandler:
 class ListUpdateSerializer(serializers.ListSerializer):
     """Сериализатор списка объектов с возможностью их обновления."""
 
-    def set_parent_data(self, data, parent):
+    def set_parent_data(self, data: list[Any] | dict[str, Any], parent: Any) -> Any:
         """
         This method is used to set data on the child objects from the parent object
         There are 3. fields you can set on the meta class of the child serializer class:
@@ -101,7 +106,7 @@ class ListUpdateSerializer(serializers.ListSerializer):
                 object_data[meta.foreign_key_field_name] = parent
             self.child.validate(attrs=object_data)
 
-    def create(self, validated_data):
+    def create(self, validated_data: OrderedDict) -> Any:
         ret = []
         for data in validated_data:
             if data.get('id', None):
@@ -124,7 +129,7 @@ class ListUpdateSerializer(serializers.ListSerializer):
                 ret.append(self.child.create(data))
         return ret
 
-    def update(self, instance, validated_data):
+    def update(self, instance: Any, validated_data: OrderedDict) -> Any:
         # Maps for id->instance and id->data item.
         obj_mapping = {obj.pk: obj for obj in instance}
 
@@ -174,7 +179,7 @@ class ListUpdateSerializer(serializers.ListSerializer):
 class NestedSerializerMixin(serializers.ModelSerializer):
     """Миксин для обработки вложенных сериализаторов."""
 
-    def validate(self, attrs):
+    def validate(self, attrs: dict) -> OrderedDict:
         # Валидация максимального количества элементов вложенного сериализатора
         if hasattr(self.Meta, 'amount_limit_fields'):
             for field_name, limit in self.Meta.amount_limit_fields.items():
@@ -190,12 +195,16 @@ class NestedSerializerMixin(serializers.ModelSerializer):
                     )
         return super().validate(attrs)
 
-    def create_child_objects(self, serializer, data, instance=None):
+    def create_child_objects(
+        self, serializer: Any, data: OrderedDict, instance: Any = None
+    ) -> Any:
         if isinstance(serializer, ListUpdateSerializer) and instance:
             serializer.set_parent_data(data, instance)
         return serializer.create(data)
 
-    def set_child_data_to_instance(self, instance, nested_serializers_data):
+    def set_child_data_to_instance(
+        self, instance: Any, nested_serializers_data: dict[str, Any]
+    ) -> None:
         """
         For each child data initialize the child list serializer, set parent data
         using instance and create the child objects.
@@ -216,7 +225,9 @@ class NestedSerializerMixin(serializers.ModelSerializer):
                 else:
                     instance.__getattribute__(objs_related_names).add(_child_obj)
 
-    def set_child_data_to_validated_data(self, validated_data, nested_serializers_data):
+    def set_child_data_to_validated_data(
+        self, validated_data: OrderedDict, nested_serializers_data: dict[str, Any]
+    ) -> None:
         """
         For each child data initialize the child list serializer and create
         the child objects without passing instance.
@@ -231,11 +242,11 @@ class NestedSerializerMixin(serializers.ModelSerializer):
         return validated_data
 
     @staticmethod
-    def set_child_context(child, context_attr, data):
+    def set_child_context(child: Any, context_attr: str, data: Any) -> None:
         child.context[context_attr] = data
 
     @transaction.atomic
-    def create(self, validated_data, parent_first=True):
+    def create(self, validated_data: OrderedDict, parent_first: bool = True) -> Any:
         nested_serializers_data = {}
         # find the child fields and remove the data from validated_data dict
         for key, val in self.get_fields().items():
@@ -257,7 +268,7 @@ class NestedSerializerMixin(serializers.ModelSerializer):
         return instance
 
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance: Any, validated_data: OrderedDict) -> Any:
         nested_serializers_data = {}
         # find the child fields and remove the data from validated_data dict
         for key, val in self.get_fields().items():
@@ -298,7 +309,7 @@ class FavoriteSerializerMixin(serializers.ModelSerializer):
         method_name='get_favorite', required=False
     )
 
-    def check_meta(self):
+    def check_meta(self) -> None:
         assert hasattr(self.Meta, 'favorite_model'), (
             'Using FavoriteSerializerMixin requires `favorite_model` '
             'attribute to be set in Meta.'
@@ -310,7 +321,7 @@ class FavoriteSerializerMixin(serializers.ModelSerializer):
         return None
 
     @extend_schema_field(serializers.BooleanField)
-    def get_favorite(self, obj):
+    def get_favorite(self, obj: Any) -> bool:
         self.check_meta()
         # check context is needed
         user = self.context['request'].user
@@ -322,7 +333,7 @@ class FavoriteSerializerMixin(serializers.ModelSerializer):
         )
 
     @transaction.atomic
-    def create(self, validated_data, *args, **kwargs):
+    def create(self, validated_data: OrderedDict, *args, **kwargs) -> Any:
         self.check_meta()
         favorite = validated_data.pop('favorite', None)
         instance = super().create(validated_data, *args, **kwargs)
@@ -334,7 +345,7 @@ class FavoriteSerializerMixin(serializers.ModelSerializer):
         return instance
 
     @transaction.atomic
-    def update(self, instance, validated_data):
+    def update(self, instance: Any, validated_data: OrderedDict) -> Any:
         self.check_meta()
         favorite = validated_data.pop('favorite', None)
         instance = super().update(instance, validated_data)
@@ -356,7 +367,7 @@ class CountObjsSerializerMixin:
     """Миксин для чтения счетчика связанных объектов."""
 
     @extend_schema_field({'type': 'integer'})
-    def get_objs_count(self, obj, objs_related_name=''):
+    def get_objs_count(self, obj: Any, objs_related_name: str = '') -> int | None:
         assert objs_related_name, '`objs_related_name` must be passed.'
         if hasattr(obj, objs_related_name):
             return obj.__getattribute__(objs_related_name).count()
@@ -366,7 +377,9 @@ class CountObjsSerializerMixin:
 class UpdateSerializerMixin:
     """Миксин для обновления объекта при создании."""
 
-    def create(self, validated_data, parent_first=True, *args, **kwargs):
+    def create(
+        self, validated_data: OrderedDict, parent_first: bool = True, *args, **kwargs
+    ) -> Any:
         pk = validated_data.get('id', None)
         author = validated_data.get('author', None)
         if pk:

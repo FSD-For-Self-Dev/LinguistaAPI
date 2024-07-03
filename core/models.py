@@ -1,5 +1,8 @@
 """Core abstract models."""
 
+from collections import OrderedDict
+from typing import Any
+
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -10,14 +13,14 @@ from core.utils import slugify_text_fields
 
 class GetObjectBySlugModelMixin:
     @classmethod
-    def check_class_attrs(cls):
+    def check_class_attrs(cls) -> None:
         assert hasattr(cls, 'slugify_func') and hasattr(cls, 'slugify_fields'), (
             'Set `slugify_func`, `slugify_fields` class attributes to use '
             'GetObjectBySlugModelMixin.'
         )
 
     @classmethod
-    def get_slug_from_data(cls, *args, **kwargs):
+    def get_slug_from_data(cls, *args, **kwargs) -> str:
         cls.check_class_attrs()
         _slugify_data = []
         for field in cls.slugify_fields:
@@ -36,7 +39,7 @@ class GetObjectBySlugModelMixin:
         return cls.slugify_func(*_slugify_data)
 
     @classmethod
-    def get_object(cls, data):
+    def get_object(cls, data: OrderedDict) -> Any:
         slug = cls.get_slug_from_data(**data)
         try:
             return cls.objects.get(slug=slug)
@@ -48,13 +51,13 @@ class GetObjectModelMixin:
     get_object_by_fields = ('field',)
 
     @classmethod
-    def check_class_attrs(cls):
+    def check_class_attrs(cls) -> None:
         assert hasattr(
             cls, 'get_object_by_fields'
         ), 'Set `get_object_by_fields` class attributes to use GetObjectModelMixin.'
 
     @classmethod
-    def get_object(cls, data):
+    def get_object(cls, data: OrderedDict) -> Any:
         cls.check_class_attrs()
         get_by_fields = {}
         for field in cls.get_object_by_fields:
@@ -95,7 +98,7 @@ class ModifiedModel(models.Model):
     class Meta:
         abstract = True
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
         """On save, update timestamps."""
         self.modified = timezone.now()
         return super().save(*args, **kwargs)
@@ -117,7 +120,7 @@ class SlugModel(models.Model):
         abstract = True
 
 
-def slug_filler(sender, instance, *args, **kwargs):
+def slug_filler(sender, instance, *args, **kwargs) -> None:
     """
     Fills slug field from slugify_fields
     (`slugify_func` and `slugify_fields` class attributes is needed).

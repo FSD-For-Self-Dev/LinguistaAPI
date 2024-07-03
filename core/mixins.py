@@ -1,14 +1,18 @@
 import operator
 from functools import reduce
+from typing import Any
 
 from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
 from django.db.models import Q
+from django.db.models.base import ModelBase
+from django.http import HttpRequest, HttpResponse
 
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.exceptions import NotFound
+from rest_framework.utils.serializer_helpers import ReturnDict
 
 from core.exceptions import AmountLimitExceeded, ObjectAlreadyExist
 from core.constants import AmountLimits
@@ -17,13 +21,13 @@ from core.constants import AmountLimits
 class ActionsWithRelatedObjectsMixin:
     def list_related_objs(
         self,
-        request,
-        objs_related_name='',
-        status_code=status.HTTP_200_OK,
-        search_fields=[],
+        request: HttpRequest,
+        objs_related_name: str = '',
+        status_code: int = status.HTTP_200_OK,
+        search_fields: list[str] = [],
         *args,
         **kwargs,
-    ):
+    ) -> HttpResponse:
         """Осуществить метод list для связанных объектов."""
         _objs = kwargs.get('objs', None)
         if _objs is None:
@@ -56,8 +60,13 @@ class ActionsWithRelatedObjectsMixin:
         )
 
     def paginate_related_objs(
-        self, request, objs, objs_serializer_class=None, *args, **kwargs
-    ):
+        self,
+        request: HttpRequest,
+        objs: Any,
+        objs_serializer_class: Any = None,
+        *args,
+        **kwargs,
+    ) -> ReturnDict:
         page = self.paginate_queryset(objs)
         if page is not None:
             serializer = (
@@ -74,7 +83,13 @@ class ActionsWithRelatedObjectsMixin:
         )
         return serializer.data
 
-    def get_filtered_paginated_objs(self, request, objs, view, serializer_class):
+    def get_filtered_paginated_objs(
+        self,
+        request: HttpRequest,
+        objs: Any,
+        view: Any,
+        serializer_class: Any,
+    ) -> HttpResponse:
         for backend in view.filter_backends:
             objs = backend().filter_queryset(request, objs, view)
 
@@ -88,17 +103,17 @@ class ActionsWithRelatedObjectsMixin:
     @transaction.atomic
     def create_related_objs(
         self,
-        request,
-        objs_related_name,
-        amount_limit=None,
-        related_model=None,
-        set_objs=False,
-        return_objs_list=False,
-        instance=None,
-        serializer=None,
+        request: HttpRequest,
+        objs_related_name: str,
+        amount_limit: int | None = None,
+        related_model: ModelBase = None,
+        set_objs: bool = False,
+        return_objs_list: bool = False,
+        instance: Any = None,
+        serializer: Any = None,
         *args,
         **kwargs,
-    ):
+    ) -> HttpResponse:
         """Осуществить метод create для связанных объектов."""
         instance = instance if instance else self.get_object()
         serializer = (
@@ -158,13 +173,13 @@ class ActionsWithRelatedObjectsMixin:
     @transaction.atomic
     def detail_action(
         self,
-        request,
-        objs_related_name,
-        lookup_attr_name,
-        lookup_field='pk',
+        request: HttpRequest,
+        objs_related_name: str,
+        lookup_attr_name: str,
+        lookup_field: str = 'pk',
         *args,
         **kwargs,
-    ):
+    ) -> HttpResponse:
         """Осуществить методы retrieve, partial_update, destroy для связанных объектов."""
         instance = self.get_object()
         try:
@@ -209,14 +224,14 @@ class ActionsWithRelatedObjectsMixin:
 
 
 class ObjectAlreadyExistHandler:
-    def create(self, request, *args, **kwargs):
+    def create(self, request: HttpRequest, *args, **kwargs) -> Any:
         """Обработать ошибку ObjectAlreadyExist перед созданием объекта."""
         try:
             return super().create(request, *args, **kwargs)
         except ObjectAlreadyExist as exception:
             return exception.get_detail_response(request)
 
-    def update(self, request, *args, **kwargs):
+    def update(self, request: HttpRequest, *args, **kwargs) -> Any:
         """Обработать ошибку ObjectAlreadyExist перед обновлением объекта."""
         try:
             return super().update(request, *args, **kwargs)
@@ -225,7 +240,7 @@ class ObjectAlreadyExistHandler:
 
 
 class DestroyReturnListMixin:
-    def destroy(self, request, *args, **kwargs):
+    def destroy(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Возвращать обновленный список объектов после удаления объекта."""
         instance = self.get_object()
         self.perform_destroy(instance)
@@ -236,11 +251,11 @@ class DestroyReturnListMixin:
 class FavoriteMixin:
     def _add_to_favorite_action(
         self,
-        request,
-        related_model,
-        related_model_obj_field,
-        already_exist_msg='Object already in favorites.',
-    ):
+        request: HttpRequest,
+        related_model: ModelBase,
+        related_model_obj_field: str,
+        already_exist_msg: str = 'Object already in favorites.',
+    ) -> HttpResponse:
         """Добавить объект в избранное."""
         obj = self.get_object()
         __, created = related_model.objects.get_or_create(
@@ -256,11 +271,11 @@ class FavoriteMixin:
 
     def _remove_from_favorite_action(
         self,
-        request,
-        related_model,
-        related_model_obj_field,
-        not_found_msg='Object not found.',
-    ):
+        request: HttpRequest,
+        related_model: ModelBase,
+        related_model_obj_field: str,
+        not_found_msg: str = 'Object not found.',
+    ) -> HttpResponse:
         """Удалить объект из избранного."""
         obj = self.get_object()
         deleted, __ = related_model.objects.filter(

@@ -102,7 +102,7 @@ class Hint(CreatedModel):
         ordering = ('-created',)
         get_latest_by = ('created',)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return 'Hint `%s` - %s' % (self.name, self.description)
 
 
@@ -171,7 +171,7 @@ class UsersExercisesHistory(CreatedModel):
         ordering = ('-created',)
         get_latest_by = ('created',)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f'`{self.user}` trained with {self.exercise} at {self.created:%Y-%m-%d} '
             f'({self.words_amount} words)'
@@ -221,7 +221,7 @@ class WordsUpdateHistory(CreatedModel):
         ordering = ('-created',)
         get_latest_by = ('created',)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"`{self.word}`'s activity status was upgraded from "
             f'{self.activity_status} to {self.new_activity_status}'
@@ -294,7 +294,7 @@ class TranslatorHistoryDetails(CreatedModel):
         ordering = ('-created',)
         get_latest_by = ('created',)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f'Word asked: {self.word}; user answer: {self.user_answer}; '
             f'verdict: {self.verdict}'
@@ -350,7 +350,7 @@ class TranslatorUserDefaultSettings(models.Model):
         verbose_name = _('Translator exercise saved user settings')
         verbose_name_plural = _('Translator exercise saved users settings')
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "%s's `Translator` exercise saved settings" % (self.user,)
 
 
@@ -436,10 +436,10 @@ class WordSet(
 
 @receiver(pre_save, sender=Exercise)
 @receiver(pre_save, sender=WordSet)
-def fill_slug(sender, instance, *args, **kwargs):
+def fill_slug(sender, instance, *args, **kwargs) -> None:
     return slug_filler(sender, instance, *args, **kwargs)
 
 
 @receiver(post_save, sender=User)
-def set_exercises_default_settings(sender, instance, *args, **kwargs):
+def set_exercises_default_settings(sender, instance, *args, **kwargs) -> None:
     TranslatorUserDefaultSettings.objects.get_or_create(user=instance)
