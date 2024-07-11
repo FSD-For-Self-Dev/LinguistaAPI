@@ -73,6 +73,16 @@ class CustomUserAdmin(UserAdmin):
     )
 
 
-admin.site.register(UserDefaultWordsView)
-admin.site.register(UserLearningLanguage)
-admin.site.register(UserNativeLanguage)
+@admin.register(UserDefaultWordsView)
+class UserDefaultWordsViewAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(UserLearningLanguage)
+class UserLearningLanguageAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(UserNativeLanguage)
+class UserNativeLanguageAdmin(admin.ModelAdmin):
+    pass

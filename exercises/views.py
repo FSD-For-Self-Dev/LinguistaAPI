@@ -1,5 +1,7 @@
 """Exercises views."""
 
+import logging
+
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils.translation import gettext as _
@@ -13,13 +15,14 @@ from drf_spectacular.utils import (
 from rest_framework import mixins, viewsets, status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import action
-from rest_framework.exceptions import NotFound
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 
 from core.pagination import LimitPagination
 from core.mixins import FavoriteMixin
+from core.utils import get_admin_user
 from vocabulary.views import ActionsWithRelatedWordsMixin, CollectionViewSet
+from vocabulary.serializers import CollectionShortSerializer
 
 from .serializers import (
     ExerciseListSerializer,
@@ -27,15 +30,17 @@ from .serializers import (
     SetListSerializer,
     SetSerializer,
     LastApproachProfileSerializer,
-    CollectionWithAvailableWordsSerializer,
+    TranslatorCollectionsSerializer,
     TranslatorUserDefaultSettingsSerializer,
 )
 from .models import (
     Exercise,
     FavoriteExercise,
-    WordSet,
+    TranslatorUserDefaultSettings,
 )
-from .constants import ExercisesAmountLimits
+from .constants import ExercisesAmountLimits, exercises_lookups
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -52,7 +57,7 @@ class ExerciseViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    """Просмотр библиотеки упражнений."""
+    """Retrieve, list exercises."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
@@ -63,6 +68,9 @@ class ExerciseViewSet(
     ordering = ('available', '-created')
 
     def get_queryset(self) -> QuerySet[Exercise]:
+        """
+        Returns all exercises or favorites only or available only.
+        """
         match self.action:
             case 'favorites':
                 return Exercise.objects.filter(
@@ -83,10 +91,15 @@ class ExerciseViewSet(
                 return super().get_serializer_class(*args, **kwargs)
 
     def list(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns separate lists of available, unavailable exercises."""
+        logger.debug('Obtaining available exercises data')
         response = super().list(request, *args, **kwargs)
-        response.data['others'] = self.get_serializer(
+
+        logger.debug('Obtaining unavailable exercises data')
+        response.data['unavailable'] = self.get_serializer(
             Exercise.objects.filter(available=False), many=True
         ).data
+
         return response
 
     @extend_schema(operation_id='exercises_list_for_anonymous', methods=('get',))
@@ -97,6 +110,7 @@ class ExerciseViewSet(
         serializer_class=ExerciseListSerializer,
     )
     def anonymous(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns exercises list for anonymous users."""
         return self.list(request)
 
     @extend_schema(operation_id='exercise_sets_list', methods=('get',))
@@ -108,7 +122,7 @@ class ExerciseViewSet(
         permission_classes=(IsAuthenticated,),
     )
     def word_sets(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все наборы слов."""
+        """Returns all words sets list for given exercise."""
         return self.list_related_objs(
             request,
             objs_related_name='word_sets',
@@ -118,12 +132,11 @@ class ExerciseViewSet(
     @extend_schema(operation_id='exercise_sets_create', methods=('post',))
     @word_sets.mapping.post
     def word_sets_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить новые наборы."""
+        """Creates new words sets, returns words sets updated list."""
         return self.create_related_objs(
             request,
             objs_related_name='word_sets',
             amount_limit=ExercisesAmountLimits.EXERCISE_MAX_WORD_SETS,
-            related_model=WordSet,
             set_objs=False,
             return_objs_list=True,
         )
@@ -131,36 +144,21 @@ class ExerciseViewSet(
     @extend_schema(operation_id='exercise_set_retrieve', methods=('get',))
     @extend_schema(operation_id='exercise_set_partial_update', methods=('patch',))
     @action(
-        methods=('get', 'patch'),
+        methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'word-sets/(?P<word_set_slug>[\w-]+)',
         serializer_class=SetSerializer,
     )
     def word_sets_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить, редактировать или удалить набор слов."""
+        """Words sets retrieve, partial_update, destroy actions."""
         return self.detail_action(
             request,
             objs_related_name='word_sets',
             lookup_field='slug',
-            lookup_attr_name='word_set_slug',
+            lookup_query_param='word_set_slug',
+            list_serializer=SetListSerializer,
             *args,
             **kwargs,
-        )
-
-    @extend_schema(operation_id='exercise_set_destroy', methods=('delete',))
-    @word_sets_detail.mapping.delete
-    def delete_word_set(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        instance = self.get_object()
-        try:
-            _obj = instance.word_sets.get(slug=kwargs.get('word_set_slug'))
-        except ObjectDoesNotExist:
-            raise NotFound
-        _obj.delete()
-        return self.list_related_objs(
-            request,
-            'word_sets',
-            status_code=status.HTTP_204_NO_CONTENT,
-            serializer_class=SetListSerializer,
         )
 
     @extend_schema(operation_id='exercise_last_approach_retrieve', methods=('get',))
@@ -172,13 +170,20 @@ class ExerciseViewSet(
         permission_classes=(IsAuthenticated,),
     )
     def last_approach(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        instance = self.get_object()
+        """Returns user last approach details of current exercise."""
+        instance: Exercise = self.get_object()
+        logger.debug(f'Obtained instance: {instance}')
+
         try:
             serializer = self.get_serializer(
                 instance.users_history.filter(user=request.user).latest()
             )
+            logger.debug(f'Serializer used: {type(serializer)}')
+
             return Response(serializer.data)
-        except ObjectDoesNotExist:
+
+        except ObjectDoesNotExist as exception:
+            logger.error(f'ObjectDoesNotExist exception occured: {exception}')
             return Response(
                 {'detail': _("You haven't done this exercise yet")},
                 status=status.HTTP_409_CONFLICT,
@@ -193,13 +198,26 @@ class ExerciseViewSet(
         permission_classes=(IsAuthenticated,),
     )
     def available_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """
+        Returns given exercise details and available for this exercise words list.
+        """
+        # Determine the available words depending on the given exercise
         match self.kwargs[self.lookup_field]:
-            case 'translator':
+            case exercises_lookups.TRANSLATOR_EXERCISE_SLUG:
+                logger.debug(
+                    'Obtaining words available for `Translator` exercise '
+                    'from user vocabulary'
+                )
                 words = request.user.words.filter(translations__isnull=False)
             case _:
+                logger.debug(
+                    f'Passed {self.lookup_field} has no match with available '
+                    f'exercises slugs ({self.kwargs[self.lookup_field]})'
+                )
                 words = request.user.words.none()
+
         return self.retrieve_with_words(
-            request, default_order='-created', words=words, *args, **kwargs
+            request, default_order=['-created'], words=words, *args, **kwargs
         )
 
     @extend_schema(
@@ -215,20 +233,46 @@ class ExerciseViewSet(
     def available_collections(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
+        """
+        Returns given exercise details and available for this exercise collections
+        list.
+        """
         instance = self.get_object()
-        response_data = self.get_serializer(instance).data
-        _collections = request.user.collections.filter(
-            words__translations__isnull=False
-        ).distinct()
+        logger.debug(f'Obtained instance: {instance}')
+
+        instance_data = self.get_serializer(instance).data
+
+        # Determine the available collections depending on the given exercise
+        match self.kwargs[self.lookup_field]:
+            case exercises_lookups.TRANSLATOR_EXERCISE_SLUG:
+                logger.debug(
+                    'Obtaining collections available for `Translator` exercise '
+                    'from user collections'
+                )
+                _collections = request.user.collections.filter(
+                    words__translations__isnull=False
+                ).distinct()
+
+                collections_serializer_class = TranslatorCollectionsSerializer
+            case _:
+                logger.debug(
+                    f'Passed {self.lookup_field} has no match with available '
+                    f'exercises slugs'
+                )
+                _collections = request.user.collections.none()
+
+                collections_serializer_class = CollectionShortSerializer
+
         collections_data = self.get_filtered_paginated_objs(
             request,
             _collections,
             CollectionViewSet,
-            CollectionWithAvailableWordsSerializer,
+            collections_serializer_class,
         )
+
         return Response(
             {
-                **response_data,
+                **instance_data,
                 'collections': collections_data,
             }
         )
@@ -246,7 +290,22 @@ class ExerciseViewSet(
     def translator_default_settings(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        serializer = self.get_serializer(request.user.translator_settings)
+        """Returns user default settings for `Translator` exercise."""
+        # Retrieve user settings or admin user (default) settings if not exist
+        try:
+            translator_settings = request.user.translator_settings
+            logger.debug(f'Obtained user settings: {translator_settings}')
+        except TranslatorUserDefaultSettings.DoesNotExist as e:
+            logger.debug(f'RelatedObjectDoesNotExist exception occured: {e}')
+            admin_user = get_admin_user(User)
+            translator_settings = admin_user.translator_settings
+            logger.debug(
+                f'Obtained admin user (default) settings: {translator_settings}'
+            )
+
+        serializer = self.get_serializer(translator_settings)
+        logger.debug(f'Serializer used: {type(serializer)}')
+
         return Response(serializer.data)
 
     @extend_schema(
@@ -256,12 +315,28 @@ class ExerciseViewSet(
     def update_translator_default_settings(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        instance = request.user.translator_settings
-        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        """Updates user default settings for `Translator` exercise."""
+        # Update user settings or create if not exist
+        try:
+            instance = request.user.translator_settings
+            logger.debug(f'Obtained instance: {instance}')
+
+            serializer = self.get_serializer(instance, data=request.data, partial=True)
+            logger.debug(f'Serializer used: {type(serializer)}')
+        except TranslatorUserDefaultSettings.DoesNotExist as e:
+            logger.debug(f'RelatedObjectDoesNotExist exception occured: {e}')
+            instance = None
+
+            serializer = self.get_serializer(data=request.data)
+            logger.debug(f'Serializer used: {type(serializer)}')
+
+        logger.debug('Validating data')
         serializer.is_valid(raise_exception=True)
+
+        logger.debug('Performing save')
         serializer.save()
 
-        if getattr(instance, '_prefetched_objects_cache', None):
+        if instance and getattr(instance, '_prefetched_objects_cache', None):
             # If 'prefetch_related' has been applied to a queryset, we need to
             # forcibly invalidate the prefetch cache on the instance.
             instance._prefetched_objects_cache = {}
@@ -271,13 +346,13 @@ class ExerciseViewSet(
     @extend_schema(operation_id='exercises_favorites_list')
     @action(methods=('get',), detail=False, permission_classes=(IsAuthenticated,))
     def favorites(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить список избранных упражнений."""
+        """Returns user's favorite exercises."""
         return self.list(request)
 
     @extend_schema(operation_id='exercise_favorite_create')
     @action(methods=('post',), detail=True, permission_classes=(IsAuthenticated,))
     def favorite(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить упражнение в избранное."""
+        """Adds given exercise to user's favorites."""
         return self._add_to_favorite_action(
             request,
             related_model=FavoriteExercise,
@@ -290,7 +365,7 @@ class ExerciseViewSet(
     def remove_from_favorite(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Удалить упражнение из избранного."""
+        """Removes given exercise from user's favorites."""
         return self._remove_from_favorite_action(
             request,
             related_model=FavoriteExercise,

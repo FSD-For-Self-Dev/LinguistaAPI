@@ -21,7 +21,6 @@ from core.serializers_fields import KwargsMethodField, ReadableHiddenField
 from vocabulary.serializers import (
     WordShortCardSerializer,
     WordSuperShortSerializer,
-    WordTranslationSerializer,
     CollectionShortSerializer,
 )
 from vocabulary.models import Word, Collection
@@ -31,16 +30,19 @@ from .models import (
     WordSet,
     FavoriteExercise,
     UsersExercisesHistory,
-    TranslatorHistoryDetails,
+    ExerciseHistoryDetails,
     WordsUpdateHistory,
     TranslatorUserDefaultSettings,
     Hint,
 )
-from .constants import ExercisesAmountLimits
+from .constants import ExercisesAmountLimits, exercises_lookups
 
 
 class CurrentExerciseDefault:
-    """Текущее просматриваемое упражнение в качестве дефолтного значения для поля."""
+    """
+    The current exercise as the default value for the field.
+    Lookup field must be `slug`.
+    """
 
     requires_context = True
 
@@ -56,7 +58,7 @@ class CurrentExerciseDefault:
 
 
 class ExerciseListSerializer(FavoriteSerializerMixin, serializers.ModelSerializer):
-    """Сериализатор для просмотра библиотеки упражнений."""
+    """Serializer to list exercises."""
 
     new_for_user = serializers.SerializerMethodField('get_new_for_user')
 
@@ -79,6 +81,11 @@ class ExerciseListSerializer(FavoriteSerializerMixin, serializers.ModelSerialize
 
     @extend_schema_field({'type': 'boolean'})
     def get_new_for_user(self, obj: Exercise) -> bool:
+        """
+        Returns False if user has already completed this exercise once
+        (exercises is not new for that user), else True.
+        Always False for anonymous users.
+        """
         user = self.context.get('request').user
         return (
             user.is_authenticated and not obj.users_history.filter(user=user).exists()
@@ -88,7 +95,7 @@ class ExerciseListSerializer(FavoriteSerializerMixin, serializers.ModelSerialize
 class SetSerializer(
     AlreadyExistSerializerHandler, CountObjsSerializerMixin, serializers.ModelSerializer
 ):
-    """Сериализатор для профиля набора слов."""
+    """Serializer to retrieve set of words in exercise."""
 
     words_count = KwargsMethodField(
         'get_objs_count',
@@ -102,9 +109,11 @@ class SetSerializer(
     )
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
-        slug_field='username',
+        representation_field='username',
     )
-    exercise = ReadableHiddenField(default=CurrentExerciseDefault(), slug_field='name')
+    exercise = ReadableHiddenField(
+        default=CurrentExerciseDefault(), representation_field='name'
+    )
 
     already_exist_detail = _('Такой сохраненный набор для этого упражнения уже есть.')
 
@@ -127,7 +136,7 @@ class SetSerializer(
 
 
 class SetListSerializer(SetSerializer):
-    """Сериализатор для просмотра списка и создания наборов слов."""
+    """Serializer to list, create set of words in exercise."""
 
     last_3_words = serializers.SerializerMethodField('get_last_3_words')
 
@@ -144,13 +153,14 @@ class SetListSerializer(SetSerializer):
 
     @extend_schema_field({'type': 'string'})
     def get_last_3_words(self, obj: WordSet) -> QuerySet[Word]:
+        """Returns list of 3 last added words in given set."""
         return obj.words.order_by('-last_exercise_date').values_list('text', flat=True)[
             :3
         ]
 
 
 class HintSerializer(serializers.ModelSerializer):
-    """Сериализатор для просмотра подсказок."""
+    """Serializer to retrieve exercise hint."""
 
     class Meta:
         model = Hint
@@ -163,14 +173,12 @@ class HintSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class TranslatorHistoryDetailsSerializer(serializers.ModelSerializer):
-    """Сериализатор для просмотра истории ответов упражнения `Переводчик`."""
+class ExerciseHistoryDetailsSerializer(serializers.ModelSerializer):
+    """
+    Serializer to retrieve history details of user passing `Translator` exercise.
+    """
 
     task_word = WordSuperShortSerializer(
-        many=False,
-        read_only=True,
-    )
-    task_translation = WordTranslationSerializer(
         many=False,
         read_only=True,
     )
@@ -181,13 +189,19 @@ class TranslatorHistoryDetailsSerializer(serializers.ModelSerializer):
         many=True,
         read_only=True,
     )
+    user_answer = serializers.SerializerMethodField(
+        'get_user_answer',
+    )
+    correct_answer = serializers.SerializerMethodField(
+        'get_correct_answer',
+    )
 
     class Meta:
-        model = TranslatorHistoryDetails
+        model = ExerciseHistoryDetails
         fields = (
             'id',
             'task_word',
-            'task_translation',
+            'correct_answer',
             'user_answer',
             'verdict',
             'suggested_options',
@@ -198,17 +212,46 @@ class TranslatorHistoryDetailsSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     @extend_schema_field({'type': 'string'})
-    def get_verdict_display(self, obj: TranslatorHistoryDetails) -> str:
+    def get_verdict_display(self, obj: ExerciseHistoryDetails) -> str:
+        """Get verdict full text for display."""
         return obj.get_verdict_display()
+
+    @extend_schema_field({'type': 'dict'})
+    def get_user_answer(self, obj: ExerciseHistoryDetails) -> dict:
+        """Returns type, value of user answer."""
+        if obj.text_answer:
+            return {
+                'type': 'text',
+                'answer': obj.text_answer,
+            }
+
+        return {}
+
+    @extend_schema_field({'type': 'dict'})
+    def get_correct_answer(self, obj: ExerciseHistoryDetails) -> dict:
+        """Returns type, value of correct answer."""
+        match obj.approach.exercise.slug:
+            case exercises_lookups.TRANSLATOR_EXERCISE_SLUG:
+                correct_translations = obj.task_word.translations.values_list(
+                    'text', flat=True
+                )
+                return {
+                    'type': 'text',
+                    'answer': correct_translations,
+                }
+            case _:
+                return {}
 
 
 class LastApproachShortSerializer(serializers.ModelSerializer):
-    """Сериализатор для просмотра последнего подхода (короткая форма)."""
+    """
+    Serializer to retrieve history details of last exercise approach by user.
+    """
 
     mode = serializers.SerializerMethodField(
         'get_mode_display',
     )
-    details = TranslatorHistoryDetailsSerializer(
+    details = ExerciseHistoryDetailsSerializer(
         many=True,
         read_only=True,
     )
@@ -230,13 +273,14 @@ class LastApproachShortSerializer(serializers.ModelSerializer):
 
     @extend_schema_field({'type': 'string'})
     def get_mode_display(self, obj: UsersExercisesHistory) -> str:
+        """Get mode full text for display."""
         return obj.get_mode_display()
 
 
 class ExerciseProfileSerializer(
     FavoriteSerializerMixin, CountObjsSerializerMixin, serializers.ModelSerializer
 ):
-    """Сериализатор для просмотра профиля упражнения."""
+    """Serializer to retrieve exercise details."""
 
     word_sets = serializers.SerializerMethodField(
         'get_word_sets',
@@ -269,6 +313,7 @@ class ExerciseProfileSerializer(
 
     @extend_schema_field({'type': 'object'})
     def get_word_sets(self, obj: Exercise) -> dict:
+        """Returns available words sets for given exercise and its amount."""
         user = self.context.get('request').user
         queryset = user.wordsets.filter(exercise=obj)
         return {
@@ -281,6 +326,7 @@ class ExerciseProfileSerializer(
 
     @extend_schema_field(LastApproachShortSerializer(many=False))
     def get_last_approach_preview(self, obj: Exercise) -> ReturnDict | list:
+        """Returns latest approach in given exercise details."""
         user = self.context.get('request').user
         try:
             return LastApproachShortSerializer(
@@ -291,7 +337,7 @@ class ExerciseProfileSerializer(
 
 
 class WordUpdateSerializer(serializers.ModelSerializer):
-    """Сериализатор для просмотра обновления статуса активности слов."""
+    """Serializer to retrieve word activity status changes."""
 
     word = WordSuperShortSerializer(
         many=False,
@@ -311,7 +357,9 @@ class WordUpdateSerializer(serializers.ModelSerializer):
 
 
 class LastApproachProfileSerializer(LastApproachShortSerializer):
-    """Сериализатор для просмотра последнего подхода."""
+    """
+    Serializer to retrieve full history details of last exercise approach by user.
+    """
 
     exercise = ExerciseListSerializer(
         many=False,
@@ -332,6 +380,7 @@ class LastApproachProfileSerializer(LastApproachShortSerializer):
 
     @extend_schema_field({'type': 'object'})
     def get_status_counters(self, obj: UsersExercisesHistory) -> dict:
+        """Returns list of each new status words amount."""
         new_statuses = obj.words_updates.values_list('new_activity_status', flat=True)
         result = {}
         for status in new_statuses:
@@ -344,7 +393,8 @@ class LastApproachProfileSerializer(LastApproachShortSerializer):
 
 class CollectionWithAvailableWordsSerializer(CollectionShortSerializer):
     """
-    Сериализатор коллекций с счетчиком доступных для упражнения `Переводчик` слов.
+    Common serializer to list collections with counter of available words for some
+    exercise in each collection.
     """
 
     available_words_count = serializers.SerializerMethodField(
@@ -356,17 +406,32 @@ class CollectionWithAvailableWordsSerializer(CollectionShortSerializer):
 
     @extend_schema_field({'type': 'integer'})
     def get_available_words_count(self, obj: Collection) -> int:
+        """
+        Redefine this to get the amount of available words for a particular exercise.
+        """
+        pass
+
+
+class TranslatorCollectionsSerializer(CollectionWithAvailableWordsSerializer):
+    """
+    Serializer to list collections with counters of available words for `Translator`
+    exercise in each collection.
+    """
+
+    @extend_schema_field({'type': 'integer'})
+    def get_available_words_count(self, obj: Collection) -> int:
+        """Count words that have at least one translation."""
         return obj.words.filter(translations__isnull=False).count()
 
 
 class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
     """
-    Сериализатор для просмотра и редактирования дефолтных настроек упражнения
-    `Переводчик`.
+    Serializer to retrieve, update users default settings for `Translator` exercise.
     """
 
     from_language = serializers.SerializerMethodField('get_from_language_display')
     mode = serializers.SerializerMethodField('get_mode_display')
+    user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = TranslatorUserDefaultSettings
@@ -375,17 +440,23 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
             'set_time_limit',
             'repetitions_amount',
             'from_language',
+            'user',
         )
 
     @extend_schema_field({'type': 'string'})
     def get_from_language_display(self, obj: TranslatorUserDefaultSettings) -> str:
+        """Get `from_language` mode full text for display."""
         return obj.get_from_language_display()
 
     @extend_schema_field({'type': 'string'})
     def get_mode_display(self, obj: TranslatorUserDefaultSettings) -> str:
+        """Get mode full text for display."""
         return obj.get_mode_display()
 
     def validate_set_time_limit(self, set_time_limit: timedelta) -> timedelta:
+        """
+        Checks that `set_time` value does not exceed the specified limits.
+        """
         min_limit = ExercisesAmountLimits.TRANSLATOR_MIN_TIME_LIMIT
         max_limit = ExercisesAmountLimits.TRANSLATOR_MAX_TIME_LIMIT
         if not (min_limit <= set_time_limit <= max_limit):
@@ -396,6 +467,9 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
         return set_time_limit
 
     def validate_repetitions_amount(self, repetitions_amount: int) -> int:
+        """
+        Checks that `repetitions_amount` value does not exceed the specified limits.
+        """
         min_amount = ExercisesAmountLimits.EXERCISE_MIN_REPETITIONS_AMOUNT
         max_amount = ExercisesAmountLimits.EXERCISE_MAX_REPETITIONS_AMOUNT
         if not (min_amount <= repetitions_amount <= max_amount):

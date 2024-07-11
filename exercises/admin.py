@@ -8,7 +8,7 @@ from .models import (
     Hint,
     WordSet,
     UsersExercisesHistory,
-    TranslatorHistoryDetails,
+    ExerciseHistoryDetails,
     TranslatorUserDefaultSettings,
     WordsUpdateHistory,
 )
@@ -22,10 +22,36 @@ class ExerciseAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 
-admin.site.register(FavoriteExercise)
-admin.site.register(Hint)
-admin.site.register(WordSet)
-admin.site.register(UsersExercisesHistory)
-admin.site.register(TranslatorHistoryDetails)
-admin.site.register(TranslatorUserDefaultSettings)
-admin.site.register(WordsUpdateHistory)
+@admin.register(FavoriteExercise)
+class FavoriteExerciseAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Hint)
+class HintAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(WordSet)
+class WordSetAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(UsersExercisesHistory)
+class UsersExercisesHistoryAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(ExerciseHistoryDetails)
+class TranslatorHistoryDetailsAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(TranslatorUserDefaultSettings)
+class TranslatorUserDefaultSettingsAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(WordsUpdateHistory)
+class WordsUpdateHistoryAdmin(admin.ModelAdmin):
+    pass

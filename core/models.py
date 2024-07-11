@@ -1,7 +1,7 @@
-"""Core abstract models."""
+"""Core abstract models, model mixins."""
 
 from collections import OrderedDict
-from typing import Any
+from typing import Type
 
 from django.db import models
 from django.utils import timezone
@@ -12,8 +12,21 @@ from core.utils import slugify_text_fields
 
 
 class GetObjectBySlugModelMixin:
+    """
+    Custom mixin to use in Model.
+    Adds `get_object` method to get object from its slug.
+    Use within custom AlreadyExistSerializerHandler serializer mixin
+    to avoid IntegrityError during create, update.
+    `slugify_func`, `slugify_fields` class attributes must be set.
+    `slugify_func` - slug generator function.
+    `slugify_fields` - fields to generate slug from,
+    must be an iterable with fields names (str or tuple[str, str] when second element
+    is attribute for first), example: slugify_fields = ('title', ('author', 'name')).
+    """
+
     @classmethod
     def check_class_attrs(cls) -> None:
+        """Check if required class attributes are passed."""
         assert hasattr(cls, 'slugify_func') and hasattr(cls, 'slugify_fields'), (
             'Set `slugify_func`, `slugify_fields` class attributes to use '
             'GetObjectBySlugModelMixin.'
@@ -21,6 +34,9 @@ class GetObjectBySlugModelMixin:
 
     @classmethod
     def get_slug_from_data(cls, *args, **kwargs) -> str:
+        """
+        Collect slug fields from passed data, return slug generated in `slugify_func`.
+        """
         cls.check_class_attrs()
         _slugify_data = []
         for field in cls.slugify_fields:
@@ -39,7 +55,8 @@ class GetObjectBySlugModelMixin:
         return cls.slugify_func(*_slugify_data)
 
     @classmethod
-    def get_object(cls, data: OrderedDict) -> Any:
+    def get_object(cls, data: OrderedDict) -> Type[models.Model] | None:
+        """Returns object gotten by slug or None if ObjectDoesNotExist is raised."""
         slug = cls.get_slug_from_data(**data)
         try:
             return cls.objects.get(slug=slug)
@@ -48,16 +65,29 @@ class GetObjectBySlugModelMixin:
 
 
 class GetObjectModelMixin:
-    get_object_by_fields = ('field',)
+    """
+    Custom mixin to use in Model.
+    Adds `get_object` method to get object from specified fields.
+    Use within custom AlreadyExistSerializerHandler serializer mixin
+    to avoid IntegrityError during create, update.
+    `get_object_by_fields` class attribute must be set.
+    `get_object_by_fields` - fields to get object by, must be an iterable
+    with fields names (str), example: get_object_by_fields = ('field1', 'field2').
+    """
 
     @classmethod
     def check_class_attrs(cls) -> None:
+        """Check if required class attributes are passed."""
         assert hasattr(
             cls, 'get_object_by_fields'
         ), 'Set `get_object_by_fields` class attributes to use GetObjectModelMixin.'
 
     @classmethod
-    def get_object(cls, data: OrderedDict) -> Any:
+    def get_object(cls, data: OrderedDict) -> Type[models.Model] | None:
+        """
+        Collect required fields from passed data, return object gotten by this fields
+        or None if ObjectDoesNotExist is raised.
+        """
         cls.check_class_attrs()
         get_by_fields = {}
         for field in cls.get_object_by_fields:
@@ -122,8 +152,8 @@ class SlugModel(models.Model):
 
 def slug_filler(sender, instance, *args, **kwargs) -> None:
     """
-    Fills slug field from slugify_fields
-    (`slugify_func` and `slugify_fields` class attributes is needed).
+    Fills instance slug field generated from `slugify_func`.
+    `slugify_func` and `slugify_fields` class attributes must be set for Model.
     """
     slugify_data = [
         (

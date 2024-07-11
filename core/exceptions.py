@@ -1,33 +1,49 @@
 """Core exceptions."""
 
-from typing import Any
+from typing import Any, Type
 
 from django.utils.translation import gettext as _
 from django.http import HttpRequest, HttpResponse
+from django.db.models import Model
 
 from rest_framework.exceptions import APIException
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.serializers import Serializer
 
 
 class AmountLimitExceeded(APIException):
+    """Custom exception to raise when some objects amount limit is exceeded."""
+
     status_code = status.HTTP_409_CONFLICT
     default_detail = _('Amount limit exceeded.')
     default_code = 'amount_limit_exceeded'
 
+    def get_detail_response(self, request: HttpRequest) -> HttpResponse:
+        return Response(
+            {
+                'detail': self.detail,
+            },
+            status=self.status_code,
+        )
+
 
 class ObjectAlreadyExist(APIException):
+    """
+    Custom exception to raise when object that need to be created already exists.
+    """
+
     status_code = status.HTTP_409_CONFLICT
     default_detail = _('This object already exists.')
     default_code = 'object_already_exist'
 
     def __init__(
         self,
-        detail: str = None,
-        code: str = None,
-        existing_object: Any = None,
-        serializer_class: Any = None,
-        passed_data: dict = None,
+        detail: str | None = None,
+        code: str | None = None,
+        existing_object: Type[Model] | None = None,
+        serializer_class: Serializer | None = None,
+        passed_data: dict[str, Any] | None = None,
     ) -> None:
         self.existing_object = existing_object
         self.serializer_class = serializer_class
@@ -35,6 +51,9 @@ class ObjectAlreadyExist(APIException):
         super().__init__(detail, code)
 
     def get_detail_response(self, request: HttpRequest) -> HttpResponse:
+        """
+        Add existing object details to response if its serializer class is passed.
+        """
         if self.serializer_class:
             return Response(
                 {
@@ -49,11 +68,5 @@ class ObjectAlreadyExist(APIException):
             {
                 'detail': self.detail,
             },
-            status=status.HTTP_409_CONFLICT,
+            status=self.status_code,
         )
-
-
-class ObjectDoesNotExistWithDetail(APIException):
-    status_code = status.HTTP_404_NOT_FOUND
-    default_detail = _('Object not found.')
-    default_code = 'object_not_exist'

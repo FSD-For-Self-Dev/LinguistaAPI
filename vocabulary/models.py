@@ -1,4 +1,4 @@
-"""Модели приложения vocabulary."""
+"""Vocabulary models."""
 
 import uuid
 
@@ -32,11 +32,19 @@ User = get_user_model()
 
 
 class WordsCountMixin:
+    """Custom model mixin to add `words_count` method"""
+
     def words_count(self) -> int:
+        """
+        Returns object related words amount.
+        Related name of word objects must be `words`.
+        """
         return self.words.count()
 
 
 class UserRelatedModel(CreatedModel):
+    """Abstract model to add `user` field for related user."""
+
     user = models.ForeignKey(
         User,
         verbose_name=_('User'),
@@ -49,6 +57,8 @@ class UserRelatedModel(CreatedModel):
 
 
 class AuthorModel(models.Model):
+    """Abstract model to add `author` field for related user."""
+
     author = models.ForeignKey(
         User,
         verbose_name=_('Author'),
@@ -67,6 +77,8 @@ class Word(
     CreatedModel,
     ModifiedModel,
 ):
+    """Users words and phrases."""
+
     INACTIVE = 'I'
     ACTIVE = 'A'
     MASTERED = 'M'
@@ -205,6 +217,7 @@ class Word(
     class Meta:
         verbose_name = _('Word or phrase')
         verbose_name_plural = _('Words and phrases')
+        db_table_comment = _('Users words and phrases')
         ordering = ('-created', '-modified', '-id')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -222,6 +235,8 @@ class Type(
     CreatedModel,
     ModifiedModel,
 ):
+    """Words and phrases types."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -242,6 +257,7 @@ class Type(
     class Meta:
         verbose_name = _('Type')
         verbose_name_plural = _('Types')
+        db_table_comment = _('Words and phrases types')
         ordering = ('-created', '-modified', '-id')
         get_latest_by = ('created', 'modified')
 
@@ -256,6 +272,8 @@ class Tag(
     CreatedModel,
     ModifiedModel,
 ):
+    """Words and phrases tags."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -276,6 +294,7 @@ class Tag(
     class Meta:
         verbose_name = _('Tag')
         verbose_name_plural = _('Tags')
+        db_table_comment = _('Words and phrases tags')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
 
@@ -291,6 +310,8 @@ class FormsGroup(
     CreatedModel,
     ModifiedModel,
 ):
+    """Groups of possible word forms in language."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -338,6 +359,7 @@ class FormsGroup(
     class Meta:
         verbose_name = _('Forms group')
         verbose_name_plural = _('Forms groups')
+        db_table_comment = _('Groups of possible word forms in language')
         ordering = ('-created', '-modified', 'name')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -348,6 +370,7 @@ class FormsGroup(
         return f'{self.name}'
 
     def save(self, *args, **kwargs) -> None:
+        """Capitalizes name text before instance save."""
         self.name = self.name.capitalize()
         super(FormsGroup, self).save(*args, **kwargs)
 
@@ -360,6 +383,8 @@ class WordTranslation(
     CreatedModel,
     ModifiedModel,
 ):
+    """Users words and phrases translations."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -387,6 +412,7 @@ class WordTranslation(
     class Meta:
         verbose_name = _('Translation')
         verbose_name_plural = _('Translations')
+        db_table_comment = _('Users words and phrases translations')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -407,6 +433,8 @@ class Definition(
     CreatedModel,
     ModifiedModel,
 ):
+    """Users words and phrases definitions."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -443,6 +471,7 @@ class Definition(
     class Meta:
         verbose_name = _('Definition')
         verbose_name_plural = _('Definitions')
+        db_table_comment = _('Users words and phrases definitions')
         ordering = ('-created', '-modified', '-id')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -465,6 +494,8 @@ class UsageExample(
     CreatedModel,
     ModifiedModel,
 ):
+    """Users words and phrases usage examples."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -501,6 +532,7 @@ class UsageExample(
     class Meta:
         verbose_name = _('Usage example')
         verbose_name_plural = _('Usage examples')
+        db_table_comment = _('Users words and phrases usage examples')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -522,6 +554,8 @@ class ImageAssociation(
     CreatedModel,
     ModifiedModel,
 ):
+    """Users words and phrases image-associations."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -533,26 +567,17 @@ class ImageAssociation(
         null=False,
         blank=False,
     )
-    name = models.CharField(
-        _('Image name'),
-        max_length=LengthLimits.MAX_IMAGE_NAME_LENGTH,
-        blank=True,
-        validators=(
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
-        ),
-    )
 
     get_object_by_fields = ('image',)
 
     class Meta:
-        ordering = ('-created', '-modified')
-        get_latest_by = ('created', 'modified')
         verbose_name = _('Association image')
         verbose_name_plural = _('Association images')
+        db_table_comment = _('Users words and phrases image-associations')
+        ordering = ('-created', '-modified')
+        get_latest_by = ('created', 'modified')
 
     def __str__(self) -> str:
-        if self.name:
-            return _(f'Image association `{self.image}` ({self.name}) by {self.author}')
         return _(f'Image association `{self.image}` by {self.author}')
 
 
@@ -563,6 +588,8 @@ class QuoteAssociation(
     CreatedModel,
     ModifiedModel,
 ):
+    """Users words and phrases quote-associations."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -588,10 +615,11 @@ class QuoteAssociation(
     get_object_by_fields = ('text',)
 
     class Meta:
-        ordering = ('-created', '-modified')
-        get_latest_by = ('created', 'modified')
         verbose_name = _('Association quote')
         verbose_name_plural = _('Association quotes')
+        db_table_comment = _('Users words and phrases quote-associations')
+        ordering = ('-created', '-modified')
+        get_latest_by = ('created', 'modified')
 
     def __str__(self) -> str:
         if self.quote_author:
@@ -609,6 +637,8 @@ class Collection(
     CreatedModel,
     ModifiedModel,
 ):
+    """Users words and phrases collections."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -640,6 +670,7 @@ class Collection(
     class Meta:
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
+        db_table_comment = _('Users words and phrases collections')
         ordering = ('-created', '-modified', '-id')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -653,6 +684,8 @@ class Collection(
 
 
 class WordRelatedModel(CreatedModel):
+    """Abstract model to add `word` field for related word."""
+
     word = models.ForeignKey(
         'Word',
         verbose_name=_('Word'),
@@ -665,6 +698,8 @@ class WordRelatedModel(CreatedModel):
 
 
 class WordsFormGroups(WordRelatedModel):
+    """Words and its form groups intermediary model."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -681,8 +716,9 @@ class WordsFormGroups(WordRelatedModel):
     get_object_by_fields = ('word', 'forms_group')
 
     class Meta:
-        verbose_name = _('Words forms group')
-        verbose_name_plural = _('Words forms group')
+        verbose_name = _('Word form group')
+        verbose_name_plural = _('Words form groups')
+        db_table_comment = _('Words and form groups intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -699,6 +735,8 @@ class WordsFormGroups(WordRelatedModel):
 
 
 class WordTranslations(GetObjectModelMixin, WordRelatedModel):
+    """Words and its translations intermediary model."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -716,6 +754,7 @@ class WordTranslations(GetObjectModelMixin, WordRelatedModel):
     class Meta:
         verbose_name = _('Word translation')
         verbose_name_plural = _('Word translations')
+        db_table_comment = _('Words and its translations intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -733,6 +772,8 @@ class WordTranslations(GetObjectModelMixin, WordRelatedModel):
 
 
 class WordDefinitions(GetObjectModelMixin, WordRelatedModel):
+    """Words and definitions intermediary model."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -750,6 +791,7 @@ class WordDefinitions(GetObjectModelMixin, WordRelatedModel):
     class Meta:
         verbose_name = _('Word definition')
         verbose_name_plural = _('Word definitions')
+        db_table_comment = _('Words and definitions intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -767,6 +809,8 @@ class WordDefinitions(GetObjectModelMixin, WordRelatedModel):
 
 
 class WordUsageExamples(GetObjectModelMixin, WordRelatedModel):
+    """Words and usage examples intermediary model."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -784,6 +828,7 @@ class WordUsageExamples(GetObjectModelMixin, WordRelatedModel):
     class Meta:
         verbose_name = _('Word usage example')
         verbose_name_plural = _('Word usage examples')
+        db_table_comment = _('Words and usage examples intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -800,6 +845,8 @@ class WordUsageExamples(GetObjectModelMixin, WordRelatedModel):
 
 
 class WordImageAssociations(GetObjectModelMixin, WordRelatedModel):
+    """Words and image-associations intermediary model."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -817,6 +864,7 @@ class WordImageAssociations(GetObjectModelMixin, WordRelatedModel):
     class Meta:
         verbose_name = _('Word image')
         verbose_name_plural = _('Words images')
+        db_table_comment = _('Words and image-associations intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -831,6 +879,8 @@ class WordImageAssociations(GetObjectModelMixin, WordRelatedModel):
 
 
 class WordQuoteAssociations(GetObjectModelMixin, WordRelatedModel):
+    """Words and quote-associations intermediary model."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -848,6 +898,7 @@ class WordQuoteAssociations(GetObjectModelMixin, WordRelatedModel):
     class Meta:
         verbose_name = _('Word quote')
         verbose_name_plural = _('Words quotes')
+        db_table_comment = _('Words and quote-associations intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -862,6 +913,8 @@ class WordQuoteAssociations(GetObjectModelMixin, WordRelatedModel):
 
 
 class WordsInCollections(GetObjectModelMixin, WordRelatedModel):
+    """Words and collections intermediary model."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -879,6 +932,7 @@ class WordsInCollections(GetObjectModelMixin, WordRelatedModel):
     class Meta:
         verbose_name = _('Words in collections')
         verbose_name_plural = _('Words in collections')
+        db_table_comment = _('Words and collections intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -895,6 +949,8 @@ class WordsInCollections(GetObjectModelMixin, WordRelatedModel):
 
 
 class WordSelfRelatedModel(GetObjectModelMixin, CreatedModel):
+    """Words related to other words intermediary abstract model."""
+
     to_word = models.ForeignKey(
         Word,
         related_name='%(class)s_to_words',
@@ -922,6 +978,8 @@ class WordSelfRelatedModel(GetObjectModelMixin, CreatedModel):
 
 
 class WordSelfRelatedWithNoteModel(WordSelfRelatedModel):
+    """Words related to other words intermediary abstract model with `note` field."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -952,6 +1010,8 @@ class WordSelfRelatedWithNoteModel(WordSelfRelatedModel):
 
 
 class Synonym(WordSelfRelatedWithNoteModel):
+    """Words synonyms."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -961,6 +1021,7 @@ class Synonym(WordSelfRelatedWithNoteModel):
     class Meta:
         verbose_name = _('Synonyms')
         verbose_name_plural = _('Synonyms')
+        db_table_comment = _('Words synonyms')
         ordering = ('-from_word__created', '-created')
         get_latest_by = ('created',)
         constraints = [
@@ -975,6 +1036,8 @@ class Synonym(WordSelfRelatedWithNoteModel):
 
 
 class Antonym(WordSelfRelatedWithNoteModel):
+    """Words antonyms."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -984,6 +1047,7 @@ class Antonym(WordSelfRelatedWithNoteModel):
     class Meta:
         verbose_name = _('Antonym')
         verbose_name_plural = _('Antonyms')
+        db_table_comment = _('Words antonyms')
         ordering = ('-from_word__created', '-created')
         get_latest_by = ('created',)
         constraints = [
@@ -998,6 +1062,8 @@ class Antonym(WordSelfRelatedWithNoteModel):
 
 
 class Form(WordSelfRelatedModel):
+    """Words forms."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -1007,6 +1073,7 @@ class Form(WordSelfRelatedModel):
     class Meta:
         verbose_name = _('Form')
         verbose_name_plural = _('Forms')
+        db_table_comment = _('Words forms')
         ordering = ('-from_word__created', '-created')
         get_latest_by = ('created',)
         constraints = [
@@ -1021,6 +1088,8 @@ class Form(WordSelfRelatedModel):
 
 
 class Similar(WordSelfRelatedModel):
+    """Similar words."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -1030,6 +1099,7 @@ class Similar(WordSelfRelatedModel):
     class Meta:
         verbose_name = _('Similar')
         verbose_name_plural = _('Similars')
+        db_table_comment = _('Similar words')
         ordering = ('-from_word__created', '-created')
         get_latest_by = ('created',)
         constraints = [
@@ -1050,6 +1120,8 @@ class Note(
     CreatedModel,
     ModifiedModel,
 ):
+    """Word notes."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -1073,6 +1145,7 @@ class Note(
     class Meta:
         verbose_name = _('Note')
         verbose_name_plural = _('Notes')
+        db_table_comment = _('Word notes')
         ordering = ('-created', '-id')
         get_latest_by = ('created',)
 
@@ -1081,6 +1154,8 @@ class Note(
 
 
 class FavoriteWord(GetObjectModelMixin, UserRelatedModel):
+    """Users favorite words."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -1098,6 +1173,7 @@ class FavoriteWord(GetObjectModelMixin, UserRelatedModel):
     class Meta:
         verbose_name = _('Favorite word')
         verbose_name_plural = _('Favorite words')
+        db_table_comment = _('Users favorite words')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -1114,6 +1190,8 @@ class FavoriteWord(GetObjectModelMixin, UserRelatedModel):
 
 
 class FavoriteCollection(GetObjectModelMixin, UserRelatedModel):
+    """Users favorite collections."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -1131,6 +1209,7 @@ class FavoriteCollection(GetObjectModelMixin, UserRelatedModel):
     class Meta:
         verbose_name = _('Favorite collection')
         verbose_name_plural = _('Favorite collections')
+        db_table_comment = _('Users favorite collections')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -1155,15 +1234,13 @@ class FavoriteCollection(GetObjectModelMixin, UserRelatedModel):
 @receiver(pre_save, sender=UsageExample)
 @receiver(pre_save, sender=Note)
 def fill_slug(sender, instance, *args, **kwargs) -> None:
+    """Fill slug field before save instance."""
     return slug_filler(sender, instance, *args, **kwargs)
 
 
 @receiver(post_delete, sender=Word)
 def clear_extra_objects(sender, *args, **kwargs) -> None:
-    """
-    Delete word related objects if related to no words.
-    (Удалить связанные объекты, если они больше не используются.)
-    """
+    """Delete word related objects if they no longer relate to other words."""
     WordTranslation.objects.filter(words__isnull=True).delete()
     UsageExample.objects.filter(words__isnull=True).delete()
     Definition.objects.filter(words__isnull=True).delete()

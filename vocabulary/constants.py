@@ -1,9 +1,11 @@
-"""Константы приложения vocabulary."""
+"""Vocabulary constants."""
 
 from core.constants import AmountLimits
 
 
 class VocabularyAmountLimits(AmountLimits):
+    """Amount limits constants."""
+
     MAX_TYPES_AMOUNT = 3
     MAX_TAGS_AMOUNT = 10
     MAX_TRANSLATIONS_AMOUNT = 24
@@ -20,15 +22,17 @@ class VocabularyAmountLimits(AmountLimits):
 
 
 class LengthLimits:
-    MAX_WORD_LENGTH = 512
+    """Length limits constants."""
+
+    MAX_WORD_LENGTH = 256
     MIN_WORD_LENGTH = 1
-    MAX_TRANSLATION_LENGTH = 512
+    MAX_TRANSLATION_LENGTH = 256
     MIN_TRANSLATION_LENGTH = 1
-    MAX_DEFINITION_LENGTH = 1024
+    MAX_DEFINITION_LENGTH = 512
     MIN_DEFINITION_LENGTH = 2
-    MAX_EXAMPLE_LENGTH = 1024
+    MAX_EXAMPLE_LENGTH = 512
     MIN_EXAMPLE_LENGTH = 2
-    MAX_NOTE_LENGTH = 1024
+    MAX_NOTE_LENGTH = 512
     MIN_NOTE_LENGTH = 1
     MAX_COLLECTION_NAME_LENGTH = 32
     MIN_COLLECTION_NAME_LENGTH = 1

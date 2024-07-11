@@ -1,16 +1,15 @@
-"""Обработчики приложения vocabulary."""
+"""Vocabulary views."""
 
 import random
+import logging
 from itertools import chain
 
 from django.contrib.auth import get_user_model
 from django.db import transaction, IntegrityError
-from django.db.models import Count, Q, F
+from django.db.models import Count, Q, F, Model
 from django.db.models.query import QuerySet
-from django.db.models.base import ModelBase
 from django.utils.translation import gettext as _
 from django.shortcuts import get_object_or_404
-from django.core.exceptions import ObjectDoesNotExist
 from django.http import HttpRequest, HttpResponse
 
 from django_filters.rest_framework import DjangoFilterBackend
@@ -23,17 +22,21 @@ from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser
-from rest_framework.exceptions import NotFound
 from rest_framework.serializers import Serializer
+from rest_framework.exceptions import NotFound
 
 from core.pagination import LimitPagination
-from core.exceptions import AmountLimitExceeded, ObjectAlreadyExist
+from core.exceptions import (
+    AmountLimitExceeded,
+    ObjectAlreadyExist,
+)
 from core.mixins import (
     ActionsWithRelatedObjectsMixin,
     ObjectAlreadyExistHandler,
     DestroyReturnListMixin,
     FavoriteMixin,
 )
+from core.utils import get_admin_user
 from languages.serializers import LanguageSerializer
 from users.models import (
     UserDefaultWordsView,
@@ -56,13 +59,8 @@ from .models import (
     UsageExample,
     Word,
     Tag,
-    Synonym,
-    Antonym,
-    Form,
-    Similar,
     ImageAssociation,
     QuoteAssociation,
-    Note,
     FavoriteCollection,
     FavoriteWord,
     Language,
@@ -75,30 +73,27 @@ from .serializers import (
     WordShortCreateSerializer,
     WordSerializer,
     WordTranslationInLineSerializer,
-    WordTranslationForWordSerializer,
     WordTranslationSerializer,
     WordTranslationCreateSerializer,
     WordTranslationListSerializer,
     UsageExampleInLineSerializer,
-    UsageExampleForWordSerializer,
     UsageExampleSerializer,
     UsageExampleCreateSerializer,
     UsageExampleListSerializer,
     DefinitionInLineSerializer,
-    DefinitionForWordSerializer,
     DefinitionSerializer,
     DefinitionCreateSerializer,
     DefinitionListSerializer,
     SynonymForWordListSerializer,
-    SynonymForWordSerializer,
+    SynonymInLineSerializer,
     SynonymSerializer,
     AntonymForWordListSerializer,
-    AntonymForWordSerializer,
+    AntonymInLineSerializer,
     AntonymSerializer,
     FormForWordListSerializer,
-    FormForWordSerializer,
+    FormInLineSerializer,
     SimilarForWordListSerializer,
-    SimilarForWordSerailizer,
+    SimilarInLineSerializer,
     SimilarSerializer,
     MultipleWordsSerializer,
     TagListSerializer,
@@ -110,20 +105,21 @@ from .serializers import (
     NoteForWordSerializer,
     ImageInLineSerializer,
     ImageListSerializer,
-    ImageForWordSerializer,
     ImageShortSerailizer,
     QuoteInLineSerializer,
-    QuoteForWordSerializer,
     AssociationsCreateSerializer,
     LearningLanguageWithLastWordsSerailizer,
     LearningLanguageShortSerailizer,
     MainPageSerailizer,
 )
 
+logger = logging.getLogger(__name__)
+
 User = get_user_model()
 
 
 def get_words_view(request: HttpRequest) -> Serializer:
+    """Returns serializer class for words list."""
     words_view = {
         'standart': WordStandartCardSerializer,
         'short': WordShortCardSerializer,
@@ -131,49 +127,115 @@ def get_words_view(request: HttpRequest) -> Serializer:
     }
     default_words_view = 'standart'
 
+    # Return serializer class based on `words_view_param` query parameter if passed
+    # or try to get user setting for default word cards view from database
+    # or return serializer class defined in `default_words_view`
     words_view_param = request.query_params.get('view', None)
+    logger.debug(f'Word cards view query parameter passed: {words_view_param}')
+
     if not words_view_param:
         try:
             words_view_param = UserDefaultWordsView.objects.get(
                 user=request.user
             ).words_view
+            logger.debug(
+                f'Word cards view parameter obtained from users default settings: '
+                f'{words_view_param}'
+            )
         except Exception:
             words_view_param = default_words_view
+            logger.debug(
+                f'Word cards view parameter is set to default: {words_view_param}'
+            )
+
     return words_view.get(words_view_param)
 
 
+def annotate_words_with_counters(
+    words: QuerySet[Word] | None = None,
+    instance: Model | None = None,
+    words_related_name: str = '',
+    ordering: list[str] = [],
+) -> QuerySet[Word]:
+    """
+    Annotates words with some related objects amount to use in filters, sorting.
+
+    Args:
+        words (QuerySet): words queryset to be annotated.
+        instance (Model subclass): instance to obtain words from if words not passed.
+        words_related_name (str): related name to obtain words by if words not passed.
+        ordering (list[str]): list of fields to be sorted words by.
+    """
+    if words is None:
+        return (
+            instance.__getattribute__(words_related_name)
+            .annotate(
+                translations_count=Count('translations', distinct=True),
+                examples_count=Count('examples', distinct=True),
+                collections_count=Count('collections', distinct=True),
+            )
+            .order_by(*ordering)
+        )
+
+    return words.annotate(
+        translations_count=Count('translations', distinct=True),
+        examples_count=Count('examples', distinct=True),
+        collections_count=Count('collections', distinct=True),
+    ).order_by(*ordering)
+
+
 class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
+    """Custom mixin to add related words data to response."""
+
     def retrieve_with_words(
         self,
         request: HttpRequest,
-        default_order: str = '-created',
+        default_order: list[str] = ['-created'],
         words_related_name: str = 'words',
         words: QuerySet[Word] | None = None,
         *args,
         **kwargs,
     ) -> HttpResponse:
+        """
+        Returns instance data with related words filtered, paginated, ordered data.
+
+        Args:
+            default_order (list[str]): list of fields to be sorted words by.
+            words_related_name (str): related name to obtain words by if words not
+                                      passed.
+            words (QuerySet): related words queryset.
+        """
         queryset = self.get_queryset()
         instance = get_object_or_404(
             queryset, **{self.lookup_field: self.kwargs[self.lookup_field]}
         )
-        response_data = self.get_serializer(instance).data
+        logger.debug(f'Obtained instance: {instance}')
+
+        instance_data = self.get_serializer(instance).data
+
+        # Obtaining words from instance if words not passed,
+        # annotate words with counters
         _words = (
-            words
-            if words is not None
-            else instance.__getattribute__(words_related_name)
+            annotate_words_with_counters(
+                instance=instance,
+                words_related_name=words_related_name,
+                ordering=default_order,
+            )
+            if words is None
+            else annotate_words_with_counters(words, ordering=default_order)
         )
-        _words = _words.annotate(
-            translations_count=Count('translations', distinct=True),
-            examples_count=Count('examples', distinct=True),
-            collections_count=Count('collections', distinct=True),
-        ).order_by(default_order)
-        words_serializer = get_words_view(request)
+        logger.debug(f'Obtained words: {_words}')
+
+        words_serializer_class = get_words_view(request)
+        logger.debug(f'Serializer used for words: {words_serializer_class}')
+
         words_data = self.get_filtered_paginated_objs(
-            request, _words, WordViewSet, words_serializer
+            request, _words, WordViewSet, words_serializer_class
         )
+
         return Response(
             {
-                **response_data,
+                **instance_data,
                 'words': words_data,
             }
         )
@@ -181,25 +243,41 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
     def create_return_with_words(
         self,
         request: HttpRequest,
-        default_order: str = '-created',
+        default_order: list[str] = ['-created'],
         words_related_name: str = 'words',
         *args,
         **kwargs,
     ) -> HttpResponse:
+        """
+        Returns created instance data with related words filtered, paginated,
+        ordered data.
+
+        Args:
+            default_order (list[str]): list of fields to be sorted words by.
+            words_related_name (str): related name to obtain words by.
+
+        """
         serializer = self.get_serializer(data=request.data)
+        logger.debug(f'Serializer used for instance: {type(serializer)}')
+
+        logger.debug('Validating data')
         serializer.is_valid(raise_exception=True)
+
+        logger.debug('Performing instance save')
         instance = serializer.save()
-        _words = (
-            instance.__getattribute__(words_related_name)
-            .annotate(
-                translations_count=Count('translations', distinct=True),
-                examples_count=Count('examples', distinct=True),
-                collections_count=Count('collections', distinct=True),
-            )
-            .order_by(default_order)
+
+        _words = annotate_words_with_counters(
+            instance=instance,
+            words_related_name=words_related_name,
+            ordering=default_order,
         )
-        words_serializer = get_words_view(request)
-        words_data = self.paginate_related_objs(request, _words, words_serializer)
+        logger.debug(f'Obtained words: {_words}')
+
+        words_serializer_class = get_words_view(request)
+        logger.debug(f'Serializer used for words: {words_serializer_class}')
+
+        words_data = self.paginate_related_objs(request, _words, words_serializer_class)
+
         return Response(
             {
                 **serializer.data,
@@ -211,26 +289,43 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
     def partial_update_return_with_words(
         self,
         request: HttpRequest,
-        default_order: str = '-created',
+        default_order: list[str] = ['-created'],
         words_related_name: str = 'words',
         *args,
         **kwargs,
     ) -> HttpResponse:
+        """
+        Returns updated instance data with related words filtered, paginated,
+        ordered data.
+
+        Args:
+            default_order (list[str]): list of fields to be sorted words by.
+            words_related_name (str): related name to obtain words by.
+        """
         instance = self.get_object()
+        logger.debug(f'Obtained instance: {instance}')
+
         serializer = self.get_serializer(instance, data=request.data, partial=True)
+        logger.debug(f'Serializer used for instance: {type(serializer)}')
+
+        logger.debug('Validating data')
         serializer.is_valid(raise_exception=True)
+
+        logger.debug('Performing update')
         self.perform_update(serializer)
-        _words = (
-            instance.__getattribute__(words_related_name)
-            .annotate(
-                translations_count=Count('translations', distinct=True),
-                examples_count=Count('examples', distinct=True),
-                collections_count=Count('collections', distinct=True),
-            )
-            .order_by(default_order)
+
+        _words = annotate_words_with_counters(
+            instance=instance,
+            words_related_name=words_related_name,
+            ordering=default_order,
         )
-        words_serializer = get_words_view(request)
-        words_data = self.paginate_related_objs(request, _words, words_serializer)
+        logger.debug(f'Obtained words: {_words}')
+
+        words_serializer_class = get_words_view(request)
+        logger.debug(f'Serializer used for words: {words_serializer_class}')
+
+        words_data = self.paginate_related_objs(request, _words, words_serializer_class)
+
         return Response(
             {
                 **serializer.data,
@@ -238,37 +333,48 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
             }
         )
 
-    def add_words_return_with_words(
+    def add_words_return_retrieve_with_words(
         self,
         request: HttpRequest,
-        default_order: str = '-created',
+        default_order: list[str] = ['-created'],
         words_related_name: str = 'words',
         *args,
         **kwargs,
     ) -> HttpResponse:
+        """
+        Adds passed words to instance, returns updated instance data with
+        related words filtered, paginated, ordered data.
+
+        Args:
+            default_order (list[str]): list of fields to be sorted words by.
+            words_related_name (str): related name to obtain words by.
+        """
         instance = self.get_object()
-        response_data = self.create_related_objs(
+        logger.debug(f'Obtained instance: {instance}')
+
+        instance_data = self.create_related_objs(
             request,
             objs_related_name=words_related_name,
-            serializer=WordShortCreateSerializer,
-            related_model=Word,
+            serializer_class=WordShortCreateSerializer,
             set_objs=True,
             instance=instance,
         ).data
-        _words = (
-            instance.__getattribute__(words_related_name)
-            .annotate(
-                translations_count=Count('translations', distinct=True),
-                examples_count=Count('examples', distinct=True),
-                collections_count=Count('collections', distinct=True),
-            )
-            .order_by(default_order)
+
+        _words = annotate_words_with_counters(
+            instance=instance,
+            words_related_name=words_related_name,
+            ordering=default_order,
         )
-        words_serializer = get_words_view(request)
-        words_data = self.paginate_related_objs(request, _words, words_serializer)
+        logger.debug(f'Obtained words: {_words}')
+
+        words_serializer_class = get_words_view(request)
+        logger.debug(f'Serializer used for words: {words_serializer_class}')
+
+        words_data = self.paginate_related_objs(request, _words, words_serializer_class)
+
         return Response(
             {
-                **response_data,
+                **instance_data,
                 'words': words_data,
             },
             status=status.HTTP_201_CREATED,
@@ -290,7 +396,7 @@ class WordViewSet(
     FavoriteMixin,
     viewsets.ModelViewSet,
 ):
-    """Действия со словами из своего словаря."""
+    """Words CRUD and actions with word related objects."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
@@ -322,6 +428,7 @@ class WordViewSet(
     )
 
     def get_queryset(self) -> QuerySet[Word]:
+        """Returns all words from user vocabulary or favorites only."""
         user = self.request.user
         if user.is_authenticated:
             match self.action:
@@ -330,10 +437,10 @@ class WordViewSet(
                         '-favorite_for__created'
                     )
                 case _:
-                    return user.words.annotate(
-                        translations_count=Count('translations', distinct=True),
-                        examples_count=Count('examples', distinct=True),
-                        collections_count=Count('collections', distinct=True),
+                    # Annotate words with some related objects amount to use in
+                    # filters, sorting
+                    return annotate_words_with_counters(
+                        instance=user, words_related_name='words'
                     )
         return Word.objects.none()
 
@@ -341,10 +448,8 @@ class WordViewSet(
         match self.action:
             case 'list' | 'destroy' | 'multiple_create' | 'favorites':
                 return get_words_view(self.request)
-            case 'notes_detail' | 'notes_create':
+            case 'notes_create':
                 return NoteForWordSerializer
-            case 'delete_note':
-                return WordSerializer
             case _:
                 return super().get_serializer_class()
 
@@ -355,9 +460,10 @@ class WordViewSet(
         serializer_class=WordStandartCardSerializer,
     )
     def random(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить случайное слово из словаря."""
+        """Return one random word from user's vocabulary."""
         queryset = self.filter_queryset(self.get_queryset())
-        word = random.choice(queryset) if queryset else None
+        word: Word | None = random.choice(queryset) if queryset else None
+        logger.debug(f'Random word from {request.user} user vocabulary: {word}')
         return Response(
             self.get_serializer(word, many=False, context={'request': request}).data,
             status=status.HTTP_200_OK,
@@ -371,10 +477,14 @@ class WordViewSet(
         serializer_class=WordSerializer,
     )
     def problematic(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Изменить значение метки is_problematic слова."""
-        word = self.get_object()
+        """Switch value for `is_problematic` word mark."""
+        word: Word = self.get_object()
+        logger.debug(f'Old value: {word.is_problematic}')
+
         word.is_problematic = not word.is_problematic
         word.save()
+        logger.debug(f'New value: {word.is_problematic}')
+
         return Response(
             self.get_serializer(word).data,
             status=status.HTTP_201_CREATED,
@@ -388,15 +498,21 @@ class WordViewSet(
         url_path='multiple-create',
     )
     def multiple_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Быстрое добавление нескольких слов сразу в словарь пользователя."""
+        """Creates multiple words at time, adds given words to given collections."""
         serializer = MultipleWordsSerializer(
             data=request.data, many=False, context={'request': request}
         )
+        logger.debug(f'Serializer used: {type(serializer)}')
+
+        logger.debug(f'Validating data: {request.data}')
         serializer.is_valid(raise_exception=True)
+
         try:
+            logger.debug('Performing create')
             self.perform_create(serializer)
             words_created_count = len(serializer.validated_data['words'])
             collections_count = len(serializer.validated_data['collections'])
+
             headers = self.get_success_headers(serializer.data)
             response_data = self.list(request).data
             return Response(
@@ -408,8 +524,14 @@ class WordViewSet(
                 status=status.HTTP_201_CREATED,
                 headers=headers,
             )
+
         except ObjectAlreadyExist as exception:
+            logger.error(f'ObjectAlreadyExist exception occured: {exception}')
             return exception.get_detail_response(request)
+
+        except NotFound as exception:
+            logger.error(f'ObjectDoesNotExist exception occured: {exception}')
+            raise exception
 
     @extend_schema(operation_id='word_tags_list', methods=('get',))
     @action(
@@ -418,7 +540,7 @@ class WordViewSet(
         serializer_class=TagListSerializer,
     )
     def tags(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все теги слова."""
+        """Returns list of all tags for given word."""
         return self.list_related_objs(request, objs_related_name='tags')
 
     @extend_schema(operation_id='word_collections_list', methods=('get',))
@@ -428,19 +550,18 @@ class WordViewSet(
         serializer_class=CollectionShortSerializer,
     )
     def collections(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все коллекции с этим словом."""
+        """Returns list of all collections with given word."""
         return self.list_related_objs(request, objs_related_name='collections')
 
     @extend_schema(operation_id='word_collections_add', methods=('post',))
     @collections.mapping.post
     def collections_add(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить слово в коллекции."""
+        """Adds given word to passed collections."""
         return self.create_related_objs(
             request,
             objs_related_name='collections',
-            related_model=Collection,
             set_objs=True,
-            response_serializer=WordSerializer,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_translations_list', methods=('get',))
@@ -450,25 +571,36 @@ class WordViewSet(
         serializer_class=WordTranslationInLineSerializer,
     )
     def translations(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все переводы слова."""
+        """Returns list of all translations for given word."""
         queryset = self.get_queryset()
         instance = get_object_or_404(
             queryset, **{self.lookup_field: self.kwargs[self.lookup_field]}
         )
+        logger.debug(f'Word instance: {instance}')
+
         filterby_language_name = request.query_params.get('language', '')
+        logger.debug(
+            f'Language name query param to filter translations: '
+            f'{filterby_language_name}'
+        )
+
         _objs = (
             instance.translations.filter(language__name=filterby_language_name)
             if filterby_language_name
             else instance.translations.all()
         )
+        logger.debug(f'Obtained objects: {_objs}')
+
         translations_languages = instance.translations.values_list(
             'language__name', flat=True
         )
+        logger.debug(f'Translations languages list: {translations_languages}')
+
         return self.list_related_objs(
             request,
             objs_related_name='translations',
             objs=_objs,
-            extra_data={'languages': translations_languages},
+            response_extra_data={'languages': translations_languages},
         )
 
     @extend_schema(operation_id='word_translations_create', methods=('post',))
@@ -476,14 +608,13 @@ class WordViewSet(
     def translations_create(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Добавить новые переводы к слову."""
+        """Adds new translations for given word."""
         return self.create_related_objs(
             request,
             objs_related_name='translations',
             amount_limit=VocabularyAmountLimits.MAX_TRANSLATIONS_AMOUNT,
-            related_model=WordTranslation,
             set_objs=True,
-            response_serializer=WordSerializer,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_translations_retrieve', methods=('get',))
@@ -493,19 +624,20 @@ class WordViewSet(
         methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'translations/(?P<translation_slug>[\w-]+)',
-        serializer_class=WordTranslationForWordSerializer,
+        serializer_class=WordTranslationInLineSerializer,
     )
     def translations_detail(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Получить, редактировать или удалить перевод слова."""
+        """Retrieve, update, disassociate translation for given word."""
         return self.detail_action(
             request,
-            objs_related_name='wordtranslations',
-            lookup_field='translation__slug',
-            lookup_attr_name='translation_slug',
-            list_objs_related_name='translations',
-            list_serializer=WordTranslationInLineSerializer,
+            objs_related_name='translations',
+            lookup_field='slug',
+            lookup_query_param='translation_slug',
+            delete_through_manager=True,
+            response_objs_name='translations',
+            response_serializer_class=WordTranslationInLineSerializer,
             *args,
             **kwargs,
         )
@@ -518,20 +650,19 @@ class WordViewSet(
         permission_classes=(IsAuthenticated,),
     )
     def definitions(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все определения слова."""
+        """Returns list of all definitions for given word."""
         return self.list_related_objs(request, objs_related_name='definitions')
 
     @extend_schema(operation_id='word_definitions_create', methods=('post',))
     @definitions.mapping.post
     def definitions_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить новые определения к слову."""
+        """Adds new definitions for given word."""
         return self.create_related_objs(
             request,
             objs_related_name='definitions',
             amount_limit=VocabularyAmountLimits.MAX_DEFINITIONS_AMOUNT,
-            related_model=Definition,
             set_objs=True,
-            response_serializer=WordSerializer,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_definition_retrieve', methods=('get',))
@@ -541,17 +672,18 @@ class WordViewSet(
         detail=True,
         methods=('get', 'patch', 'delete'),
         url_path=r'definitions/(?P<definition_slug>[\w-]+)',
-        serializer_class=DefinitionForWordSerializer,
+        serializer_class=DefinitionInLineSerializer,
     )
     def definitions_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить, редактировать или удалить определение слова."""
+        """Retrieve, update, disassociate definition for given word."""
         return self.detail_action(
             request,
-            objs_related_name='worddefinitions',
-            lookup_field='definition__slug',
-            lookup_attr_name='definition_slug',
-            list_objs_related_name='definitions',
-            list_serializer=DefinitionInLineSerializer,
+            objs_related_name='definitions',
+            lookup_field='slug',
+            lookup_query_param='definition_slug',
+            delete_through_manager=True,
+            response_objs_name='definitions',
+            response_serializer_class=DefinitionInLineSerializer,
             *args,
             **kwargs,
         )
@@ -564,20 +696,19 @@ class WordViewSet(
         permission_classes=(IsAuthenticated,),
     )
     def examples(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все примеры слова."""
+        """Returns list of all usage examples for given word."""
         return self.list_related_objs(request, objs_related_name='examples')
 
     @extend_schema(operation_id='word_examples_create', methods=('post',))
     @examples.mapping.post
     def examples_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить новые примеры к слову."""
+        """Adds new usage examples for given word."""
         return self.create_related_objs(
             request,
             objs_related_name='examples',
             amount_limit=VocabularyAmountLimits.MAX_EXAMPLES_AMOUNT,
-            related_model=UsageExample,
             set_objs=True,
-            response_serializer=WordSerializer,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_example_retrieve', methods=('get',))
@@ -587,17 +718,18 @@ class WordViewSet(
         methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'examples/(?P<example_slug>[\w-]+)',
-        serializer_class=UsageExampleForWordSerializer,
+        serializer_class=UsageExampleInLineSerializer,
     )
     def examples_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить, редактировать или удалить пример использования слова."""
+        """Retrieve, update, disassociate usage example for given word."""
         return self.detail_action(
             request,
-            objs_related_name='wordusageexamples',
-            lookup_field='example__slug',
-            lookup_attr_name='example_slug',
-            list_objs_related_name='examples',
-            list_serializer=UsageExampleInLineSerializer,
+            objs_related_name='examples',
+            lookup_field='slug',
+            lookup_query_param='example_slug',
+            delete_through_manager=True,
+            response_objs_name='examples',
+            response_serializer_class=UsageExampleInLineSerializer,
             *args,
             **kwargs,
         )
@@ -610,52 +742,41 @@ class WordViewSet(
         permission_classes=(IsAuthenticated,),
     )
     def notes(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все заметки слова."""
+        """Returns list of all notes for given word."""
         return self.list_related_objs(request, objs_related_name='notes')
 
     @extend_schema(operation_id='word_notes_create', methods=('post',))
     @notes.mapping.post
     def notes_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить новые заметки к слову."""
+        """Creates new notes for given word."""
         return self.create_related_objs(
             request,
             objs_related_name='notes',
             amount_limit=VocabularyAmountLimits.MAX_NOTES_AMOUNT,
-            related_model=Note,
             set_objs=False,
-            response_serializer=WordSerializer,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_note_retrieve', methods=('get',))
     @extend_schema(operation_id='word_note_partial_update', methods=('patch',))
+    @extend_schema(operation_id='word_note_destroy', methods=('delete',))
     @action(
-        methods=('get', 'patch'),
+        methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'notes/(?P<note_slug>[\w-]+)',
+        serializer_class=NoteForWordSerializer,
     )
     def notes_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить, редактировать заметку слова."""
+        """Retrieve, update, destroy note for given word."""
         return self.detail_action(
             request,
             objs_related_name='notes',
             lookup_field='slug',
-            lookup_attr_name='note_slug',
+            lookup_query_param='note_slug',
+            delete_return_list=False,
             *args,
             **kwargs,
         )
-
-    @extend_schema(operation_id='word_note_destroy', methods=('delete',))
-    @notes_detail.mapping.delete
-    def delete_note(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Удалить заметку слова."""
-        instance = self.get_object()
-        try:
-            _obj = instance.notes.get(slug=kwargs.get('note_slug'))
-        except ObjectDoesNotExist:
-            raise NotFound
-        _obj.delete()
-        instance_serializer = self.get_serializer(instance)
-        return Response(instance_serializer.data, status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(operation_id='word_synonyms_list', methods=('get',))
     @action(
@@ -664,7 +785,7 @@ class WordViewSet(
         serializer_class=SynonymForWordListSerializer,
     )
     def synonyms(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все синонимы слова."""
+        """Returns list of all synonyms for given word."""
         return self.list_related_objs(
             request, objs_related_name='synonym_to_words', response_objs_name='synonyms'
         )
@@ -672,15 +793,14 @@ class WordViewSet(
     @extend_schema(operation_id='word_synonyms_create', methods=('post',))
     @synonyms.mapping.post
     def synonyms_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить новые синонимы к слову."""
+        """Adds new synonyms for given word."""
         return self.create_related_objs(
             request,
             objs_related_name='synonym_to_words',
             response_objs_name='synonyms',
             amount_limit=VocabularyAmountLimits.MAX_SYNONYMS_AMOUNT,
-            related_model=Synonym,
             set_objs=False,
-            response_serializer=WordSerializer,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_synonym_retrieve', methods=('get',))
@@ -690,17 +810,17 @@ class WordViewSet(
         methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'synonyms/(?P<synonym_slug>[\w-]+)',
-        serializer_class=SynonymForWordSerializer,
+        serializer_class=SynonymInLineSerializer,
     )
     def synonyms_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить, редактировать или удалить синоним слова."""
+        """Retrieve, update, disassociate synonym for given word."""
         return self.detail_action(
             request,
             objs_related_name='synonym_to_words',
             lookup_field='from_word__slug',
-            lookup_attr_name='synonym_slug',
+            lookup_query_param='synonym_slug',
             response_objs_name='synonyms',
-            response_serializer=SynonymForWordListSerializer,
+            response_serializer_class=SynonymForWordListSerializer,
             *args,
             **kwargs,
         )
@@ -712,7 +832,7 @@ class WordViewSet(
         serializer_class=AntonymForWordListSerializer,
     )
     def antonyms(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все антонимы слова."""
+        """Returns list of all antonyms for given word."""
         return self.list_related_objs(
             request, objs_related_name='antonym_to_words', response_objs_name='antonyms'
         )
@@ -720,15 +840,14 @@ class WordViewSet(
     @extend_schema(operation_id='word_antonyms_create', methods=('post',))
     @antonyms.mapping.post
     def antonyms_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить новые антонимы к слову."""
+        """Adds new antonyms for given word."""
         return self.create_related_objs(
             request,
             objs_related_name='antonym_to_words',
             response_objs_name='antonyms',
             amount_limit=VocabularyAmountLimits.MAX_ANTONYMS_AMOUNT,
-            related_model=Antonym,
             set_objs=False,
-            response_serializer=WordSerializer,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_antonym_retrieve', methods=('get',))
@@ -738,17 +857,17 @@ class WordViewSet(
         methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'antonyms/(?P<antonym_slug>[\w-]+)',
-        serializer_class=AntonymForWordSerializer,
+        serializer_class=AntonymInLineSerializer,
     )
     def antonyms_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить, редактировать или удалить антоним слова."""
+        """Retrieve, update, disassociate antonym for given word."""
         return self.detail_action(
             request,
             objs_related_name='antonym_to_words',
             lookup_field='from_word__slug',
-            lookup_attr_name='antonym_slug',
+            lookup_query_param='antonym_slug',
             response_objs_name='antonyms',
-            response_serializer=AntonymForWordListSerializer,
+            response_serializer_class=AntonymForWordListSerializer,
             *args,
             **kwargs,
         )
@@ -760,7 +879,7 @@ class WordViewSet(
         serializer_class=FormForWordListSerializer,
     )
     def forms(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все формы слова."""
+        """Returns list of all forms for given word."""
         return self.list_related_objs(
             request, objs_related_name='form_to_words', response_objs_name='forms'
         )
@@ -768,15 +887,14 @@ class WordViewSet(
     @extend_schema(operation_id='word_forms_create', methods=('post',))
     @forms.mapping.post
     def forms_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить новые формы к слову."""
+        """Adds new forms for given word."""
         return self.create_related_objs(
             request,
             objs_related_name='form_to_words',
             response_objs_name='forms',
             amount_limit=VocabularyAmountLimits.MAX_FORMS_AMOUNT,
-            related_model=Form,
             set_objs=False,
-            response_serializer=WordSerializer,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_form_retrieve', methods=('get',))
@@ -786,17 +904,17 @@ class WordViewSet(
         methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'forms/(?P<form_slug>[\w-]+)',
-        serializer_class=FormForWordSerializer,
+        serializer_class=FormInLineSerializer,
     )
     def form_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить или удалить форму слова."""
+        """Retrieve, update, disassociate form for given word."""
         return self.detail_action(
             request,
             objs_related_name='form_to_words',
             lookup_field='from_word__slug',
-            lookup_attr_name='form_slug',
+            lookup_query_param='form_slug',
             response_objs_name='forms',
-            response_serializer=FormForWordListSerializer,
+            response_serializer_class=FormForWordListSerializer,
             *args,
             **kwargs,
         )
@@ -808,7 +926,7 @@ class WordViewSet(
         serializer_class=SimilarForWordListSerializer,
     )
     def similars(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все похожие слова."""
+        """Returns list of all similar words for given word."""
         return self.list_related_objs(
             request, objs_related_name='similar_to_words', response_objs_name='similars'
         )
@@ -816,15 +934,14 @@ class WordViewSet(
     @extend_schema(operation_id='word_similars_create', methods=('post',))
     @similars.mapping.post
     def similars_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить новые похожие слова к слову."""
+        """Adds new similar words for given word."""
         return self.create_related_objs(
             request,
             objs_related_name='similar_to_words',
             response_objs_name='similars',
             amount_limit=VocabularyAmountLimits.MAX_SIMILARS_AMOUNT,
-            related_model=Similar,
             set_objs=False,
-            response_serializer=WordSerializer,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_similar_retrieve', methods=('get',))
@@ -834,17 +951,17 @@ class WordViewSet(
         methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'similars/(?P<similar_slug>[\w-]+)',
-        serializer_class=SimilarForWordSerailizer,
+        serializer_class=SimilarInLineSerializer,
     )
     def similar_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить или удалить похожее слово."""
+        """Retrieve, update, disassociate similar word for given word."""
         return self.detail_action(
             request,
             objs_related_name='similar_to_words',
             lookup_field='from_word__slug',
-            lookup_attr_name='similar_slug',
+            lookup_query_param='similar_slug',
             response_objs_name='similars',
-            response_serializer=SimilarForWordListSerializer,
+            response_serializer_class=SimilarForWordListSerializer,
             *args,
             **kwargs,
         )
@@ -857,23 +974,31 @@ class WordViewSet(
         permission_classes=(IsAuthenticated,),
     )
     def associations(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все ассоциации слова."""
+        """Returns list of all associations of any type for given word."""
         instance = self.get_object()
+        logger.debug(f'Word instance: {instance}')
+
         images = ImageInLineSerializer(
             instance.images_associations.all(),
             many=True,
             context={'request': request},
         )
+        logger.debug(f'Word image-associations: {images.data}')
+
         quotes = QuoteInLineSerializer(
             instance.quotes_associations.all(),
             many=True,
             context={'request': request},
         )
+        logger.debug(f'Word quote-associations: {images.data}')
+
         result_list = sorted(
             chain(quotes.data, images.data),
             key=lambda d: d.get('created'),
             reverse=True,
         )
+        logger.debug(f'Result list: {images.data}')
+
         return Response(
             {
                 'count': len(result_list),
@@ -887,41 +1012,61 @@ class WordViewSet(
     def associations_create(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Добавить новые ассоциации к слову."""
+        """Adds passed associations to given word."""
         instance = self.get_object()
+        logger.debug(f'Word instance: {instance}')
+
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            _data = serializer.save()
-            _quotes, _images = _data.get('quotes', []), _data.get('images', [])
-            if (
-                len(_quotes) + instance.quotes_associations.count()
-                <= VocabularyAmountLimits.MAX_QUOTES_AMOUNT
-            ):
-                instance.quotes_associations.add(*_quotes)
-            else:
-                raise AmountLimitExceeded(
-                    detail=VocabularyAmountLimits.get_error_message(
-                        VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
-                        attr_name='quotes_associations',
-                    )
-                )
-            if (
-                len(_images) + instance.images_associations.count()
-                <= VocabularyAmountLimits.MAX_IMAGES_AMOUNT
-            ):
-                instance.images_associations.add(*_images)
-            else:
-                raise AmountLimitExceeded(
-                    detail=VocabularyAmountLimits.get_error_message(
-                        VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
-                        attr_name='images_associations',
-                    )
-                )
-            return Response(
-                WordSerializer(instance, context={'request': request}).data,
-                status=status.HTTP_201_CREATED,
+        logger.debug(f'Serializer used: {type(serializer)}')
+
+        logger.debug(f'Validating data: {request.data}')
+        serializer.is_valid(raise_exception=True)
+
+        logger.debug('Performing save')
+        _data = serializer.save()
+
+        _quotes, _images = _data.get('quotes', []), _data.get('images', [])
+
+        logger.debug('Checking amount limits')
+        try:
+            VocabularyAmountLimits.check_amount_limit(
+                instance.quotes_associations.count(),
+                len(_quotes),
+                VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
+                attr_name='quotes_associations',
             )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            VocabularyAmountLimits.check_amount_limit(
+                instance.images_associations.count(),
+                len(_images),
+                VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
+                attr_name='images_associations',
+            )
+        except AmountLimitExceeded as exception:
+            logger.error(f'AmountLimitExceeded exception occured: {exception}')
+            return exception.get_detail_response(request)
+
+        logger.debug('Associate objects with instance')
+        instance.quotes_associations.add(*_quotes)
+        instance.images_associations.add(*_images)
+
+        return Response(
+            WordSerializer(instance, context={'request': request}).data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @extend_schema(operation_id='word_images_list', methods=('get',))
+    @action(
+        methods=('get',),
+        detail=True,
+        serializer_class=ImageInLineSerializer,
+    )
+    def images(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns list of all image associations for given word."""
+        return self.list_related_objs(
+            request,
+            objs_related_name='images_associations',
+            response_objs_name='images',
+        )
 
     @extend_schema(operation_id='word_image_retrieve', methods=('get',))
     @extend_schema(operation_id='word_image_partial_update', methods=('patch',))
@@ -930,19 +1075,33 @@ class WordViewSet(
         methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'images/(?P<image_id>[\w\d-]+)',
-        serializer_class=ImageForWordSerializer,
+        serializer_class=ImageInLineSerializer,
     )
     def images_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить, редактировать или удалить ассоциацию-картинку слова."""
+        """Retrieve, update, disassociate image-association for given word."""
         return self.detail_action(
             request,
-            objs_related_name='wordimageassociations',
-            lookup_field='image__id',
-            lookup_attr_name='image_id',
-            list_objs_related_name='images_associations',
-            list_serializer=ImageInLineSerializer,
+            objs_related_name='images_associations',
+            lookup_field='id',
+            lookup_query_param='image_id',
+            delete_through_manager=True,
+            response_serializer_class=ImageInLineSerializer,
             *args,
             **kwargs,
+        )
+
+    @extend_schema(operation_id='word_quotes_list', methods=('get',))
+    @action(
+        methods=('get',),
+        detail=True,
+        serializer_class=QuoteInLineSerializer,
+    )
+    def quotes(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns list of all quote associations for given word."""
+        return self.list_related_objs(
+            request,
+            objs_related_name='quotes_associations',
+            response_objs_name='quotes',
         )
 
     @extend_schema(operation_id='word_quote_retrieve', methods=('get',))
@@ -952,17 +1111,17 @@ class WordViewSet(
         methods=('get', 'patch', 'delete'),
         detail=True,
         url_path=r'quotes/(?P<quote_id>[\w\d-]+)',
-        serializer_class=QuoteForWordSerializer,
+        serializer_class=QuoteInLineSerializer,
     )
     def quotes_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить, редактировать или удалить ассоциацию-цитату слова."""
+        """Retrieve, update, disassociate quote-association for given word."""
         return self.detail_action(
             request,
-            objs_related_name='wordquoteassociations',
-            lookup_field='quote__id',
-            lookup_attr_name='quote_id',
-            list_objs_related_name='quotes_associations',
-            list_serializer=QuoteInLineSerializer,
+            objs_related_name='quotes_associations',
+            lookup_field='id',
+            lookup_query_param='quote_id',
+            delete_through_manager=True,
+            response_serializer_class=QuoteInLineSerializer,
             *args,
             **kwargs,
         )
@@ -970,13 +1129,13 @@ class WordViewSet(
     @extend_schema(operation_id='words_favorites_list', methods=('get',))
     @action(detail=False, methods=('get',), permission_classes=(IsAuthenticated,))
     def favorites(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить список избранных слов."""
+        """Returns list of all user's favorites words."""
         return self.list(request)
 
     @extend_schema(operation_id='word_favorite_create', methods=('post',))
     @action(detail=True, methods=('post',), permission_classes=(IsAuthenticated,))
     def favorite(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить слово в избранное."""
+        """Adds given word to users's favorites."""
         return self._add_to_favorite_action(
             request,
             related_model=FavoriteWord,
@@ -989,7 +1148,7 @@ class WordViewSet(
     def remove_from_favorite(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Удалить слово из избранного."""
+        """Removes given word from users's favorites."""
         return self._remove_from_favorite_action(
             request,
             related_model=FavoriteWord,
@@ -1009,12 +1168,17 @@ class WordViewSet(
     def images_upload(
         self, request: HttpRequest, format: str | None = None, *args, **kwargs
     ) -> HttpResponse:
-        """Загрузить картинки."""
+        """Uploads passed images through MultiPartParser or base64 field."""
         serializer = self.get_serializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        logger.debug(f'Serializer used: {type(serializer)}')
+
+        logger.debug('Validating data')
+        serializer.is_valid(raise_exception=True)
+
+        logger.debug('Performing save')
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(tags=['words_translations'])
@@ -1031,7 +1195,7 @@ class WordTranslationViewSet(
     DestroyReturnListMixin,
     viewsets.ModelViewSet,
 ):
-    """Действия с переводами из своего словаря."""
+    """Words translations CRUD."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
@@ -1045,6 +1209,7 @@ class WordTranslationViewSet(
     search_fields = ('text', 'words__text')
 
     def get_queryset(self) -> QuerySet[WordTranslation]:
+        """Returns list of all user's words translations."""
         user = self.request.user
         if user.is_authenticated:
             return user.wordtranslations.all()
@@ -1060,18 +1225,21 @@ class WordTranslationViewSet(
                 return super().get_serializer_class()
 
     def create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns created translation data and list of its related words."""
         return self.create_return_with_words(
-            request, default_order='-wordtranslations__created', *args, **kwargs
+            request, default_order=['-wordtranslations__created'], *args, **kwargs
         )
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns given translation data and list of its related words."""
         return self.retrieve_with_words(
-            request, default_order='-wordtranslations__created', *args, **kwargs
+            request, default_order=['-wordtranslations__created'], *args, **kwargs
         )
 
     def partial_update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns updated translation data and list of its related words."""
         return self.partial_update_return_with_words(
-            request, default_order='-wordtranslations__created', *args, **kwargs
+            request, default_order=['-wordtranslations__created'], *args, **kwargs
         )
 
     @extend_schema(operation_id='words_add_to_translation', methods=('post',))
@@ -1082,9 +1250,9 @@ class WordTranslationViewSet(
         serializer_class=WordTranslationSerializer,
     )
     def add_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить перевод к словам."""
-        return self.add_words_return_with_words(
-            request, default_order='-wordtranslations__created', *args, **kwargs
+        """Associate passed words with given translation."""
+        return self.add_words_return_retrieve_with_words(
+            request, default_order=['-wordtranslations__created'], *args, **kwargs
         )
 
 
@@ -1102,7 +1270,7 @@ class UsageExampleViewSet(
     DestroyReturnListMixin,
     viewsets.ModelViewSet,
 ):
-    """Действия с примерами из своего словаря."""
+    """Words usage examples CRUD."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
@@ -1116,6 +1284,7 @@ class UsageExampleViewSet(
     search_fields = ('text', 'translation', 'words__text')
 
     def get_queryset(self) -> QuerySet[UsageExample]:
+        """Returns list of all user's usage examples."""
         user = self.request.user
         if user.is_authenticated:
             return user.usageexamples.all()
@@ -1131,18 +1300,21 @@ class UsageExampleViewSet(
                 return super().get_serializer_class()
 
     def create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns created usage example data and list of its related words."""
         return self.create_return_with_words(
-            request, default_order='-wordusageexamples__created', *args, **kwargs
+            request, default_order=['-wordusageexamples__created'], *args, **kwargs
         )
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns given usage example data and list of its related words."""
         return self.retrieve_with_words(
-            request, default_order='-wordusageexamples__created', *args, **kwargs
+            request, default_order=['-wordusageexamples__created'], *args, **kwargs
         )
 
     def partial_update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns updated usage example data and list of its related words."""
         return self.partial_update_return_with_words(
-            request, default_order='-wordusageexamples__created', *args, **kwargs
+            request, default_order=['-wordusageexamples__created'], *args, **kwargs
         )
 
     @extend_schema(operation_id='words_add_to_example', methods=('post',))
@@ -1153,9 +1325,9 @@ class UsageExampleViewSet(
         serializer_class=UsageExampleSerializer,
     )
     def add_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить пример к словам."""
-        return self.add_words_return_with_words(
-            request, default_order='-wordusageexamples__created', *args, **kwargs
+        """Associate passed words with given usage example."""
+        return self.add_words_return_retrieve_with_words(
+            request, default_order=['-wordusageexamples__created'], *args, **kwargs
         )
 
 
@@ -1173,7 +1345,7 @@ class DefinitionViewSet(
     DestroyReturnListMixin,
     viewsets.ModelViewSet,
 ):
-    """Действия с определениями из своего словаря."""
+    """Words definitions CRUD."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
@@ -1187,6 +1359,7 @@ class DefinitionViewSet(
     search_fields = ('text', 'translation', 'words__text')
 
     def get_queryset(self) -> QuerySet[Definition]:
+        """Returns list of all user's definitions."""
         user = self.request.user
         if user.is_authenticated:
             return user.definitions.all()
@@ -1202,18 +1375,21 @@ class DefinitionViewSet(
                 return super().get_serializer_class()
 
     def create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns created definition data and list of its related words."""
         return self.create_return_with_words(
-            request, default_order='-worddefinitions__created', *args, **kwargs
+            request, default_order=['-worddefinitions__created'], *args, **kwargs
         )
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns given definition data and list of its related words."""
         return self.retrieve_with_words(
-            request, default_order='-worddefinitions__created', *args, **kwargs
+            request, default_order=['-worddefinitions__created'], *args, **kwargs
         )
 
     def partial_update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns updated definition data and list of its related words."""
         return self.partial_update_return_with_words(
-            request, default_order='-worddefinitions__created', *args, **kwargs
+            request, default_order=['-worddefinitions__created'], *args, **kwargs
         )
 
     @extend_schema(operation_id='words_add_to_definition', methods=('post',))
@@ -1224,9 +1400,9 @@ class DefinitionViewSet(
         serializer_class=DefinitionSerializer,
     )
     def add_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить определение к словам."""
-        return self.add_words_return_with_words(
-            request, default_order='-worddefinitions__created', *args, **kwargs
+        """Associate passed words with given definition."""
+        return self.add_words_return_retrieve_with_words(
+            request, default_order=['-worddefinitions__created'], *args, **kwargs
         )
 
 
@@ -1235,32 +1411,40 @@ class DefinitionViewSet(
     list=extend_schema(operation_id='associations_list'),
 )
 class AssociationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Действия с ассоциациями из своего словаря."""
+    """Words associations CRUD."""
 
     http_method_names = ('get',)
     queryset = ImageAssociation.objects.none()
-    serializer_class = ImageShortSerailizer
+    serializer_class = None
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
 
     def list(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить список всех ассоциаций из своего словаря."""
+        """Returns list of all user's associations of any type."""
         user = request.user
+        logger.debug(f'Associations gallery is requested by user {request.user}')
+
         images = ImageInLineSerializer(
             user.imageassociations.all(),
             many=True,
             context={'request': request},
         )
+        logger.debug(f'User image-associations: {images.data}')
+
         quotes = QuoteInLineSerializer(
             user.quoteassociations.all(),
             many=True,
             context={'request': request},
         )
+        logger.debug(f'User quote-associations: {quotes.data}')
+
         result_list = sorted(
             chain(quotes.data, images.data),
             key=lambda d: d.get('created'),
             reverse=True,
         )
+        logger.debug(f'Result list: {result_list}')
+
         return Response(result_list)
 
 
@@ -1280,7 +1464,7 @@ class ImageViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    """Действия с ассоциациями-картинками из своего словаря."""
+    """Words image-associations CRUD."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'id'
@@ -1290,10 +1474,11 @@ class ImageViewSet(
     pagination_class = LimitPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     ordering = ('-created',)
-    ordering_fields = ('created', 'name', 'words_count')
-    search_fields = ('name', 'words__text')
+    ordering_fields = ('created', 'words_count')
+    search_fields = ('words__text', 'words__translations__text')
 
     def get_queryset(self) -> QuerySet[ImageAssociation]:
+        """Returns list of all user's image-associations."""
         user = self.request.user
         if user.is_authenticated:
             return user.imageassociations.all()
@@ -1307,13 +1492,15 @@ class ImageViewSet(
                 return super().get_serializer_class()
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns given image-association data and list of its related words."""
         return self.retrieve_with_words(
-            request, default_order='-wordimageassociations__created', *args, **kwargs
+            request, default_order=['-wordimageassociations__created'], *args, **kwargs
         )
 
     def partial_update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns updated image-association data and list of its related words."""
         return self.partial_update_return_with_words(
-            request, default_order='-wordimageassociations__created', *args, **kwargs
+            request, default_order=['-wordimageassociations__created'], *args, **kwargs
         )
 
     @extend_schema(operation_id='words_add_to_image', methods=('post',))
@@ -1324,9 +1511,9 @@ class ImageViewSet(
         serializer_class=ImageInLineSerializer,
     )
     def add_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить ассоциацию-картинку к словам."""
-        return self.add_words_return_with_words(
-            request, default_order='-wordimageassociations__created', *args, **kwargs
+        """Associate passed words with given image-association."""
+        return self.add_words_return_retrieve_with_words(
+            request, default_order=['-wordimageassociations__created'], *args, **kwargs
         )
 
 
@@ -1343,7 +1530,7 @@ class QuoteViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    """Действия с ассоциациями-цитатами из своего словаря."""
+    """Words quote-associtaions CRUD."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'id'
@@ -1357,19 +1544,22 @@ class QuoteViewSet(
     search_fields = ('text', 'quote_author', 'words__text')
 
     def get_queryset(self) -> QuerySet[QuoteAssociation]:
+        """Returns list of all user's quote-associations."""
         user = self.request.user
         if user.is_authenticated:
             return user.quoteassociations.all()
         return QuoteAssociation.objects.none()
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns given quote-association data and list of its related words."""
         return self.retrieve_with_words(
-            request, default_order='-wordquoteassociations__created', *args, **kwargs
+            request, default_order=['-wordquoteassociations__created'], *args, **kwargs
         )
 
     def partial_update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns updated quote-association data and list of its related words."""
         return self.partial_update_return_with_words(
-            request, default_order='-wordquoteassociations__created', *args, **kwargs
+            request, default_order=['-wordquoteassociations__created'], *args, **kwargs
         )
 
     @extend_schema(operation_id='words_add_to_quote', methods=('post',))
@@ -1380,9 +1570,9 @@ class QuoteViewSet(
         serializer_class=QuoteInLineSerializer,
     )
     def add_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить ассоциацию-цитату к словам."""
-        return self.add_words_return_with_words(
-            request, default_order='-wordquoteassociations__created', *args, **kwargs
+        """Associate passed words with given quote-association."""
+        return self.add_words_return_retrieve_with_words(
+            request, default_order=['-wordquoteassociations__created'], *args, **kwargs
         )
 
 
@@ -1399,7 +1589,7 @@ class SynonymViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    """Действия с синонимами из своего словаря."""
+    """Retrieve, update, destroy actions for words synonyms."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
@@ -1413,6 +1603,7 @@ class SynonymViewSet(
     search_fields = ('text', 'words__text')
 
     def get_queryset(self) -> QuerySet[Word]:
+        """Returns all words with synonyms from user's vocabulary."""
         user = self.request.user
         if user.is_authenticated:
             return user.words.filter(synonyms__isnull=False).distinct()
@@ -1426,18 +1617,20 @@ class SynonymViewSet(
                 return super().get_serializer_class()
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns given word data and list of its synonyms."""
         return self.retrieve_with_words(
             request,
-            default_order='-synonym_to_words__created',
+            default_order=['-synonym_to_words__created'],
             words_related_name='synonyms',
             *args,
             **kwargs,
         )
 
     def partial_update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns updated word data and list of its synonyms."""
         return self.partial_update_return_with_words(
             request,
-            default_order='-synonym_to_words__created',
+            default_order=['-synonym_to_words__created'],
             words_related_name='synonyms',
             *args,
             **kwargs,
@@ -1451,10 +1644,10 @@ class SynonymViewSet(
         serializer_class=SynonymSerializer,
     )
     def add_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить синоним к словам."""
-        return self.add_words_return_with_words(
+        """Adds passed words to given word synonyms."""
+        return self.add_words_return_retrieve_with_words(
             request,
-            default_order='-synonym_to_words__created',
+            default_order=['-synonym_to_words__created'],
             words_related_name='synonyms',
             *args,
             **kwargs,
@@ -1474,7 +1667,7 @@ class AntonymViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    """Действия с антонимами из своего словаря."""
+    """Retrieve, update, destroy actions for words antonyms."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
@@ -1488,6 +1681,7 @@ class AntonymViewSet(
     search_fields = ('text', 'words__text')
 
     def get_queryset(self) -> QuerySet[Word]:
+        """Returns all words with antonyms from user's vocabulary."""
         user = self.request.user
         if user.is_authenticated:
             return user.words.filter(antonyms__isnull=False).distinct()
@@ -1501,18 +1695,20 @@ class AntonymViewSet(
                 return super().get_serializer_class()
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns given word data and list of its antonyms."""
         return self.retrieve_with_words(
             request,
-            default_order='-antonym_to_words__created',
+            default_order=['-antonym_to_words__created'],
             words_related_name='antonyms',
             *args,
             **kwargs,
         )
 
     def partial_update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns updated word data and list of its antonyms."""
         return self.partial_update_return_with_words(
             request,
-            default_order='-antonym_to_words__created',
+            default_order=['-antonym_to_words__created'],
             words_related_name='antonyms',
             *args,
             **kwargs,
@@ -1526,10 +1722,10 @@ class AntonymViewSet(
         serializer_class=AntonymSerializer,
     )
     def add_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить антоним к словам."""
-        return self.add_words_return_with_words(
+        """Adds passed words to given word antonyms."""
+        return self.add_words_return_retrieve_with_words(
             request,
-            default_order='-antonym_to_words__created',
+            default_order=['-antonym_to_words__created'],
             words_related_name='antonyms',
             *args,
             **kwargs,
@@ -1549,7 +1745,7 @@ class SimilarViewSet(
     mixins.DestroyModelMixin,
     viewsets.GenericViewSet,
 ):
-    """Действия с похожими словами из своего словаря."""
+    """Retrieve, update, destroy actions for similar words."""
 
     http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
@@ -1563,6 +1759,7 @@ class SimilarViewSet(
     search_fields = ('text', 'words__text')
 
     def get_queryset(self) -> QuerySet[Word]:
+        """Returns all words with similar words from user's vocabulary."""
         user = self.request.user
         if user.is_authenticated:
             return user.words.filter(similars__isnull=False).distinct()
@@ -1576,18 +1773,20 @@ class SimilarViewSet(
                 return super().get_serializer_class()
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns given word data and list of its similar words."""
         return self.retrieve_with_words(
             request,
-            default_order='-similar_to_words__created',
+            default_order=['-similar_to_words__created'],
             words_related_name='similars',
             *args,
             **kwargs,
         )
 
     def partial_update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns updated word data and list of its similar words."""
         return self.partial_update_return_with_words(
             request,
-            default_order='-similar_to_words__created',
+            default_order=['-similar_to_words__created'],
             words_related_name='similars',
             *args,
             **kwargs,
@@ -1601,10 +1800,10 @@ class SimilarViewSet(
         serializer_class=SimilarSerializer,
     )
     def add_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить похожие слова."""
-        return self.add_words_return_with_words(
+        """Adds passed words to given word similar words."""
+        return self.add_words_return_retrieve_with_words(
             request,
-            default_order='-similar_to_words__created',
+            default_order=['-similar_to_words__created'],
             words_related_name='similars',
             *args,
             **kwargs,
@@ -1614,6 +1813,8 @@ class SimilarViewSet(
 @extend_schema(tags=['tags'])
 @extend_schema_view(list=extend_schema(operation_id='user_tags_list'))
 class TagViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """List all user's tags."""
+
     queryset = Tag.objects.none()
     serializer_class = TagListSerializer
     http_method_names = ('get',)
@@ -1624,6 +1825,7 @@ class TagViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     ordering = ('-words_count', '-created')
 
     def get_queryset(self) -> QuerySet[Tag]:
+        # Annotate tags with words amount to use in sorting
         user = self.request.user
         if user.is_authenticated:
             return user.tags.annotate(words_count=Count('words', distinct=True))
@@ -1633,7 +1835,7 @@ class TagViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 @extend_schema(tags=['types'])
 @extend_schema_view(list=extend_schema(operation_id='types_list'))
 class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Просмотр списка всех возможных типов слов и фраз."""
+    """List all possible types of words and phrases."""
 
     queryset = Type.objects.all()
     serializer_class = TypeSerializer
@@ -1646,6 +1848,7 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     ordering = ('-words_count',)
 
     def get_queryset(self) -> QuerySet[Type]:
+        # Annotate with words amount to use in sorting
         return Type.objects.annotate(words_count=Count('words', distinct=True))
 
 
@@ -1654,7 +1857,7 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     list=extend_schema(operation_id='formsgroups_list'),
 )
 class FormsGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Просмотр списка всех групп форм пользователя."""
+    """List all user's form groups."""
 
     queryset = FormsGroup.objects.none()
     serializer_class = FormsGroupListSerializer
@@ -1666,8 +1869,9 @@ class FormsGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     search_fields = ('name',)
 
     def get_queryset(self) -> QuerySet[FormsGroup]:
+        """Returns all user's and admin user form groups."""
         user = self.request.user
-        admin_user = User.objects.filter(username='admin').first()
+        admin_user = get_admin_user(User)
         if admin_user and user.is_authenticated:
             return FormsGroup.objects.filter(
                 Q(author=user) | Q(author=admin_user)
@@ -1694,7 +1898,7 @@ class CollectionViewSet(
     FavoriteMixin,
     viewsets.ModelViewSet,
 ):
-    """Действия с коллекциями."""
+    """Words collections CRUD."""
 
     queryset = Collection.objects.none()
     serializer_class = CollectionSerializer
@@ -1712,14 +1916,8 @@ class CollectionViewSet(
     ordering_fields = ('created', 'title')
     search_fields = ('title',)
 
-    def get_serializer_class(self) -> Serializer:
-        match self.action:
-            case 'list' | 'favorites' | 'destroy':
-                return CollectionShortSerializer
-            case _:
-                return super().get_serializer_class()
-
     def get_queryset(self) -> QuerySet[Collection]:
+        """Returns all user's collections or favorites only."""
         user = self.request.user
         if user.is_authenticated:
             match self.action:
@@ -1728,24 +1926,35 @@ class CollectionViewSet(
                         '-favorite_for__created'
                     )
                 case _:
+                    # Annotate with words amount to use in filters, sorting
                     return user.collections.annotate(
                         words_count=Count('words', distinct=True)
                     )
         return Collection.objects.none()
 
+    def get_serializer_class(self) -> Serializer:
+        match self.action:
+            case 'list' | 'favorites' | 'destroy':
+                return CollectionShortSerializer
+            case _:
+                return super().get_serializer_class()
+
     def create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns created collection data and list of all words in it."""
         return self.create_return_with_words(
-            request, default_order='-wordsincollections__created', *args, **kwargs
+            request, default_order=['-wordsincollections__created'], *args, **kwargs
         )
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns given collection data and list of all words in it."""
         return self.retrieve_with_words(
-            request, default_order='-wordsincollections__created', *args, **kwargs
+            request, default_order=['-wordsincollections__created'], *args, **kwargs
         )
 
     def partial_update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns updated collection data and list of all words in it."""
         return self.partial_update_return_with_words(
-            request, default_order='-wordsincollections__created', *args, **kwargs
+            request, default_order=['-wordsincollections__created'], *args, **kwargs
         )
 
     @extend_schema(operation_id='words_add_to_collection', methods=('post',))
@@ -1756,38 +1965,46 @@ class CollectionViewSet(
         serializer_class=CollectionSerializer,
     )
     def add_words(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить слова в коллекцию."""
-        return self.add_words_return_with_words(
-            request, default_order='-wordsincollections__created', *args, **kwargs
+        """Adds passed words to given collection."""
+        return self.add_words_return_retrieve_with_words(
+            request, default_order=['-wordsincollections__created'], *args, **kwargs
         )
 
     def retrieve_words_objs(
         self,
         request: HttpRequest,
         objs_response_name: str,
-        objs_model: ModelBase,
+        objs_model: Model,
         objs_viewset: viewsets.GenericViewSet,
         objs_list_serializer: Serializer,
         *args,
         **kwargs,
     ) -> HttpResponse:
-        """Получить объекты, относящиеся к словам коллекции."""
+        """
+        Common method to list some related objects of all words in given collection.
+        """
         queryset = self.get_queryset()
         collection = get_object_or_404(
             queryset, **{self.lookup_field: self.kwargs[self.lookup_field]}
         )
-        response_data = self.get_serializer(collection).data
+        logger.debug(f'Collection instance: {collection}')
+
+        collection_data = self.get_serializer(collection).data
+
         _objs = (
             objs_model.objects.filter(words__in=collection.words.all())
             .distinct()
             .annotate(words_count=Count('words'))
         )
+        logger.debug(f'Obtained objects: {_objs}')
+
         objs_data = self.get_filtered_paginated_objs(
             request, _objs, objs_viewset, objs_list_serializer
         )
+
         return Response(
             {
-                **response_data,
+                **collection_data,
                 objs_response_name: objs_data,
             }
         )
@@ -1799,7 +2016,7 @@ class CollectionViewSet(
         serializer_class=CollectionSerializer,
     )
     def images(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все картинки слов коллекции."""
+        """Return list of all images of words in given collections."""
         return self.retrieve_words_objs(
             request,
             'images_associations',
@@ -1815,7 +2032,7 @@ class CollectionViewSet(
         serializer_class=CollectionSerializer,
     )
     def translations(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все переводы слов коллекции."""
+        """Return list of all translations of words in given collections."""
         return self.retrieve_words_objs(
             request,
             'translations',
@@ -1831,7 +2048,7 @@ class CollectionViewSet(
         serializer_class=CollectionSerializer,
     )
     def definitions(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все определения слов коллекции."""
+        """Return list of all definitions of words in given collections."""
         return self.retrieve_words_objs(
             request,
             'definitions',
@@ -1847,7 +2064,7 @@ class CollectionViewSet(
         serializer_class=CollectionSerializer,
     )
     def examples(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все примеры слов коллекции."""
+        """Return list of all usage examples of words in given collections."""
         return self.retrieve_words_objs(
             request,
             'examples',
@@ -1859,13 +2076,13 @@ class CollectionViewSet(
     @extend_schema(operation_id='collections_favorites_list', methods=('get',))
     @action(detail=False, methods=('get',), permission_classes=(IsAuthenticated,))
     def favorites(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить список избранных коллекций."""
+        """Return list of all user's favorite collections."""
         return self.list(request)
 
     @extend_schema(operation_id='collection_favorite_create', methods=('post',))
     @action(detail=True, methods=('post',), permission_classes=(IsAuthenticated,))
     def favorite(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Добавить коллекцию в избранное."""
+        """ADds given collection to user's favorites."""
         return self._add_to_favorite_action(
             request,
             related_model=FavoriteCollection,
@@ -1878,7 +2095,7 @@ class CollectionViewSet(
     def remove_from_favorite(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Удалить коллекцию из избранного."""
+        """Removes given collection from user's favorites."""
         return self._remove_from_favorite_action(
             request,
             related_model=FavoriteCollection,
@@ -1896,12 +2113,17 @@ class CollectionViewSet(
     def add_words_to_collections(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Добавить выбранные слова в выбранные коллекции."""
+        """Adds given words to given collections."""
         serializer = MultipleWordsSerializer(
             data=request.data, many=False, context={'request': request}
         )
+        logger.debug(f'Serializer used: {type(serializer)}')
+
+        logger.debug(f'Validating data: {request.data}')
         serializer.is_valid(raise_exception=True)
+
         try:
+            logger.debug('Performing create')
             self.perform_create(serializer)
             words_added_count = len(serializer.validated_data['words'])
             collections_count = len(serializer.validated_data['collections'])
@@ -1917,6 +2139,7 @@ class CollectionViewSet(
                 headers=headers,
             )
         except ObjectAlreadyExist as exception:
+            logger.error(f'ObjectAlreadyExist exception occured: {exception}')
             return exception.get_detail_response(request)
 
 
@@ -1927,8 +2150,8 @@ class CollectionViewSet(
     retrieve=extend_schema(operation_id='learning_language_retrieve'),
     destroy=extend_schema(operation_id='learning_language_destroy'),
 )
-class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
-    """Действия с изучаемыми и родными языками."""
+class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
+    """User's learning, native languages CRUD."""
 
     http_method_names = ('get', 'post', 'delete')
     lookup_field = 'slug'
@@ -1981,25 +2204,39 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 return super().get_serializer_class()
 
     def list(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns all user's learning languages."""
         response_data = super().list(request, *args, **kwargs).data
         return Response({'count': len(response_data), 'results': response_data})
 
     def create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Adds language to user's learning languages."""
         try:
             serializer = self.get_serializer(data=request.data, many=True)
+            logger.debug(f'Serializer used: {type(serializer)}')
+
+            logger.debug(f'Validating data: {request.data}')
             serializer.is_valid(raise_exception=True)
+
+            # Amount limit check
+            logger.debug('Checking amount limits')
             amount_limit = kwargs.get(
                 'amount_limit', UsersAmountLimits.MAX_LEARNING_LANGUAGES_AMOUNT
             )
             current_amount = kwargs.get(
                 'current_amount', request.user.learning_languages.count()
             )
-            if current_amount + len(serializer.validated_data) > amount_limit:
-                return Response(
-                    {'detail': UsersAmountLimits.get_error_message(limit=amount_limit)},
-                    status=status.HTTP_409_CONFLICT,
+            logger.debug(f'Objects amount limit: {amount_limit}')
+            try:
+                UsersAmountLimits.check_amount_limit(
+                    current_amount, len(serializer.validated_data), amount_limit
                 )
+            except AmountLimitExceeded as exception:
+                logger.error(f'AmountLimitExceeded exception occured: {exception}')
+                return exception.get_detail_response(request)
+
+            logger.debug('Performing create')
             self.perform_create(serializer)
+
             headers = self.get_success_headers(serializer.data)
             list_response_data = self.list(request).data
             return Response(
@@ -2007,7 +2244,9 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 status=status.HTTP_201_CREATED,
                 headers=headers,
             )
+
         except IntegrityError:
+            logger.error('IntegrityError exception occured.')
             return Response(
                 {
                     'detail': _(
@@ -2021,27 +2260,40 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             )
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns user's learning language details."""
         instance = kwargs.get('instance', self.get_object())
-        response_data = self.get_serializer(instance).data
+        logger.debug(f'Obtained instance: {instance}')
+
+        instance_data = self.get_serializer(instance).data
+
         _words = instance.user.words.filter(language=instance.language).annotate(
             translations_count=Count('translations', distinct=True),
             examples_count=Count('examples', distinct=True),
             collections_count=Count('collections', distinct=True),
         )
+        logger.debug(f'Obtained words: {_words}')
+
         words_serializer = get_words_view(request)
+        logger.debug(f'Serializer used for words: {type(words_serializer)}')
+
         words_data = self.get_filtered_paginated_objs(
             request, _words, WordViewSet, words_serializer
         )
+
         return Response(
             {
-                **response_data,
+                **instance_data,
                 'words': words_data,
             }
         )
 
     def destroy(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Removes language from user's learning languages."""
         instance = self.get_object()
+        logger.debug(f'Obtained instance: {instance}')
+
         if instance.user.words.filter(language=instance.language).exists():
+            logger.debug('Deletion is prohibited')
             return Response(
                 {
                     'detail': _(
@@ -2051,7 +2303,10 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 },
                 status=status.HTTP_409_CONFLICT,
             )
+
+        logger.debug('Performing destroy')
         self.perform_destroy(instance)
+
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @extend_schema(operation_id='language_collections_list', methods=('get',))
@@ -2062,18 +2317,24 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         serializer_class=LearningLanguageSerailizer,
     )
     def collections(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все коллекции со словами этого языка."""
+        """Returns all user's collections that have words with given language."""
         instance = self.get_object()
-        response_data = self.get_serializer(instance).data
+        logger.debug(f'Obtained instance: {instance}')
+
+        instance_data = self.get_serializer(instance).data
+
         _collections = instance.user.collections.filter(
             words__language=instance.language
         )
+        logger.debug(f'Obtained collections: {_collections}')
+
         collections_data = self.get_filtered_paginated_objs(
             request, _collections, CollectionViewSet, CollectionShortSerializer
         )
+
         return Response(
             {
-                **response_data,
+                **instance_data,
                 'collections': collections_data,
             }
         )
@@ -2086,7 +2347,7 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         serializer_class=NativeLanguageSerailizer,
     )
     def native(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить родные языки."""
+        """Returns all user's native languages."""
         return self.list(request)
 
     @extend_schema(operation_id='native_language_create', methods=('post',))
@@ -2094,7 +2355,7 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     def add_native_languages(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Добавить родной язык."""
+        """Adds language to user's native languages."""
         return self.create(
             request,
             integrityerror_detail='Этот язык уже добавлен в родные.',
@@ -2111,7 +2372,7 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         pagination_class=LimitPagination,
     )
     def all(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все языки."""
+        """Returns all languages."""
         return super().list(request)
 
     @extend_schema(
@@ -2124,7 +2385,7 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         permission_classes=(AllowAny,),
     )
     def available(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все языки, доступные для изучения."""
+        """Returns available for learning languages."""
         return self.list(request)
 
     @extend_schema(
@@ -2138,7 +2399,10 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,),
     )
     def learning_available(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить текущие изучаемые языки и все языки, доступные для изучения."""
+        """
+        Returns current learning languages and available for lerning languages for
+        current user.
+        """
         learning_data = self.list(request).data
         serializer = LanguageSerializer(
             Language.objects.filter(learning_available=True), many=True
@@ -2161,7 +2425,7 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         permission_classes=(AllowAny,),
     )
     def interface(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все языки, доступные для перевода интерфейса."""
+        """Returns all available for interface translation languages."""
         return self.list(request)
 
     @extend_schema(operation_id='language_images_choice_retrieve', methods=('get',))
@@ -2173,13 +2437,19 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         permission_classes=(IsAuthenticated,),
     )
     def images_choice(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить все картинки, доступные для выбора обложки изучаемого языка."""
-        instance = self.get_object()
+        """
+        Returns all available images to be set as cover for given learning language.
+        """
+        learning_language = self.get_object()
+        logger.debug(f'Obtained learning language: {learning_language}')
+
         serializer = ImageShortSerailizer(
-            instance.language.images.all(),
+            learning_language.language.images.all(),
             many=True,
             context=self.context,
         )
+        logger.debug(f'Serializer used for images: {type(serializer)}')
+
         return Response(serializer.data)
 
     @extend_schema(operation_id='language_image_update', methods=('post',))
@@ -2187,14 +2457,27 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     def update_language_image(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Обновить обложку изучаемого языка."""
-        instance = self.get_object()
+        """Updates user learning language cover image."""
+        learning_language = self.get_object()
+        logger.debug(f'Obtained learning language: {learning_language}')
+
         image_id = request.data.get('id', None)
+
         if image_id:
-            image = get_object_or_404(instance.language.images.all(), id=image_id).image
-            instance.image = image
-            instance.save()
-        return self.retrieve(request, instance=instance)
+            logger.debug(f'Obtaining image by id: {image_id}')
+            image = get_object_or_404(
+                learning_language.language.images.all(), id=image_id
+            ).image
+
+            logger.debug('Updating learning_language cover')
+            learning_language.cover = image
+
+            logger.debug('Performing save')
+            learning_language.save()
+        else:
+            logger.debug(f'No image id passed in data: {request.data}')
+
+        return self.retrieve(request, instance=learning_language)
 
 
 @extend_schema(tags=['main_page'])
@@ -2202,6 +2485,8 @@ class LanguagesViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     list=extend_schema(operation_id='main_page_retrieve'),
 )
 class MainPageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    """Retrieve main page data."""
+
     http_method_names = ('get',)
     lookup_field = 'slug'
     queryset = User.objects.none()
@@ -2210,6 +2495,6 @@ class MainPageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     pagination_class = None
 
     def list(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Получить информацию с главной страницы."""
         serializer = self.get_serializer(request.user, many=False)
+        logger.debug(f'Serializer used for list main page: {type(serializer)}')
         return Response(serializer.data)

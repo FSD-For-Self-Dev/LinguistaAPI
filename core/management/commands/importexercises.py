@@ -6,6 +6,7 @@ from django.core.files.images import ImageFile
 from tqdm import tqdm
 
 from exercises.models import Exercise, Hint
+from exercises.constants import exercises_lookups
 
 
 class Command(BaseCommand):
@@ -17,6 +18,7 @@ class Command(BaseCommand):
     EXERCISES_INFO = {
         'tr': {
             'name': 'Translator',
+            'slug': exercises_lookups.TRANSLATOR_EXERCISE_SLUG,
             'description': (
                 'Translate a word on time or in free mode from your native '
                 'language to the language you are learning and vice versa.'
@@ -33,6 +35,7 @@ class Command(BaseCommand):
         },
         'as': {
             'name': 'Associate',
+            'slug': exercises_lookups.ASSOCIATE_EXERCISE_SLUG,
             'description': (
                 'Remember the word by association on time or in free mode, '
                 'or choose the correct word association.'

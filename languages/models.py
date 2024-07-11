@@ -93,6 +93,7 @@ class Language(models.Model):
     class Meta:
         verbose_name = _('Language')
         verbose_name_plural = _('Languages')
+        db_table_comment = _('Languages')
         ordering = ('-sorting', 'name', 'isocode')
 
     def __str__(self) -> str:
@@ -100,7 +101,7 @@ class Language(models.Model):
 
 
 class LanguageImage(CreatedModel, ModifiedModel):
-    """Image for language."""
+    """Images available to be set as cover for the learning language."""
 
     id = models.UUIDField(
         primary_key=True,
@@ -123,4 +124,7 @@ class LanguageImage(CreatedModel, ModifiedModel):
     class Meta:
         verbose_name = _('Language image')
         verbose_name_plural = _('Language images')
+        db_table_comment = _(
+            'Images available to be set as cover for the learning language'
+        )
         ordering = ('-created', '-modified')

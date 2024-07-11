@@ -6,7 +6,7 @@ from .models import Language
 
 
 class LanguageSerializer(serializers.ModelSerializer):
-    """Сериализатор языков."""
+    """Serializer to list languages."""
 
     class Meta:
         model = Language

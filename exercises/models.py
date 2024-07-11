@@ -5,7 +5,7 @@ import uuid
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
-from django.db.models.signals import pre_save, post_save
+from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
 from core.models import (
@@ -15,10 +15,10 @@ from core.models import (
     SlugModel,
     slug_filler,
 )
-from vocabulary.constants import LengthLimits
+from core.signals import admin_done
 from vocabulary.models import AuthorModel, Word
 
-from .constants import ExercisesLengthLimits
+from .constants import ExercisesLengthLimits, MAX_TEXT_ANSWER_LENGTH
 
 User = get_user_model()
 
@@ -28,6 +28,8 @@ class Exercise(
     CreatedModel,
     ModifiedModel,
 ):
+    """Exercises with words available in the app."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -66,16 +68,19 @@ class Exercise(
     slugify_fields = ('name',)
 
     class Meta:
-        ordering = ('-created',)
-        get_latest_by = ('created', 'modified')
         verbose_name = _('Exercise')
         verbose_name_plural = _('Exercises')
+        db_table_comment = _('Exercises with words available in the app')
+        ordering = ('-created',)
+        get_latest_by = ('created', 'modified')
 
     def __str__(self) -> str:
         return self.name
 
 
 class Hint(CreatedModel):
+    """Hints available to users for use in exercises."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -99,6 +104,7 @@ class Hint(CreatedModel):
     class Meta:
         verbose_name = _('Hint')
         verbose_name_plural = _('Hints')
+        db_table_comment = _('Hints available to users for use in exercises')
         ordering = ('-created',)
         get_latest_by = ('created',)
 
@@ -107,6 +113,8 @@ class Hint(CreatedModel):
 
 
 class UsersExercisesHistory(CreatedModel):
+    """History details of users passing exercises."""
+
     FREE_INPUT = 'FI'
     FREE_INPUT_MAX = 'FIM'
     VARIANTS = 'V'
@@ -168,6 +176,7 @@ class UsersExercisesHistory(CreatedModel):
     class Meta:
         verbose_name = _('User exercise approach')
         verbose_name_plural = _('Users exercise approaches')
+        db_table_comment = _('History details of users passing exercises')
         ordering = ('-created',)
         get_latest_by = ('created',)
 
@@ -179,6 +188,8 @@ class UsersExercisesHistory(CreatedModel):
 
 
 class WordsUpdateHistory(CreatedModel):
+    """Words activity status changes history."""
+
     INACTIVE = 'I'
     ACTIVE = 'A'
     MASTERED = 'M'
@@ -216,8 +227,9 @@ class WordsUpdateHistory(CreatedModel):
     )
 
     class Meta:
-        verbose_name = _('Word activity status upgrade history')
-        verbose_name_plural = _('Words activity statuses upgrades history')
+        verbose_name = _('Word activity status changes history')
+        verbose_name_plural = _('Words activity status changes history')
+        db_table_comment = _('Words activity status changes history')
         ordering = ('-created',)
         get_latest_by = ('created',)
 
@@ -228,7 +240,9 @@ class WordsUpdateHistory(CreatedModel):
         )
 
 
-class TranslatorHistoryDetails(CreatedModel):
+class ExerciseHistoryDetails(CreatedModel):
+    """History details of users passing some exercise."""
+
     CORRECT = 'C'
     INCORRECT = 'I'
     SEMI_CORRECT = 'SC'
@@ -263,8 +277,8 @@ class TranslatorHistoryDetails(CreatedModel):
         null=True,
         blank=True,
     )
-    user_answer = models.CharField(
-        max_length=LengthLimits.MAX_WORD_LENGTH,
+    text_answer = models.CharField(
+        max_length=MAX_TEXT_ANSWER_LENGTH,
         blank=False,
     )
     verdict = models.CharField(
@@ -289,19 +303,22 @@ class TranslatorHistoryDetails(CreatedModel):
     )
 
     class Meta:
-        verbose_name = _('Translator history detail')
-        verbose_name_plural = _('Translator history details')
+        verbose_name = _('Exercise history detail')
+        verbose_name_plural = _('Exercise history details')
+        db_table_comment = _('History details of users passing some exercise')
         ordering = ('-created',)
         get_latest_by = ('created',)
 
     def __str__(self) -> str:
         return (
-            f'Word asked: {self.word}; user answer: {self.user_answer}; '
-            f'verdict: {self.verdict}'
+            f'User {self.approach.user} passing exercise {self.approach.exercise} '
+            f'detail: word asked - {self.task_word.text}, verdict - {self.verdict}'
         )
 
 
 class TranslatorUserDefaultSettings(models.Model):
+    """Translator exercise settings which are used by default for the user."""
+
     FROM_LEARNING = 'LTN'
     FROM_NATIVE = 'NTL'
     FROM_LEARNING_TO_LEARNING = 'LTL'
@@ -347,14 +364,19 @@ class TranslatorUserDefaultSettings(models.Model):
     )
 
     class Meta:
-        verbose_name = _('Translator exercise saved user settings')
-        verbose_name_plural = _('Translator exercise saved users settings')
+        verbose_name = _('Translator exercise user default settings')
+        verbose_name_plural = _('Translator exercise users default settings')
+        db_table_comment = _(
+            'Translator exercise settings which are used by default for the user'
+        )
 
     def __str__(self) -> str:
-        return "%s's `Translator` exercise saved settings" % (self.user,)
+        return "%s's `Translator` exercise default settings" % (self.user,)
 
 
 class FavoriteExercise(CreatedModel):
+    """Users favorites exercises."""
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -374,10 +396,11 @@ class FavoriteExercise(CreatedModel):
     )
 
     class Meta:
-        ordering = ('-created',)
-        get_latest_by = ('created',)
         verbose_name = _('Favorite exercise')
         verbose_name_plural = _('Favorite exercises')
+        db_table_comment = _('Users favorite exercises')
+        ordering = ('-created',)
+        get_latest_by = ('created',)
 
     def __str__(self) -> str:
         return _(
@@ -392,6 +415,11 @@ class WordSet(
     SlugModel,
     CreatedModel,
 ):
+    """
+    Sets of words available for the exercise saved by the user for a
+    quick start.
+    """
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -422,10 +450,14 @@ class WordSet(
     slugify_fields = ('name', ('exercise', 'name'), ('author', 'username'))
 
     class Meta:
-        ordering = ('-last_exercise_date', '-created')
-        get_latest_by = ('created',)
         verbose_name = _('Word set')
         verbose_name_plural = _('Word sets')
+        db_table_comment = _(
+            'Sets of words available for the exercise saved by the user for a '
+            'quick start'
+        )
+        ordering = ('-last_exercise_date', '-created')
+        get_latest_by = ('created',)
 
     def __str__(self) -> str:
         return _(
@@ -434,12 +466,13 @@ class WordSet(
         )
 
 
-@receiver(pre_save, sender=Exercise)
 @receiver(pre_save, sender=WordSet)
 def fill_slug(sender, instance, *args, **kwargs) -> None:
+    """Fills slug field before save instance."""
     return slug_filler(sender, instance, *args, **kwargs)
 
 
-@receiver(post_save, sender=User)
+@receiver(admin_done, sender=User)
 def set_exercises_default_settings(sender, instance, *args, **kwargs) -> None:
+    """Create default settings for exercises when admin user is created."""
     TranslatorUserDefaultSettings.objects.get_or_create(user=instance)

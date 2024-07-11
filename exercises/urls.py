@@ -1,4 +1,4 @@
-"""Маршруты приложения exercises."""
+"""Exercises urls."""
 
 from django.urls import include, path
 

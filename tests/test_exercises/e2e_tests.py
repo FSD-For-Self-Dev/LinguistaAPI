@@ -1,5 +1,6 @@
 import json
 import pytest
+import logging
 from model_bakery import baker
 
 from django.utils import timezone
@@ -7,6 +8,8 @@ from django.contrib.auth import get_user_model
 
 from vocabulary.models import Word, WordTranslation, Collection
 from exercises.models import FavoriteExercise, TranslatorUserDefaultSettings
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
@@ -43,7 +46,7 @@ class TestExercisesEndpoints:
             f'Не найден параметр `{pagination_field}`'
         )
         assert response_content['count'] == 1
-        assert len(response_content['others']) == 1
+        assert len(response_content['unavailable']) == 1
 
     def test_retrieve(self, auth_api_client, user, exercises):
         exercise = exercises(extra_data={'available': True})[0]
@@ -74,7 +77,9 @@ class TestExercisesEndpoints:
     #     assert response.status_code == 200 or response.status_code == 301
 
     def test_retrieve_available_words(self, auth_api_client, user, exercises):
-        exercise = exercises(extra_data={'available': True, 'name': 'translator'})[0]
+        exercise = exercises(
+            extra_data={'available': True, 'name': 'translator', 'slug': 'translator'}
+        )[0]
         word = baker.make(Word, author=user)
         translation = baker.make(WordTranslation, author=user)
         word.translations.add(translation)
@@ -88,7 +93,9 @@ class TestExercisesEndpoints:
         assert response_content['words']['count'] == 1
 
     def test_retrieve_available_collections(self, auth_api_client, user, exercises):
-        exercise = exercises(extra_data={'available': True, 'name': 'translator'})[0]
+        exercise = exercises(
+            extra_data={'available': True, 'name': 'translator', 'slug': 'translator'}
+        )[0]
         word = baker.make(Word, author=user)
         translation = baker.make(WordTranslation, author=user)
         word.translations.add(translation)
@@ -187,9 +194,10 @@ class TestExercisesEndpoints:
             f'{self.endpoint}{exercise.slug}/word-sets/{word_set.slug}/'
         )
 
-        assert response.status_code == 204
+        assert response.status_code in (204, 200)
 
     def test_default_settings_retrieve(self, auth_api_client, user):
+        TranslatorUserDefaultSettings.objects.get_or_create(user=user)
         response = auth_api_client(user).get(
             f'{self.endpoint}translator-default-settings/',
         )

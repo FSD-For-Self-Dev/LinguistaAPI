@@ -1,4 +1,4 @@
-"""Маршруты приложения words."""
+"""Vocabulary urls."""
 
 from django.urls import include, path
 
@@ -19,7 +19,7 @@ from .views import (
     ImageViewSet,
     QuoteViewSet,
     AssociationViewSet,
-    LanguagesViewSet,
+    LanguageViewSet,
     MainPageViewSet,
 )
 
@@ -42,7 +42,7 @@ router.register('associations', AssociationViewSet, basename='associations')
 
 router.register('collections', CollectionViewSet, basename='collections')
 
-router.register('languages', LanguagesViewSet, basename='languages')
+router.register('languages', LanguageViewSet, basename='languages')
 
 router.register('main', MainPageViewSet, basename='main')
 

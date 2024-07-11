@@ -1,28 +1,43 @@
 """Core serializer mixins."""
 
-from typing import Any
+from typing import Any, Type
 from collections import OrderedDict
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
-from django.core.exceptions import ObjectDoesNotExist
+from django.db.models import Model
+from django.db.models.query import QuerySet
 from django.utils.translation import gettext as _
 
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
 from .serializers_fields import ReadWriteSerializerMethodField
-from .exceptions import ObjectAlreadyExist, ObjectDoesNotExistWithDetail
+from .exceptions import ObjectAlreadyExist
 from .constants import AmountLimits
+from .utils import get_object_by_pk
 
 
 class AlreadyExistSerializerHandler:
-    """Миксин для обработки ошибки ObjectAlreadyExist или IntegrityError."""
+    """
+    Custom mixin to use in ModelSerializer.
+    Add `ObjectAlreadyExist` custom exception handling.
+    """
 
     already_exist_detail = 'Object already exist.'
 
-    def check_existing_obj(self, data: dict, *args, **kwargs) -> Any:
+    def check_existing_obj(
+        self, data: dict | OrderedDict, *args, **kwargs
+    ) -> Type[Model] | None:
+        """
+        Check if object with passed data exists.
+        Returns existing object if data the same, else raise the exception.
+        """
         meta_model = self.Meta.model
+        # To get object that matches passed data for unique fields
+        # (avoid IntegrityError), `get_object` method must be implemented in Model
+        # or it will be gotten by objects filter with passed data
+        # (an TypeError may be occured).
         if hasattr(meta_model, 'get_object'):
             _existing_obj = meta_model.get_object(data)
             if _existing_obj:
@@ -50,8 +65,13 @@ class AlreadyExistSerializerHandler:
                 )
         return None
 
-    def create(self, validated_data: OrderedDict, *args, **kwargs) -> Any:
-        """Check if there is already existing object with same data before create."""
+    def create(self, validated_data: OrderedDict, *args, **kwargs) -> Type[Model]:
+        """
+        Check if there is already existing object with same data before create.
+        Returns existing object if matches data, else run create.
+        If existing object does not completely match data,
+        ObjectAlreadyExist exception may be raised.
+        """
         _existing_obj = self.check_existing_obj(validated_data)
         return (
             _existing_obj
@@ -60,9 +80,13 @@ class AlreadyExistSerializerHandler:
         )
 
     def update(
-        self, instance: Any, validated_data: OrderedDict, *args, **kwargs
-    ) -> Any:
-        """Check if there is other word with that data before update current."""
+        self, instance: Type[Model], validated_data: OrderedDict, *args, **kwargs
+    ) -> Type[Model]:
+        """
+        Check if there is already existing object with same data
+        that is not the current instance before update (avoid IntegrityError).
+        If true, ObjectAlreadyExist custom exception is raised.
+        """
         meta_model = self.Meta.model
         if hasattr(meta_model, 'get_object'):
             _existing_obj = meta_model.get_object(validated_data)
@@ -78,18 +102,23 @@ class AlreadyExistSerializerHandler:
 
 
 class ListUpdateSerializer(serializers.ListSerializer):
-    """Сериализатор списка объектов с возможностью их обновления."""
+    """
+    Custom list serializer with implemented update method,
+    IntegrityError handling (use when nested serializers is needed with
+    NestedSerializerMixin for parent serializer).
+    """
 
-    def set_parent_data(self, data: list[Any] | dict[str, Any], parent: Any) -> Any:
+    def set_parent_data(self, data: list[OrderedDict], parent: Type[Model]) -> None:
         """
-        This method is used to set data on the child objects from the parent object
-        There are 3. fields you can set on the meta class of the child serializer class:
+        This method is used to set data on the child objects from the parent object.
+        There are 3 fields you can set on the meta class of the child serializer class:
         1. from_parent_fields: this field is the list of common fields between the parent
-                               and child model. The values are copied from parent to child
-        2. generic_foreign_key: this field is tuple of object_id and content_type_id field
-        3. foreign_key_field_name: this field is the field name of the foriegn key of the parent model on the child model
-        parent param is the instance of the parent model
-        data is the list of dicts for the validated_data in the parent serializer
+                               and child model. The values are copied from parent to child.
+        2. generic_foreign_key: this field is tuple of object_id and content_type_id field.
+        3. foreign_key_field_name: this field is the field name of the foriegn key of
+                                   the parent model on the child model.
+        `parent` param is the instance of the parent model.
+        `data` is the list of dicts for the validated_data in the parent serializer.
         """
         meta = self.child.Meta
         for object_data in data:
@@ -106,81 +135,91 @@ class ListUpdateSerializer(serializers.ListSerializer):
                 object_data[meta.foreign_key_field_name] = parent
             self.child.validate(attrs=object_data)
 
-    def create(self, validated_data: OrderedDict) -> Any:
-        ret = []
-        for data in validated_data:
-            if data.get('id', None):
-                pk = data['id']
-                try:
-                    author = data.get('author', None)
-                    obj = (
-                        self.child.Meta.model.objects.get(pk=pk, author=author)
-                        if author
-                        else self.Meta.model.objects.get(pk=pk)
-                    )
-                    ret.append(self.child.update(obj, data))
-                except ObjectDoesNotExist:
-                    obj_name = self.child.Meta.model._meta.verbose_name
-                    raise ObjectDoesNotExistWithDetail(
-                        detail=f'{obj_name} с id={pk} не найден.',
-                        code=f'{self.child.Meta.model}_object_not_exist',
-                    )
-            else:
-                ret.append(self.child.create(data))
-        return ret
-
-    def update(self, instance: Any, validated_data: OrderedDict) -> Any:
-        # Maps for id->instance and id->data item.
-        obj_mapping = {obj.pk: obj for obj in instance}
-
-        existing_pks = []
-        ret = []
-
-        # find existing pks
-        for data in validated_data:
-            if data.get('id', None):
-                pk = data['id']
-                existing_pks.append(pk)
-
-        if hasattr(self.child.Meta, 'foreign_key_field_name'):
-            # Perform deletion of missing pks
-            self.child.Meta.model.objects.filter(
-                id__in=set(obj_mapping.keys()) - set(existing_pks)
-            ).delete()
-
+    def create(self, validated_data: OrderedDict) -> list[Type[Model]]:
+        """
+        Add update instead of create for objects with passed ids
+        (to avoid IntegrityError for some passed nested objects).
+        If invalid id passed, ObjectDoesNotExist exception may be raised.
+        """
+        child_objects = []
         for data in validated_data:
             if data.get('id', None):
                 # perform update
                 pk = data['id']
-                if pk in obj_mapping:
-                    obj = obj_mapping[pk]
-                else:
-                    try:
-                        author = data.get('author', None)
-                        obj = (
-                            self.child.Meta.model.objects.get(pk=pk, author=author)
-                            if author
-                            else self.Meta.model.objects.get(pk=pk)
-                        )
-                    except ObjectDoesNotExist:
-                        obj_name = self.child.Meta.model._meta.verbose_name
-                        raise ObjectDoesNotExistWithDetail(
-                            detail=f'{obj_name} с id={pk} не найден.',
-                            code=f'{self.child.Meta.model}_object_not_exist',
-                        )
-                ret.append(self.child.update(obj, data))
+                other_args = {}
+                author = data.get('author', None)
+                if author:
+                    other_args = {'author': author}
+                obj = get_object_by_pk(self.child.Meta.model, pk, other_args=other_args)
+                child_objects.append(self.child.update(obj, data))
             else:
                 # perform create
-                ret.append(self.child.create(data))
+                child_objects.append(self.child.create(data))
+        return child_objects
 
-        return ret
+    def update(
+        self, instance: QuerySet, validated_data: OrderedDict
+    ) -> list[Type[Model]]:
+        """
+        Add update for list of nested objects.
+        Objects with passed ids, relations to which already exists, will be updated.
+        Objects with passed ids, relations to which does not exist, will be updated
+        and set to parent.
+        Objects with no ids will be created and set to parent.
+        Related objects which ids are missing will be deleted.
+        If invalid id passed, ObjectDoesNotExist exception may be raised.
+        """
+        # Maps for id->instance and id->data item.
+        obj_mapping = {obj.pk: obj for obj in instance}
+
+        passed_pks = []
+
+        # collect pks from passed data
+        for data in validated_data:
+            if data.get('id', None):
+                pk = data['id']
+                passed_pks.append(pk)
+
+        if hasattr(self.child.Meta, 'foreign_key_field_name'):
+            # Perform deletion of missing pks
+            self.child.Meta.model.objects.filter(
+                id__in=set(obj_mapping.keys()) - set(passed_pks)
+            ).delete()
+
+        child_objects = []
+        for data in validated_data:
+            if data.get('id', None):
+                # perform update
+                pk = data['id']
+                other_args = {}
+                author = data.get('author', None)
+                if author:
+                    other_args = {'author': author}
+                obj = obj_mapping.get(
+                    pk,
+                    get_object_by_pk(self.child.Meta.model, pk, other_args=other_args),
+                )
+                child_objects.append(self.child.update(obj, data))
+            else:
+                # perform create
+                child_objects.append(self.child.create(data))
+
+        return child_objects
 
 
 class NestedSerializerMixin(serializers.ModelSerializer):
-    """Миксин для обработки вложенных сериализаторов."""
+    """
+    Custom mixin to add create, update methods for nested serializers.
+    If many=True is set for nested serializer, `list_serializer_class` Meta atribute
+    of this nested serializer must be set to ListUpdateSerializer for update method to
+    work correctly and handle IntegrityError.
+    Also validates nested objects amount limits, if field name, amount limit are
+    specified in `amount_limit_fields` Meta atribute
+    (format: {field_name: amount_limit}).
+    """
 
-    def validate(self, attrs: dict) -> OrderedDict:
-        # Валидация максимального количества элементов вложенного сериализатора
+    def validate(self, attrs: dict[str, Any]) -> OrderedDict:
+        """Add nested objects amount limit check."""
         if hasattr(self.Meta, 'amount_limit_fields'):
             for field_name, limit in self.Meta.amount_limit_fields.items():
                 obj_list = attrs.get(field_name, None)
@@ -196,18 +235,31 @@ class NestedSerializerMixin(serializers.ModelSerializer):
         return super().validate(attrs)
 
     def create_child_objects(
-        self, serializer: Any, data: OrderedDict, instance: Any = None
-    ) -> Any:
+        self,
+        serializer: Type[serializers.BaseSerializer],
+        data: OrderedDict,
+        instance: Type[Model] | None = None,
+    ) -> list[Type[Model]] | Type[Model]:
+        """
+        Create child object through its serializer.
+        Set parent data if needed.
+        """
         if isinstance(serializer, ListUpdateSerializer) and instance:
             serializer.set_parent_data(data, instance)
         return serializer.create(data)
 
     def set_child_data_to_instance(
-        self, instance: Any, nested_serializers_data: dict[str, Any]
+        self,
+        instance: Type[Model],
+        nested_serializers_data: dict[str, Type[serializers.BaseSerializer]],
     ) -> None:
         """
-        For each child data initialize the child list serializer, set parent data
+        For each child data initialize the child serializer, set parent data
         using instance and create the child objects.
+        Objects will be added through related manager if field name, related name are
+        specified in `objs_related_names` Meta attribute
+        (format: {field_name: related_name}).
+        Use when parent instance must be created first.
         """
         for key, data in nested_serializers_data.items():
             serializer = self.get_fields()[key]
@@ -226,11 +278,15 @@ class NestedSerializerMixin(serializers.ModelSerializer):
                     instance.__getattribute__(objs_related_names).add(_child_obj)
 
     def set_child_data_to_validated_data(
-        self, validated_data: OrderedDict, nested_serializers_data: dict[str, Any]
+        self,
+        validated_data: OrderedDict,
+        nested_serializers_data: dict[str, OrderedDict | list[OrderedDict]],
     ) -> None:
         """
-        For each child data initialize the child list serializer and create
-        the child objects without passing instance.
+        For each child data initialize the child serializer and create
+        the child objects without passing instance
+        (child object will be passed to validated_data).
+        Use when child objects must be created first.
         """
         for key, data in nested_serializers_data.items():
             serializer = self.get_fields()[key]
@@ -242,11 +298,17 @@ class NestedSerializerMixin(serializers.ModelSerializer):
         return validated_data
 
     @staticmethod
-    def set_child_context(child: Any, context_attr: str, data: Any) -> None:
+    def set_child_context(
+        child: type[serializers.BaseSerializer], context_attr: str, data: Any
+    ) -> None:
+        """Pass context to child serializer."""
         child.context[context_attr] = data
 
     @transaction.atomic
-    def create(self, validated_data: OrderedDict, parent_first: bool = True) -> Any:
+    def create(
+        self, validated_data: OrderedDict, parent_first: bool = True
+    ) -> Type[Model]:
+        """Create parent instance and child objects."""
         nested_serializers_data = {}
         # find the child fields and remove the data from validated_data dict
         for key, val in self.get_fields().items():
@@ -268,7 +330,8 @@ class NestedSerializerMixin(serializers.ModelSerializer):
         return instance
 
     @transaction.atomic
-    def update(self, instance: Any, validated_data: OrderedDict) -> Any:
+    def update(self, instance: Type[Model], validated_data: OrderedDict) -> Type[Model]:
+        """Update parent instance and child objects."""
         nested_serializers_data = {}
         # find the child fields and remove the data from validated_data dict
         for key, val in self.get_fields().items():
@@ -303,7 +366,12 @@ class NestedSerializerMixin(serializers.ModelSerializer):
 
 
 class FavoriteSerializerMixin(serializers.ModelSerializer):
-    """Миксин для добавления записи и чтения поля `favorite`."""
+    """
+    Custom mixin to add `favorite` readable, writable field.
+    `favorite_model`, `favorite_model_field` Meta attributes are required,
+    where `favorite_model` is model with user, some favorite object fields,
+    `favorite_model_field` is field name for some favorite object.
+    """
 
     favorite = ReadWriteSerializerMethodField(
         method_name='get_favorite', required=False
@@ -320,10 +388,21 @@ class FavoriteSerializerMixin(serializers.ModelSerializer):
         )
         return None
 
+    def check_context(self) -> None:
+        assert 'request' in self.context, (
+            'FavoriteSerializerMixin: Providing `request` in context is required '
+            'to get user.'
+        )
+
     @extend_schema_field(serializers.BooleanField)
-    def get_favorite(self, obj: Any) -> bool:
+    def get_favorite(self, obj: Type[Model]) -> bool:
+        """
+        Returns True if there are user, favorite object in `favorite_model` objects,
+        else False.
+        For anonymous users always returns False.
+        """
         self.check_meta()
-        # check context is needed
+        self.check_context()
         user = self.context['request'].user
         return (
             user.is_authenticated
@@ -333,8 +412,12 @@ class FavoriteSerializerMixin(serializers.ModelSerializer):
         )
 
     @transaction.atomic
-    def create(self, validated_data: OrderedDict, *args, **kwargs) -> Any:
+    def create(self, validated_data: OrderedDict, *args, **kwargs) -> Type[Model]:
+        """
+        Add an object to favorites when creating it by passing the `favorite` field.
+        """
         self.check_meta()
+        self.check_context()
         favorite = validated_data.pop('favorite', None)
         instance = super().create(validated_data, *args, **kwargs)
         if favorite:
@@ -345,29 +428,45 @@ class FavoriteSerializerMixin(serializers.ModelSerializer):
         return instance
 
     @transaction.atomic
-    def update(self, instance: Any, validated_data: OrderedDict) -> Any:
+    def update(self, instance: Type[Model], validated_data: OrderedDict) -> Type[Model]:
+        """
+        Add or remove an object from favorites when updating it by passing the
+        `favorite` field.
+        """
         self.check_meta()
+        self.check_context()
         favorite = validated_data.pop('favorite', None)
         instance = super().update(instance, validated_data)
-        filter_favorite = self.Meta.favorite_model.objects.filter(
+        current_favorite = self.Meta.favorite_model.objects.filter(
             **{self.Meta.favorite_model_field: instance},
             user=self.context['request'].user,
         )
-        if favorite and not filter_favorite:
+        if favorite and not current_favorite:
             self.Meta.favorite_model.objects.create(
                 **{self.Meta.favorite_model_field: instance},
                 user=self.context['request'].user,
             )
-        if not favorite and filter_favorite:
-            filter_favorite.delete()
+        if not favorite and current_favorite:
+            current_favorite.delete()
         return instance
 
 
 class CountObjsSerializerMixin:
-    """Миксин для чтения счетчика связанных объектов."""
+    """
+    Custom mixin to add method for getting related objects amount.
+    Using within KwargsMethodField (custom field from SerializerMethodField).
+    `objs_related_name` keyword argument must be passed
+    (related name for objects that need to be counted).
+    """
 
     @extend_schema_field({'type': 'integer'})
-    def get_objs_count(self, obj: Any, objs_related_name: str = '') -> int | None:
+    def get_objs_count(
+        self, obj: Type[Model], objs_related_name: str = ''
+    ) -> int | None:
+        """
+        Returns related objects amount or None if invalid `objs_related_name`
+        was passed.
+        """
         assert objs_related_name, '`objs_related_name` must be passed.'
         if hasattr(obj, objs_related_name):
             return obj.__getattribute__(objs_related_name).count()
@@ -375,24 +474,23 @@ class CountObjsSerializerMixin:
 
 
 class UpdateSerializerMixin:
-    """Миксин для обновления объекта при создании."""
+    """
+    Custom mixin to add update by passed pk within create method
+    (to avoid IntegrityError when serializer is nested).
+    """
 
     def create(
         self, validated_data: OrderedDict, parent_first: bool = True, *args, **kwargs
-    ) -> Any:
+    ) -> Type[Model]:
+        """Performs object update if object id is passed, else run create."""
         pk = validated_data.get('id', None)
-        author = validated_data.get('author', None)
         if pk:
-            try:
-                instance = (
-                    self.Meta.model.objects.get(pk=pk, author=author)
-                    if author
-                    else self.Meta.model.objects.get(pk=pk)
-                )
-                return self.update(instance, validated_data)
-            except ObjectDoesNotExist:
-                raise ObjectDoesNotExistWithDetail(
-                    detail=f'{self.Meta.model._meta.verbose_name} с id={pk} не найдено в вашем словаре.',
-                    code=f'{self.Meta.model.__name__}_object_not_exist',
-                )
+            # perform update
+            other_args = {}
+            author = validated_data.get('author', None)
+            if author:
+                other_args = {'author': author}
+            obj = get_object_by_pk(self.Meta.model, pk, other_args=other_args)
+            return super().update(obj, validated_data, *args, **kwargs)
+        # perform create
         return super().create(validated_data, *args, **kwargs)

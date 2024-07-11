@@ -21,7 +21,7 @@ User = get_user_model()
 
 
 class UserShortSerializer(serializers.ModelSerializer):
-    """Сериализатор пользователей (короткая форма)."""
+    """Serializer to list users."""
 
     image = HybridImageField()
 
@@ -39,9 +39,7 @@ class UserShortSerializer(serializers.ModelSerializer):
 class LearningLanguageShortSerailizer(
     CountObjsSerializerMixin, serializers.ModelSerializer
 ):
-    """
-    Сериализатор изучаемых языков пользователя (короткая форма).
-    """
+    """Serializer to list users's learning languages."""
 
     words_count = KwargsMethodField(
         'get_objs_count',
@@ -80,23 +78,27 @@ class LearningLanguageShortSerailizer(
 
     @extend_schema_field({'type': 'integer'})
     def get_words_count(self, obj: UserLearningLanguage) -> int:
+        """Returns words amount in given language."""
         return obj.user.words.filter(language=obj.language).count()
 
     @extend_schema_field({'type': 'integer'})
     def get_inactive_words_count(self, obj: UserLearningLanguage) -> int:
+        """Returns words with `Inactive` activity status amount in given language."""
         return obj.user.words.filter(language=obj.language, activity_status='I').count()
 
     @extend_schema_field({'type': 'integer'})
     def get_active_words_count(self, obj: UserLearningLanguage) -> int:
+        """Returns words with `Active` activity status amount in given language."""
         return obj.user.words.filter(language=obj.language, activity_status='A').count()
 
     @extend_schema_field({'type': 'integer'})
     def get_mastered_words_count(self, obj: UserLearningLanguage) -> int:
+        """Returns words with `Mastered` activity status amount in given language."""
         return obj.user.words.filter(language=obj.language, activity_status='M').count()
 
 
 class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
-    """Сериализатор изучаемого языка пользователя."""
+    """Serializer to retrieve users's learning language details."""
 
     class Meta:
         model = UserLearningLanguage
@@ -106,7 +108,7 @@ class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
             'user',
             'language',
             'level',
-            'image',
+            'cover',
             'words_count',
             'inactive_words_count',
             'active_words_count',
@@ -115,7 +117,7 @@ class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
         read_only_fields = (
             'id',
             'slug',
-            'image',
+            'cover',
             'words_count',
             'inactive_words_count',
             'active_words_count',
@@ -123,6 +125,7 @@ class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
         )
 
     def validate(self, attrs: dict) -> OrderedDict:
+        """Check that language is available for adding to learning."""
         if attrs.get('language', None) in Language.objects.filter(
             learning_available=True
         ):
@@ -133,7 +136,7 @@ class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
 
 
 class NativeLanguageSerailizer(serializers.ModelSerializer):
-    """Сериализатор родных языков пользователя."""
+    """Serializer to list, create users's native languages."""
 
     language = PresentableSlugRelatedField(
         queryset=Language.objects.all(),

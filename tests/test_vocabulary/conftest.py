@@ -385,7 +385,6 @@ def word_images_associations(request):
             if kwargs.get('serializer_data', False):
                 source = [
                     {
-                        'name': obj.name,
                         # "image": b64field.to_representation(obj.image),
                     }
                     for obj in objs
@@ -394,7 +393,6 @@ def word_images_associations(request):
                 source = [obj.id for obj in objs]
             expected = [
                 {
-                    'name': obj.name,
                     'image': obj.image or None,
                 }
                 for obj in objs

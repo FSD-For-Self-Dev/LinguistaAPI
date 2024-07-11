@@ -14,6 +14,8 @@ from languages.models import Language
 
 
 class User(AbstractUser, CreatedModel, ModifiedModel):
+    """User custom model."""
+
     last_name = None
 
     id = models.UUIDField(
@@ -57,16 +59,21 @@ class User(AbstractUser, CreatedModel, ModifiedModel):
     class Meta:
         verbose_name = _('User')
         verbose_name_plural = _('Users')
+        db_table_comment = _('Users')
         ordering = ('-date_joined',)
+        get_latest_by = ('created', 'date_joined')
 
     def __str__(self) -> str:
         return self.username
 
     def words_in_vocabulary(self) -> int:
+        """Returns words in user's vocabulary amount."""
         return self.words.count()
 
 
 class UserDefaultWordsView(CreatedModel):
+    """Default word cards view for the user."""
+
     STANDART = 'standart'
     SHORT = 'short'
     LONG = 'long'
@@ -93,6 +100,7 @@ class UserDefaultWordsView(CreatedModel):
     class Meta:
         verbose_name = _('User default words view setting')
         verbose_name_plural = _('User default words view settings')
+        db_table_comment = _('Default word cards view for the user')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [models.UniqueConstraint('user', name='unique_user_words_view')]
@@ -128,8 +136,8 @@ class UserLearningLanguage(SlugModel, CreatedModel, ModifiedModel):
         blank=True,
         default='',
     )
-    image = models.ImageField(
-        _('Learning language image'),
+    cover = models.ImageField(
+        _('Learning language cover image'),
         upload_to='users/languages/images/',
         blank=True,
         null=True,
@@ -140,6 +148,7 @@ class UserLearningLanguage(SlugModel, CreatedModel, ModifiedModel):
     class Meta:
         verbose_name = _('User learning language')
         verbose_name_plural = _('User learning languages')
+        db_table_comment = _('Users learning languages')
         ordering = ('-created', '-modified')
         constraints = [
             models.UniqueConstraint(
@@ -177,6 +186,7 @@ class UserNativeLanguage(SlugModel, CreatedModel):
     class Meta:
         verbose_name = _('User native language')
         verbose_name_plural = _('User native languages')
+        db_table_comment = _('Users native languages')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -192,4 +202,5 @@ class UserNativeLanguage(SlugModel, CreatedModel):
 @receiver(pre_save, sender=UserLearningLanguage)
 @receiver(pre_save, sender=UserNativeLanguage)
 def fill_slug(sender, instance, *args, **kwargs) -> None:
+    """Fill slug field before save instance."""
     return slug_filler(sender, instance, *args, **kwargs)

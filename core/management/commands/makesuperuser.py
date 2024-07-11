@@ -8,6 +8,8 @@ from django.utils.crypto import get_random_string
 
 from dotenv import load_dotenv
 
+from core.signals import admin_done
+
 load_dotenv()
 
 User = get_user_model()
@@ -32,13 +34,16 @@ class Command(BaseCommand):
                     'DJANGO_SUPERUSER_PASSWORD', default=get_random_string(10)
                 )
 
-                User.objects.create_superuser(username, email, new_password)
+                superuser = User.objects.create_superuser(username, email, new_password)
+
                 self.stdout.write('===================================')
                 self.stdout.write(
                     f"A superuser '{username}' was created with email "
                     f"'{email}' and password '{new_password}'"
                 )
                 self.stdout.write('===================================')
+
+                admin_done.send(sender=User, instance=superuser)
             else:
                 self.stdout.write('Admin user found. Skipping super user creation')
         except Exception as e:

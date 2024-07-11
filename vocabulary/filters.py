@@ -1,4 +1,4 @@
-"""Фильтры приложения vocabulary."""
+"""Vocabulary filters."""
 
 import django_filters as df
 from django.db.models import Q
@@ -8,7 +8,7 @@ from .models import Collection, Word
 
 
 class CollectionFilter(df.FilterSet):
-    """Фильтры коллекций."""
+    """Filters for collections."""
 
     words_count__gt = df.NumberFilter(field_name='words_count', lookup_expr='gt')
     words_count__lt = df.NumberFilter(field_name='words_count', lookup_expr='lt')
@@ -31,7 +31,7 @@ class CollectionFilter(df.FilterSet):
 
 
 class CustomFilterList(df.Filter):
-    """Фильтрация по списку значений."""
+    """Filtering by multiple comma-separated values."""
 
     def filter(self, qs: QuerySet, value: str) -> QuerySet:
         if value not in (None, ''):
@@ -41,7 +41,7 @@ class CustomFilterList(df.Filter):
 
 
 class WordFilter(df.FilterSet):
-    """Фильтры слов."""
+    """Filters for words."""
 
     language = df.CharFilter(field_name='language__isocode')
     is_problematic = df.BooleanFilter(field_name='is_problematic')
@@ -96,6 +96,10 @@ class WordFilter(df.FilterSet):
     def filter_have_associations(
         self, queryset: QuerySet, name: str, value: str
     ) -> QuerySet:
+        """
+        Returns words that have at least one association of any type if True is
+        passed, returns words with no associations if False if passed.
+        """
         if value:
             return queryset.filter(
                 Q(images_associations__isnull=False)

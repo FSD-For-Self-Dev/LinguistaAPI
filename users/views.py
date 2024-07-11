@@ -22,7 +22,7 @@ User = get_user_model()
     list=extend_schema(operation_id='users_list'),
 )
 class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
-    """Просмотр списка пользователей."""
+    """List users."""
 
     http_method_names = ('get',)
     queryset = User.objects.none()
@@ -31,5 +31,5 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     pagination_class = LimitPagination
 
     def get_queryset(self) -> QuerySet:
-        """Исключение админов из выборки."""
+        """Exclude admins from users list."""
         return User.objects.filter(is_staff=False)

@@ -27,34 +27,29 @@ from vocabulary.serializers import (
     ImageShortSerailizer,
     ImageListSerializer,
     ImageInLineSerializer,
-    ImageForWordSerializer,
     QuoteInLineSerializer,
-    QuoteForWordSerializer,
     SynonymSerializer,
     AntonymSerializer,
     SimilarSerializer,
     WordTranslationListSerializer,
     WordTranslationCreateSerializer,
-    WordTranslationForWordSerializer,
     WordTranslationSerializer,
     UsageExampleListSerializer,
     UsageExampleCreateSerializer,
-    UsageExampleForWordSerializer,
     UsageExampleSerializer,
     DefinitionListSerializer,
     DefinitionCreateSerializer,
-    DefinitionForWordSerializer,
     DefinitionSerializer,
     NoteInLineSerializer,
     NoteForWordSerializer,
     SynonymForWordListSerializer,
-    SynonymForWordSerializer,
+    SynonymInLineSerializer,
     AntonymForWordListSerializer,
-    AntonymForWordSerializer,
+    AntonymInLineSerializer,
     FormForWordListSerializer,
-    FormForWordSerializer,
+    FormInLineSerializer,
     SimilarForWordListSerializer,
-    SimilarForWordSerailizer,
+    SimilarInLineSerializer,
     AssociationsCreateSerializer,
 )
 from exercises.serializers import (
@@ -75,6 +70,8 @@ from languages.serializers import LanguageSerializer
 
 
 class CustomSchema(AutoSchema):
+    """Custom schema generator to generate schema from common data dictionary."""
+
     def get_tags(self) -> list[str]:
         try:
             return data[self.view.__class__.__name__]['tags']
@@ -321,7 +318,7 @@ data = {
             'summary': 'Удаление слова из своего словаря',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: WordStandartCardSerializer,
+                status.HTTP_200_OK: WordStandartCardSerializer,
             },
         },
         'word_random': {
@@ -384,21 +381,21 @@ data = {
             'summary': 'Просмотр перевода слова',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: WordTranslationForWordSerializer,
+                status.HTTP_200_OK: WordTranslationInLineSerializer,
             },
         },
         'word_translation_partial_update': {
             'summary': 'Редактирование перевода слова',
-            'request': WordTranslationForWordSerializer,
+            'request': WordTranslationInLineSerializer,
             'responses': {
-                status.HTTP_200_OK: WordTranslationForWordSerializer,
+                status.HTTP_200_OK: WordTranslationInLineSerializer,
             },
         },
         'word_translation_destroy': {
             'summary': 'Удаление перевода слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: WordTranslationInLineSerializer,
+                status.HTTP_200_OK: WordTranslationInLineSerializer,
             },
         },
         'word_definitions_list': {
@@ -419,21 +416,21 @@ data = {
             'summary': 'Просмотр определения слова',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: DefinitionForWordSerializer,
+                status.HTTP_200_OK: DefinitionInLineSerializer,
             },
         },
         'word_definition_partial_update': {
             'summary': 'Редактирование определения слова',
-            'request': DefinitionForWordSerializer,
+            'request': DefinitionInLineSerializer,
             'responses': {
-                status.HTTP_200_OK: DefinitionForWordSerializer,
+                status.HTTP_200_OK: DefinitionInLineSerializer,
             },
         },
         'word_definition_destroy': {
             'summary': 'Удаление определения слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: DefinitionInLineSerializer,
+                status.HTTP_200_OK: DefinitionInLineSerializer,
             },
         },
         'word_examples_list': {
@@ -454,21 +451,21 @@ data = {
             'summary': 'Просмотр примера использования слова',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: UsageExampleForWordSerializer,
+                status.HTTP_200_OK: UsageExampleInLineSerializer,
             },
         },
         'word_example_partial_update': {
             'summary': 'Редактирование примера использования слова',
-            'request': UsageExampleForWordSerializer,
+            'request': UsageExampleInLineSerializer,
             'responses': {
-                status.HTTP_200_OK: UsageExampleForWordSerializer,
+                status.HTTP_200_OK: UsageExampleInLineSerializer,
             },
         },
         'word_example_destroy': {
             'summary': 'Удаление примера использования слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: UsageExampleInLineSerializer,
+                status.HTTP_200_OK: UsageExampleInLineSerializer,
             },
         },
         'word_notes_list': {
@@ -503,7 +500,7 @@ data = {
             'summary': 'Удаление заметки слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: WordSerializer,
+                status.HTTP_200_OK: WordSerializer,
             },
         },
         'word_synonyms_list': {
@@ -524,21 +521,21 @@ data = {
             'summary': 'Просмотр синонима слова',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: SynonymForWordSerializer,
+                status.HTTP_200_OK: SynonymInLineSerializer,
             },
         },
         'word_synonym_partial_update': {
             'summary': 'Редактирование синонима слова',
-            'request': SynonymForWordSerializer,
+            'request': SynonymInLineSerializer,
             'responses': {
-                status.HTTP_200_OK: SynonymForWordSerializer,
+                status.HTTP_200_OK: SynonymInLineSerializer,
             },
         },
         'word_synonym_destroy': {
             'summary': 'Удаление синонима слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: SynonymForWordListSerializer,
+                status.HTTP_200_OK: SynonymForWordListSerializer,
             },
         },
         'word_antonyms_list': {
@@ -559,21 +556,21 @@ data = {
             'summary': 'Просмотр антонима слова',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: AntonymForWordSerializer,
+                status.HTTP_200_OK: AntonymInLineSerializer,
             },
         },
         'word_antonym_partial_update': {
             'summary': 'Редактирование антонима слова',
-            'request': AntonymForWordSerializer,
+            'request': AntonymInLineSerializer,
             'responses': {
-                status.HTTP_200_OK: AntonymForWordSerializer,
+                status.HTTP_200_OK: AntonymInLineSerializer,
             },
         },
         'word_antonym_destroy': {
             'summary': 'Удаление антонима слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: AntonymForWordListSerializer,
+                status.HTTP_200_OK: AntonymForWordListSerializer,
             },
         },
         'word_forms_list': {
@@ -594,21 +591,21 @@ data = {
             'summary': 'Просмотр формы слова',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: FormForWordSerializer,
+                status.HTTP_200_OK: FormInLineSerializer,
             },
         },
         'word_form_partial_update': {
             'summary': 'Редактирование формы слова',
-            'request': FormForWordSerializer,
+            'request': FormInLineSerializer,
             'responses': {
-                status.HTTP_200_OK: FormForWordSerializer,
+                status.HTTP_200_OK: FormInLineSerializer,
             },
         },
         'word_form_destroy': {
             'summary': 'Удаление формы слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: FormForWordListSerializer,
+                status.HTTP_200_OK: FormForWordListSerializer,
             },
         },
         'word_similars_list': {
@@ -629,21 +626,21 @@ data = {
             'summary': 'Просмотр похожего слова слова',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: SimilarForWordSerailizer,
+                status.HTTP_200_OK: SimilarInLineSerializer,
             },
         },
         'word_similar_partial_update': {
             'summary': 'Редактирование похожего слова слова',
-            'request': SimilarForWordSerailizer,
+            'request': SimilarInLineSerializer,
             'responses': {
-                status.HTTP_200_OK: SimilarForWordSerailizer,
+                status.HTTP_200_OK: SimilarInLineSerializer,
             },
         },
         'word_similar_destroy': {
             'summary': 'Удаление похожего слова слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: SimilarForWordListSerializer,
+                status.HTTP_200_OK: SimilarForWordListSerializer,
             },
         },
         'word_associations_list': {
@@ -662,42 +659,42 @@ data = {
             'summary': 'Просмотр картинки-ассоциации слова',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: ImageForWordSerializer,
+                status.HTTP_200_OK: ImageInLineSerializer,
             },
         },
         'word_image_partial_update': {
             'summary': 'Редактирование картинки-ассоциации слова',
-            'request': ImageForWordSerializer,
+            'request': ImageInLineSerializer,
             'responses': {
-                status.HTTP_200_OK: ImageForWordSerializer,
+                status.HTTP_200_OK: ImageInLineSerializer,
             },
         },
         'word_image_destroy': {
             'summary': 'Удаление картинки-ассоциации слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: ImageInLineSerializer,
+                status.HTTP_200_OK: ImageInLineSerializer,
             },
         },
         'word_quote_retrieve': {
             'summary': 'Просмотр цитаты-ассоциации слова',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: QuoteForWordSerializer,
+                status.HTTP_200_OK: QuoteInLineSerializer,
             },
         },
         'word_quote_partial_update': {
             'summary': 'Редактирование цитаты-ассоциации слова',
-            'request': QuoteForWordSerializer,
+            'request': QuoteInLineSerializer,
             'responses': {
-                status.HTTP_200_OK: QuoteForWordSerializer,
+                status.HTTP_200_OK: QuoteInLineSerializer,
             },
         },
         'word_quote_destroy': {
             'summary': 'Удаление цитаты-ассоциации слова',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: QuoteInLineSerializer,
+                status.HTTP_200_OK: QuoteInLineSerializer,
             },
         },
         'words_favorites_list': {
@@ -718,7 +715,7 @@ data = {
             'summary': 'Удаление слова из избранного',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: WordSerializer,
+                status.HTTP_200_OK: WordSerializer,
             },
         },
         'images_upload': {
@@ -799,7 +796,7 @@ data = {
             'summary': 'Удаление перевода',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: WordTranslationListSerializer,
+                status.HTTP_200_OK: WordTranslationListSerializer,
             },
         },
         'words_add_to_translation': {
@@ -845,7 +842,7 @@ data = {
             'summary': 'Удаление примера',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: UsageExampleListSerializer,
+                status.HTTP_200_OK: UsageExampleListSerializer,
             },
         },
         'words_add_to_example': {
@@ -891,7 +888,7 @@ data = {
             'summary': 'Удаление определения',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: DefinitionListSerializer,
+                status.HTTP_200_OK: DefinitionListSerializer,
             },
         },
         'words_add_to_definition': {
@@ -939,7 +936,7 @@ data = {
             'summary': 'Удаление картинки-ассоциации',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: ImageListSerializer,
+                status.HTTP_200_OK: ImageListSerializer,
             },
         },
         'words_add_to_image': {
@@ -1113,7 +1110,7 @@ data = {
             'summary': 'Удаление коллекции',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: CollectionShortSerializer,
+                status.HTTP_200_OK: CollectionShortSerializer,
             },
         },
         'words_add_to_collection': {
@@ -1169,7 +1166,7 @@ data = {
             'summary': 'Удаление коллекции из избранного',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: CollectionShortSerializer,
+                status.HTTP_200_OK: CollectionShortSerializer,
             },
         },
         'add_words_to_collections': {
@@ -1181,7 +1178,7 @@ data = {
         },
         # other methods
     },
-    'LanguagesViewSet': {
+    'LanguageViewSet': {
         'tags': ['learning_languages'],
         'learning_languages_list': {
             'summary': 'Просмотр списка изучаемых языков пользователя',
@@ -1208,7 +1205,7 @@ data = {
             'summary': 'Удаление языка из изучаемых',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: LearningLanguageWithLastWordsSerailizer,
+                status.HTTP_200_OK: LearningLanguageWithLastWordsSerailizer,
             },
         },
         'language_collections_list': {
@@ -1331,7 +1328,7 @@ data = {
             'summary': 'Удаление набора слов для этого упражнения',
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: SetListSerializer,
+                status.HTTP_200_OK: SetListSerializer,
             },
         },
         'exercise_last_approach_retrieve': {
