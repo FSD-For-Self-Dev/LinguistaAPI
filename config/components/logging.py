@@ -30,12 +30,21 @@ LOGGING = {
             'filters': ['require_debug_true'],
             'formatter': 'verbose',
         },
-        'file': {
+        'general_file': {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': 'logs/general.log',
             'backupCount': 10,  # keep at most 10 log files
             'maxBytes': 1024 * 1024 * 5,  # 5 MB
             'formatter': 'verbose',
+            'delay': True,
+        },
+        'queries_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': 'logs/queries.log',
+            'backupCount': 5,  # keep at most 5 log files
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'formatter': 'verbose',
+            'delay': True,
         },
         'mail_admins': {
             # "level": "ERROR",
@@ -44,6 +53,17 @@ LOGGING = {
         },
     },
     'loggers': {
+        'config.middleware.request_log': {
+            'handlers': ['general_file'],
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+        },
+        'config.middleware.db_queries_log': {
+            'handlers': ['queries_file'],
+            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+            'propagate': False,
+            'filters': ['require_debug_true'],
+        },
         'django.request': {
             'handlers': ['mail_admins', 'console'],
             'level': 'ERROR',
@@ -53,17 +73,6 @@ LOGGING = {
             'handlers': ['mail_admins'],
             'level': 'ERROR',
             'propagate': False,
-        },
-        'config.middleware.request_log': {
-            'handlers': ['file'],
-            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
-            'propagate': False,
-        },
-        'config.middleware.db_queries_log': {
-            'handlers': ['file'],
-            'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
-            'propagate': False,
-            'filters': ['require_debug_true'],
         },
         '': {
             'handlers': ['console'],
