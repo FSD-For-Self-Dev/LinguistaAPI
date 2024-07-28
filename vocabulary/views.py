@@ -111,6 +111,7 @@ from .serializers import (
     LearningLanguageWithLastWordsSerailizer,
     LearningLanguageShortSerailizer,
     MainPageSerailizer,
+    AllUserAssociationsSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -1415,37 +1416,15 @@ class AssociationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     http_method_names = ('get',)
     queryset = ImageAssociation.objects.none()
-    serializer_class = None
+    serializer_class = AllUserAssociationsSerializer
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
 
     def list(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns list of all user's associations of any type."""
-        user = request.user
-        logger.debug(f'Associations gallery is requested by user {request.user}')
-
-        images = ImageInLineSerializer(
-            user.imageassociations.all(),
-            many=True,
-            context={'request': request},
-        )
-        logger.debug(f'User image-associations: {images.data}')
-
-        quotes = QuoteInLineSerializer(
-            user.quoteassociations.all(),
-            many=True,
-            context={'request': request},
-        )
-        logger.debug(f'User quote-associations: {quotes.data}')
-
-        result_list = sorted(
-            chain(quotes.data, images.data),
-            key=lambda d: d.get('created'),
-            reverse=True,
-        )
-        logger.debug(f'Result list: {result_list}')
-
-        return Response(result_list)
+        serializer = self.get_serializer(request.user, many=False)
+        logger.debug(f'Serializer used for list user associations: {type(serializer)}')
+        return Response(serializer.data)
 
 
 @extend_schema(tags=['images_associations'])

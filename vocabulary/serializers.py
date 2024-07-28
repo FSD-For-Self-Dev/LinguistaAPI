@@ -2325,3 +2325,34 @@ class MainPageSerailizer(UserDetailsSerializer):
         return self.get_last_10_objs(
             obj, 'wordtranslations', WordTranslationListSerializer
         )
+
+
+class AllUserAssociationsSerializer(serializers.ModelSerializer):
+    associations_list = serializers.SerializerMethodField('get_user_associations')
+
+    class Meta:
+        model = User
+        fields = ('associations_list',)
+
+    @extend_schema_field(list)
+    def get_user_associations(self, obj) -> chain:
+        """Returns list of all user's words associations."""
+        images = ImageInLineSerializer(
+            obj.imageassociations.all(),
+            many=True,
+            context=self.context,
+        )
+
+        quotes = QuoteInLineSerializer(
+            obj.quoteassociations.all(),
+            many=True,
+            context=self.context,
+        )
+
+        result_list = sorted(
+            chain(quotes.data, images.data),
+            key=lambda d: d.get('created'),
+            reverse=True,
+        )
+
+        return result_list

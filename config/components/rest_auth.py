@@ -1,7 +1,6 @@
 from datetime import timedelta
 
 SIMPLE_JWT = {
-    # Срок жизни токена
     'ACCESS_TOKEN_LIFETIME': timedelta(days=3),
     'AUTH_HEADER_TYPES': ('Bearer',),
 }
@@ -20,6 +19,7 @@ REST_AUTH = {
     'PASSWORD_CHANGE_SERIALIZER': 'dj_rest_auth.serializers.PasswordChangeSerializer',
     'REGISTER_SERIALIZER': 'dj_rest_auth.registration.serializers.RegisterSerializer',
     'EMAIL_REQUIRED': True,
+    'UNIQUE_EMAIL': True,
     'REGISTER_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
     'TOKEN_MODEL': 'rest_framework.authtoken.models.Token',
     'TOKEN_CREATOR': 'dj_rest_auth.utils.default_create_token',
@@ -37,5 +37,14 @@ REST_AUTH = {
     'JWT_AUTH_RETURN_EXPIRATION': False,
     'JWT_AUTH_COOKIE_USE_CSRF': False,
     'JWT_AUTH_COOKIE_ENFORCE_CSRF_ON_UNAUTHENTICATED': False,
-    'ACCOUNT_CONFIRM_EMAIL_ON_GET': True,
 }
+
+ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
+ACCOUNT_EMAIL_REQUIRED = True
+ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = (
+    'http://localhost:8000/api/auth/login/'
+)
+LOGIN_URL = 'http://localhost:8000/api/auth/login/'
+ACCOUNT_CONFIRM_EMAIL_ON_GET = True
+ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False

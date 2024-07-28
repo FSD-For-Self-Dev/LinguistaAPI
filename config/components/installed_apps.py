@@ -12,6 +12,8 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
+    'allauth.socialaccount.providers.vk',
+    'allauth.socialaccount.providers.yandex',
     'dj_rest_auth',
     'dj_rest_auth.registration',
     'django_filters',

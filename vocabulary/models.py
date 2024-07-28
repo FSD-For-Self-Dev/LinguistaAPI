@@ -1029,9 +1029,6 @@ class Synonym(WordSelfRelatedWithNoteModel):
                 check=~models.Q(to_word=models.F('from_word')),
                 name='synonym_not_same_word',
             ),
-            models.UniqueConstraint(
-                fields=['from_word', 'to_word'], name='unique_synonyms_pair'
-            ),
         ]
 
 
@@ -1054,9 +1051,6 @@ class Antonym(WordSelfRelatedWithNoteModel):
             models.CheckConstraint(
                 check=~models.Q(to_word=models.F('from_word')),
                 name='antonym_not_same_word',
-            ),
-            models.UniqueConstraint(
-                fields=['from_word', 'to_word'], name='unique_antonyms_pair'
             ),
         ]
 
@@ -1081,9 +1075,6 @@ class Form(WordSelfRelatedModel):
                 check=~models.Q(to_word=models.F('from_word')),
                 name='form_not_same_word',
             ),
-            models.UniqueConstraint(
-                fields=['from_word', 'to_word'], name='unique_forms_pair'
-            ),
         ]
 
 
@@ -1106,9 +1097,6 @@ class Similar(WordSelfRelatedModel):
             models.CheckConstraint(
                 check=~models.Q(to_word=models.F('from_word')),
                 name='similar_not_same_word',
-            ),
-            models.UniqueConstraint(
-                fields=['from_word', 'to_word'], name='unique_similars_pair'
             ),
         ]
 

@@ -25,8 +25,13 @@ class RequestLogMiddleware:
 
         # Only log requests with "/api/" in path
         if '/api/' in str(request.get_full_path()):
-            req_body = json.loads(request.body.decode('utf-8')) if request.body else {}
-            log_data['request_body'] = req_body
+            try:
+                req_body = (
+                    json.loads(request.body.decode('utf-8')) if request.body else {}
+                )
+                log_data['request_body'] = req_body
+            except json.JSONDecodeError:
+                pass
 
         # Pass request to controller
         response = self.get_response(request)
