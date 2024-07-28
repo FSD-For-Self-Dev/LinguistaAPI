@@ -2161,11 +2161,11 @@ class UserDetailsSerializer(
 ):
     """Serializer to retrieve, update user's profile data."""
 
-    native_languages = PresentablePrimaryKeyRelatedField(
+    native_languages = serializers.SlugRelatedField(
         queryset=Language.objects.all(),
+        slug_field='name',
         required=False,
         many=True,
-        presentation_serializer=LanguageSerializer,
     )
     learning_languages_count = KwargsMethodField(
         'get_objs_count',
