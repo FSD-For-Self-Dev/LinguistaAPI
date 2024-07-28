@@ -84,7 +84,7 @@ class CustomSchema(AutoSchema):
                 'description'
             ]
         except KeyError:
-            return None
+            return super().get_description()
 
     def get_summary(self) -> str | None:
         try:
@@ -92,7 +92,7 @@ class CustomSchema(AutoSchema):
                 'summary'
             ]
         except KeyError:
-            return None
+            return super().get_summary()
 
     def get_request_serializer(self) -> Serializer | None:
         try:
@@ -100,7 +100,7 @@ class CustomSchema(AutoSchema):
                 'request'
             ]
         except KeyError:
-            return None
+            return super().get_request_serializer()
 
     def get_response_serializers(self) -> dict[int, OpenApiResponse]:
         try:
@@ -108,7 +108,7 @@ class CustomSchema(AutoSchema):
                 'responses'
             ]
         except KeyError:
-            return {}
+            return super().get_response_serializers()
 
     def get_override_parameters(self) -> list[OpenApiParameter]:
         try:
@@ -116,7 +116,7 @@ class CustomSchema(AutoSchema):
                 'parameters'
             ]
         except KeyError:
-            return []
+            return super().get_override_parameters()
 
 
 data = {
