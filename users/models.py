@@ -25,7 +25,6 @@ class User(AbstractUser, CreatedModel, ModifiedModel):
     )
     email = models.EmailField(
         _('Email'),
-        unique=True,
         blank=False,
     )
     gender = models.CharField(
