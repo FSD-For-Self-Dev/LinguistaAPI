@@ -9,6 +9,9 @@ from drf_spectacular.utils import (
 )
 from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import RetrieveUpdateDestroyAPIView
+
+from dj_rest_auth.views import UserDetailsView
 
 from core.pagination import LimitPagination
 
@@ -33,3 +36,7 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def get_queryset(self) -> QuerySet:
         """Exclude admins from users list."""
         return User.objects.filter(is_staff=False)
+
+
+class UserDetailsWithDestroyView(UserDetailsView, RetrieveUpdateDestroyAPIView):
+    """Add destroy action to user detail actions."""
