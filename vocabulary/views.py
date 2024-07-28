@@ -2183,7 +2183,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 return super().get_serializer_class()
 
     def list(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Returns all user's learning languages."""
+        """Returns all user's learning languages, its amount."""
         response_data = super().list(request, *args, **kwargs).data
         return Response({'count': len(response_data), 'results': response_data})
 
@@ -2201,10 +2201,11 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             amount_limit = kwargs.get(
                 'amount_limit', UsersAmountLimits.MAX_LEARNING_LANGUAGES_AMOUNT
             )
+            logger.debug(f'Objects amount limit: {amount_limit}')
             current_amount = kwargs.get(
                 'current_amount', request.user.learning_languages.count()
             )
-            logger.debug(f'Objects amount limit: {amount_limit}')
+            logger.debug(f'Objects current amount: {current_amount}')
             try:
                 UsersAmountLimits.check_amount_limit(
                     current_amount, len(serializer.validated_data), amount_limit

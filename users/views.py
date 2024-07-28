@@ -38,5 +38,12 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return User.objects.filter(is_staff=False)
 
 
+@extend_schema(tags=['user_profile'])
+@extend_schema_view(
+    get=extend_schema(operation_id='user_retrieve'),
+    put=extend_schema(operation_id='user_update'),
+    patch=extend_schema(operation_id='user_partial_update'),
+    delete=extend_schema(operation_id='user_destroy'),
+)
 class UserDetailsWithDestroyView(UserDetailsView, RetrieveUpdateDestroyAPIView):
     """Add destroy action to user detail actions."""

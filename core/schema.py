@@ -1,5 +1,7 @@
 """Custom schema generator."""
 
+import logging
+
 from rest_framework import status
 from rest_framework.serializers import Serializer
 from drf_spectacular.openapi import AutoSchema
@@ -68,6 +70,8 @@ from users.serializers import (
 )
 from languages.serializers import LanguageSerializer
 
+logger = logging.getLogger(__name__)
+
 
 class CustomSchema(AutoSchema):
     """Custom schema generator to generate schema from common data dictionary."""
@@ -75,7 +79,7 @@ class CustomSchema(AutoSchema):
     def get_tags(self) -> list[str]:
         try:
             return data[self.view.__class__.__name__]['tags']
-        except KeyError:
+        except Exception:
             return data['default']['tags']
 
     def get_description(self) -> str | None:
@@ -83,7 +87,7 @@ class CustomSchema(AutoSchema):
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'description'
             ]
-        except KeyError:
+        except Exception:
             return super().get_description()
 
     def get_summary(self) -> str | None:
@@ -91,7 +95,11 @@ class CustomSchema(AutoSchema):
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'summary'
             ]
-        except KeyError:
+        except Exception:
+            logger.warning(
+                f'Информация о методе отсутствует в данных схемы '
+                f'[{self.view.__class__.__name__}: {self.get_operation_id().lower()}]'
+            )
             return super().get_summary()
 
     def get_request_serializer(self) -> Serializer | None:
@@ -99,7 +107,7 @@ class CustomSchema(AutoSchema):
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'request'
             ]
-        except KeyError:
+        except Exception:
             return super().get_request_serializer()
 
     def get_response_serializers(self) -> dict[int, OpenApiResponse]:
@@ -107,7 +115,7 @@ class CustomSchema(AutoSchema):
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'responses'
             ]
-        except KeyError:
+        except Exception:
             return super().get_response_serializers()
 
     def get_override_parameters(self) -> list[OpenApiParameter]:
@@ -115,13 +123,62 @@ class CustomSchema(AutoSchema):
             return data[self.view.__class__.__name__][self.get_operation_id().lower()][
                 'parameters'
             ]
-        except KeyError:
+        except Exception:
             return super().get_override_parameters()
 
 
 data = {
     'default': {
+        'tags': ['default'],
+    },
+    'Fixed': {
         'tags': ['authentication'],
+        'ru_api_auth_login_create': {
+            'summary': 'Вход в аккаунт',
+        },
+        'ru_api_auth_logout_create': {
+            'summary': 'Выход из аккаунта',
+        },
+        'ru_api_auth_password_change_create': {
+            'summary': 'Изменение пароля',
+        },
+        'ru_api_auth_password_reset_create': {
+            'summary': 'Восстановление пароля',
+        },
+        'ru_api_auth_password_reset_confirm_create': {
+            'summary': 'Подтверждение восстановления пароля',
+        },
+        'ru_api_auth_registration_create': {
+            'summary': 'Регистрация',
+        },
+        'ru_api_auth_registration_resend_email_create': {
+            'summary': 'Повторная отправка сообщения с подтверждением e-mail адреса',
+        },
+        'ru_api_auth_registration_verify_email_create': {
+            'summary': 'Подтверждение e-mail адреса',
+            'description': (
+                'Передайте в теле запроса ключ подтверждения, чтобы подтвердить '
+                'свой e-mail адрес. '
+                'Возвращает сообщение об успехе/ошибке.'
+            ),
+        },
+        # other methods
+    },
+    'UserDetailsWithDestroyView': {
+        'tags': ['user_profile'],
+        'user_retrieve': {
+            'summary': 'Просмотр профиля пользователя',
+        },
+        'user_update': {
+            'summary': 'Редактирование профиля пользователя',
+        },
+        'user_partial_update': {
+            'summary': 'Редактирование профиля пользователя',
+        },
+        'user_destroy': {
+            'summary': 'Удаление аккаунта пользователя',
+        },
+        # other methods
     },
     'MainPageViewSet': {
         'tags': ['main_page'],
@@ -655,6 +712,13 @@ data = {
                 status.HTTP_201_CREATED: WordSerializer,
             },
         },
+        'word_images_list': {
+            'summary': 'Просмотр списка всех картинок-ассоциаций слова',
+            'request': None,
+            'responses': {
+                status.HTTP_200_OK: ImageInLineSerializer,
+            },
+        },
         'word_image_retrieve': {
             'summary': 'Просмотр картинки-ассоциации слова',
             'request': None,
@@ -674,6 +738,13 @@ data = {
             'request': None,
             'responses': {
                 status.HTTP_200_OK: ImageInLineSerializer,
+            },
+        },
+        'word_quotes_list': {
+            'summary': 'Просмотр списка всех цитат-ассоциаций слова',
+            'request': None,
+            'responses': {
+                status.HTTP_200_OK: QuoteInLineSerializer,
             },
         },
         'word_quote_retrieve': {
@@ -1296,35 +1367,35 @@ data = {
                 status.HTTP_200_OK: ExerciseListSerializer,
             },
         },
-        'exercise_sets_list': {
+        'exercise_words_sets_list': {
             'summary': 'Просмотр списка наборов слов для этого упражнения',
             'request': None,
             'responses': {
                 status.HTTP_200_OK: SetListSerializer,
             },
         },
-        'exercise_sets_create': {
+        'exercise_words_sets_create': {
             'summary': 'Создание набора слов для этого упражнения',
             'request': SetSerializer,
             'responses': {
                 status.HTTP_201_CREATED: SetSerializer,
             },
         },
-        'exercise_set_retrieve': {
+        'exercise_words_set_retrieve': {
             'summary': 'Просмотр набора слов',
             'request': None,
             'responses': {
                 status.HTTP_200_OK: SetSerializer,
             },
         },
-        'exercise_set_partial_update': {
+        'exercise_words_set_partial_update': {
             'summary': 'Редактирование набора слов',
             'request': SetSerializer,
             'responses': {
                 status.HTTP_200_OK: SetSerializer,
             },
         },
-        'exercise_set_destroy': {
+        'exercise_words_set_destroy': {
             'summary': 'Удаление набора слов для этого упражнения',
             'request': None,
             'responses': {

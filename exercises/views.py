@@ -113,7 +113,7 @@ class ExerciseViewSet(
         """Returns exercises list for anonymous users."""
         return self.list(request)
 
-    @extend_schema(operation_id='exercise_sets_list', methods=('get',))
+    @extend_schema(operation_id='exercise_words_sets_list', methods=('get',))
     @action(
         methods=('get',),
         detail=True,
@@ -129,7 +129,7 @@ class ExerciseViewSet(
             search_fields=['name', 'words__text'],
         )
 
-    @extend_schema(operation_id='exercise_sets_create', methods=('post',))
+    @extend_schema(operation_id='exercise_words_sets_create', methods=('post',))
     @word_sets.mapping.post
     def word_sets_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Creates new words sets, returns words sets updated list."""
@@ -141,8 +141,9 @@ class ExerciseViewSet(
             return_objs_list=True,
         )
 
-    @extend_schema(operation_id='exercise_set_retrieve', methods=('get',))
-    @extend_schema(operation_id='exercise_set_partial_update', methods=('patch',))
+    @extend_schema(operation_id='exercise_words_set_retrieve', methods=('get',))
+    @extend_schema(operation_id='exercise_words_set_partial_update', methods=('patch',))
+    @extend_schema(operation_id='exercise_words_set_destroy', methods=('delete',))
     @action(
         methods=('get', 'patch', 'delete'),
         detail=True,
