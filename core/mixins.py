@@ -343,7 +343,7 @@ class ActionsWithRelatedObjectsMixin:
         try:
             logger.debug(
                 f'Lookup field: {lookup_field}, '
-                f'Lookup query param: {lookup_query_param}'
+                f'Lookup query param: {lookup_query_param}, '
                 f'Objects related name: {objs_related_name}'
             )
             _obj = instance.__getattribute__(objs_related_name).get(
