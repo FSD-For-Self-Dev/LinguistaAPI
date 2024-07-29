@@ -1,3 +1,4 @@
+import os
 from datetime import timedelta
 
 SIMPLE_JWT = {
@@ -42,9 +43,10 @@ REST_AUTH = {
 ACCOUNT_EMAIL_CONFIRMATION_EXPIRE_DAYS = 1
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_EMAIL_VERIFICATION = 'mandatory'
-ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = (
-    'http://localhost:8000/api/auth/login/'
+ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = os.environ.get(
+    'ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL',
+    'http://localhost:8000/api/auth/login/',
 )
-LOGIN_URL = 'http://localhost:8000/api/auth/login/'
+LOGIN_URL = os.environ.get('LOGIN_URL', 'http://localhost:8000/api/auth/login/')
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False
