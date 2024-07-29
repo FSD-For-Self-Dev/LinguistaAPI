@@ -412,7 +412,7 @@ class WordTranslation(
     class Meta:
         verbose_name = _('Translation')
         verbose_name_plural = _('Translations')
-        db_table_comment = _('Users words and phrases translations')
+        db_table_comment = _('Translations for words and phrases')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -471,7 +471,7 @@ class Definition(
     class Meta:
         verbose_name = _('Definition')
         verbose_name_plural = _('Definitions')
-        db_table_comment = _('Users words and phrases definitions')
+        db_table_comment = _('Definitions for words and phrases')
         ordering = ('-created', '-modified', '-id')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -482,7 +482,7 @@ class Definition(
 
     def __str__(self) -> str:
         if self.translation:
-            return _(f'{self.text} ({self.translation})')
+            return f'{self.text} ({self.translation})'
         return self.text
 
 
@@ -532,7 +532,7 @@ class UsageExample(
     class Meta:
         verbose_name = _('Usage example')
         verbose_name_plural = _('Usage examples')
-        db_table_comment = _('Users words and phrases usage examples')
+        db_table_comment = _('Usage examples for words and phrases')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -543,7 +543,7 @@ class UsageExample(
 
     def __str__(self) -> str:
         if self.translation:
-            return _(f'{self.text} ({self.translation})')
+            return f'{self.text} ({self.translation})'
         return self.text
 
 
@@ -571,9 +571,9 @@ class ImageAssociation(
     get_object_by_fields = ('image',)
 
     class Meta:
-        verbose_name = _('Association image')
-        verbose_name_plural = _('Association images')
-        db_table_comment = _('Users words and phrases image-associations')
+        verbose_name = _('Image-association')
+        verbose_name_plural = _('Image-associations')
+        db_table_comment = _('Image-associations for words and phrases')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
 
@@ -615,9 +615,9 @@ class QuoteAssociation(
     get_object_by_fields = ('text',)
 
     class Meta:
-        verbose_name = _('Association quote')
-        verbose_name_plural = _('Association quotes')
-        db_table_comment = _('Users words and phrases quote-associations')
+        verbose_name = _('Quote-association')
+        verbose_name_plural = _('Quote-associations')
+        db_table_comment = _('Quote-associations for words and phrases')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
 
@@ -670,7 +670,7 @@ class Collection(
     class Meta:
         verbose_name = _('Collection')
         verbose_name_plural = _('Collections')
-        db_table_comment = _('Users words and phrases collections')
+        db_table_comment = _('Collections of words and phrases')
         ordering = ('-created', '-modified', '-id')
         get_latest_by = ('created', 'modified')
         constraints = [
@@ -680,7 +680,7 @@ class Collection(
         ]
 
     def __str__(self) -> str:
-        return _(f'{self.title}')
+        return self.title
 
 
 class WordRelatedModel(CreatedModel):
@@ -716,9 +716,9 @@ class WordsFormGroups(WordRelatedModel):
     get_object_by_fields = ('word', 'forms_group')
 
     class Meta:
-        verbose_name = _('Word form group')
-        verbose_name_plural = _('Words form groups')
-        db_table_comment = _('Words and form groups intermediary model')
+        verbose_name = _('Word form group (intermediary model)')
+        verbose_name_plural = _('Words form groups (intermediary model)')
+        db_table_comment = _('Intermediary model for words and form groups')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -752,8 +752,8 @@ class WordTranslations(GetObjectModelMixin, WordRelatedModel):
     get_object_by_fields = ('word', 'translation')
 
     class Meta:
-        verbose_name = _('Word translation')
-        verbose_name_plural = _('Word translations')
+        verbose_name = _('Word translation (intermediary model)')
+        verbose_name_plural = _('Word translations (intermediary model)')
         db_table_comment = _('Words and its translations intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
@@ -789,8 +789,8 @@ class WordDefinitions(GetObjectModelMixin, WordRelatedModel):
     get_object_by_fields = ('word', 'definition')
 
     class Meta:
-        verbose_name = _('Word definition')
-        verbose_name_plural = _('Word definitions')
+        verbose_name = _('Word definition (intermediary model)')
+        verbose_name_plural = _('Word definitions (intermediary model)')
         db_table_comment = _('Words and definitions intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
@@ -826,8 +826,8 @@ class WordUsageExamples(GetObjectModelMixin, WordRelatedModel):
     get_object_by_fields = ('word', 'example')
 
     class Meta:
-        verbose_name = _('Word usage example')
-        verbose_name_plural = _('Word usage examples')
+        verbose_name = _('Word usage example (intermediary model)')
+        verbose_name_plural = _('Word usage examples (intermediary model)')
         db_table_comment = _('Words and usage examples intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
@@ -862,8 +862,8 @@ class WordImageAssociations(GetObjectModelMixin, WordRelatedModel):
     get_object_by_fields = ('word', 'image')
 
     class Meta:
-        verbose_name = _('Word image')
-        verbose_name_plural = _('Words images')
+        verbose_name = _('Word image-association (intermediary model)')
+        verbose_name_plural = _('Words image-associations (intermediary model)')
         db_table_comment = _('Words and image-associations intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
@@ -896,8 +896,8 @@ class WordQuoteAssociations(GetObjectModelMixin, WordRelatedModel):
     get_object_by_fields = ('word', 'quote')
 
     class Meta:
-        verbose_name = _('Word quote')
-        verbose_name_plural = _('Words quotes')
+        verbose_name = _('Word quote-association (intermediary model)')
+        verbose_name_plural = _('Words quote-associations (intermediary model)')
         db_table_comment = _('Words and quote-associations intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)
@@ -930,8 +930,8 @@ class WordsInCollections(GetObjectModelMixin, WordRelatedModel):
     get_object_by_fields = ('word', 'collection')
 
     class Meta:
-        verbose_name = _('Words in collections')
-        verbose_name_plural = _('Words in collections')
+        verbose_name = _('Word in collection (intermediary model)')
+        verbose_name_plural = _('Words in collections (intermediary model)')
         db_table_comment = _('Words and collections intermediary model')
         ordering = ('-created',)
         get_latest_by = ('created',)

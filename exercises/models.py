@@ -55,7 +55,7 @@ class Exercise(
         null=True,
     )
     available = models.BooleanField(
-        _('Is the exercise available for users.'),
+        _('Is the exercise available for users'),
         default=False,
     )
     hints_available = models.ManyToManyField(
@@ -70,7 +70,7 @@ class Exercise(
     class Meta:
         verbose_name = _('Exercise')
         verbose_name_plural = _('Exercises')
-        db_table_comment = _('Exercises with words available in the app')
+        db_table_comment = _("Exercises with user's words")
         ordering = ('-created',)
         get_latest_by = ('created', 'modified')
 
@@ -403,7 +403,7 @@ class FavoriteExercise(CreatedModel):
         get_latest_by = ('created',)
 
     def __str__(self) -> str:
-        return _(
+        return (
             f'The exercise `{self.exercise}` was added to favorites by '
             f'{self.user} at {self.created}'
         )
@@ -460,7 +460,7 @@ class WordSet(
         get_latest_by = ('created',)
 
     def __str__(self) -> str:
-        return _(
+        return (
             f'`{self.name}` ({self.words.count()} words) set for {self.exercise} '
             f'exercise'
         )

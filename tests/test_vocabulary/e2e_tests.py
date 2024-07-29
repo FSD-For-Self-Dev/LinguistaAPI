@@ -41,7 +41,7 @@ def get_yesterday_date():
 
 @pytest.mark.vocabulary
 class TestVocabularyEndpoints:
-    endpoint = '/ru/api/vocabulary/'
+    endpoint = '/api/vocabulary/'
 
     @pytest.mark.parametrize(
         'pagination_field',
@@ -1630,7 +1630,7 @@ class TestVocabularyEndpoints:
 
 @pytest.mark.word_types
 class TestTypesEndpoints:
-    endpoint = '/ru/api/types/'
+    endpoint = '/api/types/'
 
     def test_list(self, auth_api_client, user, word_types):
         """
@@ -1647,7 +1647,7 @@ class TestTypesEndpoints:
 
 @pytest.mark.word_tags
 class TestTagsEndpoints:
-    endpoint = '/ru/api/tags/'
+    endpoint = '/api/tags/'
 
     def test_list(self, auth_api_client, user, word_tags):
         """
@@ -1664,7 +1664,7 @@ class TestTagsEndpoints:
 
 @pytest.mark.word_form_groups
 class TestFormGroupsEndpoints:
-    endpoint = '/ru/api/forms-groups/'
+    endpoint = '/api/forms-groups/'
 
     def test_list(self, auth_api_client, user, word_forms_groups):
         """
@@ -1681,7 +1681,7 @@ class TestFormGroupsEndpoints:
 
 @pytest.mark.word_translations
 class TestWordTranslationsEndpoints:
-    endpoint = '/ru/api/translations/'
+    endpoint = '/api/translations/'
     objs_related_name = 'translations'
     related_model = WordTranslation
 
@@ -1821,7 +1821,7 @@ class TestWordTranslationsEndpoints:
 
 @pytest.mark.word_usage_examples
 class TestWordExamplesEndpoints:
-    endpoint = '/ru/api/examples/'
+    endpoint = '/api/examples/'
     objs_related_name = 'examples'
     related_model = UsageExample
 
@@ -1965,7 +1965,7 @@ class TestWordExamplesEndpoints:
 
 @pytest.mark.word_definitions
 class TestWordDefinitionsEndpoints:
-    endpoint = '/ru/api/definitions/'
+    endpoint = '/api/definitions/'
     objs_related_name = 'definitions'
     related_model = Definition
 
@@ -2109,7 +2109,7 @@ class TestWordDefinitionsEndpoints:
 
 @pytest.mark.word_synonyms
 class TestWordSynonymsEndpoints:
-    endpoint = '/ru/api/synonyms/'
+    endpoint = '/api/synonyms/'
     objs_related_name = 'synonyms'
     related_model = Word
 
@@ -2191,7 +2191,7 @@ class TestWordSynonymsEndpoints:
 
 @pytest.mark.word_antonyms
 class TestWordAntonymsEndpoints:
-    endpoint = '/ru/api/antonyms/'
+    endpoint = '/api/antonyms/'
     objs_related_name = 'antonyms'
     related_model = Word
 
@@ -2273,7 +2273,7 @@ class TestWordAntonymsEndpoints:
 
 @pytest.mark.word_similars
 class TestWordSimilarsEndpoints:
-    endpoint = '/ru/api/similars/'
+    endpoint = '/api/similars/'
     objs_related_name = 'similars'
     related_model = Word
 
@@ -2355,7 +2355,7 @@ class TestWordSimilarsEndpoints:
 
 @pytest.mark.word_images
 class TestWordImagesEndpoints:
-    endpoint = '/ru/api/images/'
+    endpoint = '/api/images/'
     objs_related_name = 'images_associations'
     related_model = ImageAssociation
 
@@ -2482,7 +2482,7 @@ class TestWordImagesEndpoints:
 
 @pytest.mark.word_quotes
 class TestWordQuoteEndpoints:
-    endpoint = '/ru/api/quotes/'
+    endpoint = '/api/quotes/'
     objs_related_name = 'quotes_associations'
     related_model = QuoteAssociation
 
@@ -2578,7 +2578,7 @@ class TestWordQuoteEndpoints:
 
 @pytest.mark.main_page
 class TestMainPageEndpoints:
-    endpoint = '/ru/api/main/'
+    endpoint = '/api/main/'
 
     @pytest.mark.parametrize(
         'res_name, fixture_name',
@@ -2619,7 +2619,7 @@ class TestMainPageEndpoints:
 
 @pytest.mark.associations
 class TestAssociationsEndpoints:
-    endpoint = '/ru/api/associations/'
+    endpoint = '/api/associations/'
 
     @pytest.mark.parametrize(
         'fixture_name',
@@ -2640,7 +2640,7 @@ class TestAssociationsEndpoints:
 
 @pytest.mark.word_collections
 class TestWordCollectionsEndpoints:
-    endpoint = '/ru/api/collections/'
+    endpoint = '/api/collections/'
     objs_related_name = 'collections'
     related_model = Collection
 
@@ -2862,7 +2862,7 @@ class TestWordCollectionsEndpoints:
 
 @pytest.mark.languages
 class TestLanguagesEndpoints:
-    endpoint = '/ru/api/languages/'
+    endpoint = '/api/languages/'
 
     def test_list_learning(self, auth_api_client, user, learning_languages):
         """

@@ -22,8 +22,8 @@ class AmountLimits:
     @staticmethod
     def get_error_message(limit, attr_name=None):
         if attr_name:
-            return _(f'{attr_name}: достигнуто максимальное кол-во ({limit}).')
-        return _(f'Достигнуто максимальное кол-во ({limit}).')
+            return f'{attr_name}: достигнуто максимальное кол-во ({limit}).'
+        return f'Достигнуто максимальное кол-во ({limit}).'
 
     @staticmethod
     def check_amount_limit(

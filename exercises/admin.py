@@ -43,7 +43,7 @@ class UsersExercisesHistoryAdmin(admin.ModelAdmin):
 
 
 @admin.register(ExerciseHistoryDetails)
-class TranslatorHistoryDetailsAdmin(admin.ModelAdmin):
+class ExerciseHistoryDetailsAdmin(admin.ModelAdmin):
     pass
 
 

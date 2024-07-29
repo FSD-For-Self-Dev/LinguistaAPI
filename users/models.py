@@ -89,7 +89,7 @@ class UserDefaultWordsView(CreatedModel):
         related_name='words_view_setting',
     )
     words_view = models.CharField(
-        _('Words cards view'),
+        _('Word cards view'),
         max_length=8,
         choices=VIEW_OPTIONS,
         blank=False,
@@ -97,8 +97,8 @@ class UserDefaultWordsView(CreatedModel):
     )
 
     class Meta:
-        verbose_name = _('User default words view setting')
-        verbose_name_plural = _('User default words view settings')
+        verbose_name = _('User default word cards view setting')
+        verbose_name_plural = _('User default word cards view settings')
         db_table_comment = _('Default word cards view for the user')
         ordering = ('-created',)
         get_latest_by = ('created',)

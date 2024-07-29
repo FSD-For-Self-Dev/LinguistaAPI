@@ -186,7 +186,7 @@ class ExerciseViewSet(
         except ObjectDoesNotExist as exception:
             logger.error(f'ObjectDoesNotExist exception occured: {exception}')
             return Response(
-                {'detail': _("You haven't done this exercise yet")},
+                {'detail': _("You haven't done this exercise yet.")},
                 status=status.HTTP_409_CONFLICT,
             )
 

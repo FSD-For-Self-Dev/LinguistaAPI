@@ -131,7 +131,7 @@ class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
         ):
             return super().validate(attrs)
         raise serializers.ValidationError(
-            {'language': _('Этот язык пока нельзя добавить в изучаемые.')}
+            {'language': _('The selected language is not yet able for learning.')}
         )
 
 

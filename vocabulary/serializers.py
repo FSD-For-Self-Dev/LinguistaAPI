@@ -161,7 +161,7 @@ class NoteInLineSerializer(AlreadyExistSerializerHandler, serializers.ModelSeria
     )
     word = serializers.HiddenField(default=None)
 
-    already_exist_detail = _('Такая заметка у слова уже есть.')
+    already_exist_detail = _('Such a note already exists for the word.')
 
     class Meta:
         model = Note
@@ -200,7 +200,9 @@ class WordTranslationInLineSerializer(
         default=NativeLanguageDefault(),
     )
 
-    already_exist_detail = _('Такой перевод уже есть в вашем словаре. Обновить его?')
+    already_exist_detail = _(
+        'This translation already exists in your vocabulary. Update it?'
+    )
 
     class Meta:
         model = WordTranslation
@@ -241,7 +243,9 @@ class UsageExampleInLineSerializer(
         required=True,
     )
 
-    already_exist_detail = _('Такой пример уже есть в вашем словаре. Обновить его?')
+    already_exist_detail = _(
+        'This example already exists in your vocabulary. Update it?'
+    )
 
     class Meta:
         model = UsageExample
@@ -281,7 +285,7 @@ class DefinitionInLineSerializer(
     )
 
     already_exist_detail = _(
-        'Такое определение уже есть в вашем словаре. Обновить его?'
+        'This definition already exists in your vocabulary. Update it?'
     )
 
     class Meta:
@@ -327,7 +331,9 @@ class CollectionShortSerializer(
     )
     last_3_words = serializers.SerializerMethodField('get_last_3_words')
 
-    already_exist_detail = _('Такая коллекция уже есть в вашем словаре. Обновить её?')
+    already_exist_detail = _(
+        'This collection already exists in your vocabulary. Update it?'
+    )
 
     class Meta:
         model = Collection
@@ -378,7 +384,9 @@ class FormsGroupInLineSerializer(
         required=True,
     )
 
-    already_exist_detail = _('Такая группа форм уже есть в вашем словаре. Обновить её?')
+    already_exist_detail = _(
+        'This form group already exists in your vocabulary. Update it?'
+    )
 
     class Meta:
         model = FormsGroup
@@ -484,7 +492,7 @@ class TagSerializer(AlreadyExistSerializerHandler, serializers.ModelSerializer):
     )
     name = serializers.CharField()
 
-    already_exist_detail = _('Такой тег уже есть в вашем словаре. Обновить его?')
+    already_exist_detail = _('This tag already exists in your vocabulary. Update it?')
 
     class Meta:
         model = Tag
@@ -754,21 +762,21 @@ class WordShortCreateSerializer(
     )
     activity_status = serializers.SerializerMethodField('get_activity_status_display')
 
-    already_exist_detail = _('Такое слово уже есть в вашем словаре. Обновить его?')
+    already_exist_detail = _('This word already exists in your vocabulary. Update it?')
     default_error_messages = {
         'examples_same_language_detail': {
             'examples': _(
-                'Пример использования должен быть на том же языке, что и само слово.'
+                'The usage examples should be in the same language as the word itself.'
             )
         },
         'definitions_same_language_detail': {
             'definitions': _(
-                'Определение должно быть на том же языке, что и само слово.'
+                'The definitions should be in the same language as the word itself.'
             )
         },
         'forms_groups_same_language_detail': {
             'forms_groups': _(
-                'Группа форм должна быть на том же языке, что и само слово.'
+                'The form groups should be in the same language as the word itself.'
             )
         },
     }
@@ -932,7 +940,7 @@ class WordSelfRelatedSerializer(NestedSerializerMixin, serializers.ModelSerializ
 
     validate_same_language = True
     default_error_messages = {
-        'same_language_detail': _('Validation error.'),
+        'same_language_detail': _('Words must be in the same language.'),
         'same_words_detail': _('Object can not be the same word.'),
     }
 
@@ -978,10 +986,12 @@ class SynonymInLineSerializer(WordSelfRelatedSerializer):
 
     default_error_messages = {
         'same_language_detail': {
-            'synonyms': _('Синоним должен быть на том же языке, что и само слово.')
+            'synonyms': _(
+                'The synonyms should be in the same language as the word itself.'
+            )
         },
         'same_words_detail': {
-            'synonyms': _('Само слово не может быть своим синонимом.')
+            'synonyms': _('The word itself cannot be its own synonym.')
         },
     }
 
@@ -1006,10 +1016,12 @@ class AntonymInLineSerializer(WordSelfRelatedSerializer):
 
     default_error_messages = {
         'same_language_detail': {
-            'antonyms': _('Антоним должен быть на том же языке, что и само слово.')
+            'antonyms': _(
+                'The antonyms should be in the same language as the word itself.'
+            )
         },
         'same_words_detail': {
-            'antonyms': _('Само слово не может быть своим антонимом.')
+            'antonyms': _('The word itself cannot be its own antonym.')
         },
     }
 
@@ -1034,9 +1046,9 @@ class FormInLineSerializer(WordSelfRelatedSerializer):
 
     default_error_messages = {
         'same_language_detail': {
-            'forms': _('Форма должна быть на том же языке, что и само слово.')
+            'forms': _('The forms should be in the same language as the word itself.')
         },
-        'same_words_detail': {'forms': _('Само слово не может быть своей формой.')},
+        'same_words_detail': {'forms': _('The word itself cannot be its own form.')},
     }
 
     class Meta:
@@ -1060,10 +1072,12 @@ class SimilarInLineSerializer(WordSelfRelatedSerializer):
     default_error_messages = {
         'same_language_detail': {
             'similars': _(
-                'Похожее слово должно быть на том же языке, что и само слово.'
+                'The similar words should be in the same language as the word itself.'
             )
         },
-        'same_words_detail': {'similars': _('Само слово нельзя добавить в похожие.')},
+        'same_words_detail': {
+            'similars': _('The word itself cannot be its own similar.')
+        },
     }
 
     class Meta:
@@ -1149,7 +1163,7 @@ class WordSerializer(WordShortCreateSerializer):
     notes_count = KwargsMethodField('get_objs_count', objs_related_name='notes')
     notes = NoteInLineSerializer(many=True, required=False)
 
-    already_exist_detail = _('Такое слово уже есть в вашем словаре. Обновить его?')
+    already_exist_detail = _('This word already exists in your vocabulary. Update it?')
 
     class Meta(WordShortCreateSerializer.Meta):
         list_serializer_class = serializers.ListSerializer
@@ -1506,7 +1520,9 @@ class WordTranslationSerializer(
         read_only=True,
     )
 
-    already_exist_detail = _('Такой перевод уже есть в вашем словаре.')
+    already_exist_detail = _(
+        'This translation already exists in your vocabulary. Update it?'
+    )
 
     class Meta:
         model = WordTranslation
@@ -1546,7 +1562,9 @@ class WordTranslationCreateSerializer(
         write_only=True,
     )
 
-    already_exist_detail = _('Такой перевод уже есть в вашем словаре. Обновить его?')
+    already_exist_detail = _(
+        'This translation already exists in your vocabulary. Update it?'
+    )
 
     class Meta(WordTranslationSerializer.Meta):
         fields = WordTranslationSerializer.Meta.fields + ('words',)
@@ -1617,7 +1635,9 @@ class DefinitionSerializer(
         read_only=True,
     )
 
-    already_exist_detail = _('Такое определение уже есть в вашем словаре.')
+    already_exist_detail = _(
+        'This definition already exists in your vocabulary. Update it?'
+    )
 
     class Meta:
         model = Definition
@@ -1653,11 +1673,13 @@ class DefinitionCreateSerializer(
     words = WordShortCreateSerializer(many=True, required=True, write_only=True)
 
     already_exist_detail = _(
-        'Такое определение уже есть в вашем словаре. Обновить его?'
+        'This definition already exists in your vocabulary. Update it?'
     )
     default_error_messages = {
         'words_same_language_detail': {
-            'words': _('Слово должно быть на том же языке, что и определение.')
+            'words': _(
+                'The words should be in the same language as the definition itself.'
+            )
         },
     }
 
@@ -1753,7 +1775,9 @@ class UsageExampleSerializer(
         read_only=True,
     )
 
-    already_exist_detail = _('Такой пример уже есть в вашем словаре.')
+    already_exist_detail = _(
+        'This usage example already exists in your vocabulary. Update it?'
+    )
 
     class Meta:
         model = UsageExample
@@ -1792,10 +1816,14 @@ class UsageExampleCreateSerializer(
         write_only=True,
     )
 
-    already_exist_detail = _('Такой пример уже есть в вашем словаре. Обновить его?')
+    already_exist_detail = _(
+        'This usage example already exists in your vocabulary. Update it?'
+    )
     default_error_messages = {
         'words_same_language_detail': {
-            'words': _('Слово должно быть на том же языке, что и пример.')
+            'words': _(
+                'The words should be in the same language as the usage example itself.'
+            )
         },
     }
 
@@ -1945,7 +1973,7 @@ class SynonymSerializer(
         objs_related_name='images_associations',
     )
 
-    already_exist_detail = _('Такое слово уже есть в вашем словаре.')
+    already_exist_detail = _('This word already exists in your vocabulary. Update it?')
 
     class Meta:
         model = Word

@@ -115,7 +115,7 @@ class SetSerializer(
         default=CurrentExerciseDefault(), representation_field='name'
     )
 
-    already_exist_detail = _('Такой сохраненный набор для этого упражнения уже есть.')
+    already_exist_detail = _('Same word set already exists.')
 
     class Meta:
         model = WordSet
@@ -461,7 +461,7 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
         max_limit = ExercisesAmountLimits.TRANSLATOR_MAX_TIME_LIMIT
         if not (min_limit <= set_time_limit <= max_limit):
             raise ValidationError(
-                _(f'Time limit must be in range from {min_limit} to {max_limit}.'),
+                (f'Time limit must be in range from {min_limit} to {max_limit}.'),
                 code='set_time_limit_exceeded',
             )
         return set_time_limit
@@ -474,7 +474,7 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
         max_amount = ExercisesAmountLimits.EXERCISE_MAX_REPETITIONS_AMOUNT
         if not (min_amount <= repetitions_amount <= max_amount):
             raise ValidationError(
-                _(
+                (
                     f'Repetitions amount must be in range from {min_amount} to {max_amount}.'
                 ),
                 code='repetitions_amount_exceeded',

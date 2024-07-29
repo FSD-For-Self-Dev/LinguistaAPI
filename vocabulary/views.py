@@ -2277,8 +2277,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             return Response(
                 {
                     'detail': _(
-                        'Нельзя удалить язык из изучаемых, если в вашем словаре '
-                        'есть слова на этом языке.'
+                        'You cannot remove a language from learning languages if there are words in that language in your vocabulary.'
                     )
                 },
                 status=status.HTTP_409_CONFLICT,

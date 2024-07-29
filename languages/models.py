@@ -73,14 +73,14 @@ class Language(models.Model):
         blank=False,
         null=False,
         default=0,
-        help_text=_('increase to show at top of the list'),
+        help_text=_('Increase to show at top of the list'),
     )
     learning_available = models.BooleanField(
-        _('Is the language available for user to add to learning ones.'),
+        _('Is the language available for user to add to learning ones'),
         default=False,
     )
     interface_available = models.BooleanField(
-        _('Is the language available as interface language.'),
+        _('Is the language available as interface language'),
         default=False,
     )
     flag_icon = models.ImageField(

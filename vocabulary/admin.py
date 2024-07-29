@@ -1,4 +1,4 @@
-"""Конфигурация админ-панели приложения vocabulary."""
+"""Vocabulary admin config."""
 
 from django.contrib import admin
 
@@ -233,4 +233,9 @@ class WordImageAssociationsAdmin(admin.ModelAdmin):
 
 @admin.register(WordQuoteAssociations)
 class WordQuoteAssociationsAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(WordsFormGroups)
+class WordsFormGroupsAdmin(admin.ModelAdmin):
     pass

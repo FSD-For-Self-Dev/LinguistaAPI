@@ -13,8 +13,6 @@ from .models import (
 
 @admin.register(User)
 class CustomUserAdmin(UserAdmin):
-    """Админ-панель модели пользователя"""
-
     list_display = (
         'username',
         'email',

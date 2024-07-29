@@ -69,7 +69,7 @@ PASSWORD_HASHERS = [
     'django.contrib.auth.hashers.ScryptPasswordHasher',
 ]
 
-LANGUAGE_CODE = 'ru-ru'
+LANGUAGE_CODE = os.getenv('LANGUAGE_CODE', default='ru')
 LANGUAGES = (
     ('ru', _('Russian')),
     ('en', _('English')),

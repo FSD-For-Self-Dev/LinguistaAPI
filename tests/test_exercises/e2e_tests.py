@@ -22,7 +22,7 @@ def get_yesterday_date():
 
 @pytest.mark.exercises
 class TestExercisesEndpoints:
-    endpoint = '/ru/api/exercises/'
+    endpoint = '/api/exercises/'
 
     @pytest.mark.parametrize(
         'pagination_field',
