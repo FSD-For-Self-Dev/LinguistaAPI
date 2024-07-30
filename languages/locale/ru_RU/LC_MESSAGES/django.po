@@ -67,8 +67,8 @@ msgid "Language image"
 msgstr "Картинка языка"
 
 #: .\languages\models.py:126
-msgid "Language images"
-msgstr "Картинки языка"
+msgid "Languages images"
+msgstr "Картинки языков"
 
 #: .\languages\models.py:128
 msgid "Images available to be set as cover for the learning language"

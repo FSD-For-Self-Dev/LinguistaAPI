@@ -123,7 +123,7 @@ class LanguageImage(CreatedModel, ModifiedModel):
 
     class Meta:
         verbose_name = _('Language image')
-        verbose_name_plural = _('Language images')
+        verbose_name_plural = _('Languages images')
         db_table_comment = _(
             'Images available to be set as cover for the learning language'
         )
