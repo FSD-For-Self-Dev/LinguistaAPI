@@ -1,5 +1,5 @@
 databases:
-  - name: linguista-db
+  - name: linguista_db
     databaseName: linguista_db_0jl8
     user: linguista_db_user
 
@@ -13,7 +13,7 @@ services:
       - fromGroup: conc-settings
       - key: DATABASE_URL
         fromDatabase:
-          name: linguista-db
+          name: linguista_db
           property: connectionString
 
 envVarGroups:
