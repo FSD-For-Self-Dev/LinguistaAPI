@@ -1,5 +1,7 @@
 import os
 
+LOGS_DIR = 'logs/'
+
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -32,7 +34,7 @@ LOGGING = {
         },
         'general_file': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': 'logs/general.log',
+            'filename': os.path.join(LOGS_DIR, 'general.log'),
             'backupCount': 10,  # keep at most 10 log files
             'maxBytes': 1024 * 1024 * 5,  # 5 MB
             'formatter': 'verbose',
@@ -40,7 +42,7 @@ LOGGING = {
         },
         'queries_file': {
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': 'logs/queries.log',
+            'filename': os.path.join(LOGS_DIR, 'queries.log'),
             'backupCount': 5,  # keep at most 5 log files
             'maxBytes': 1024 * 1024 * 5,  # 5 MB
             'formatter': 'verbose',
