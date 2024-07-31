@@ -133,28 +133,28 @@ data = {
     },
     'Fixed': {
         'tags': ['authentication'],
-        'ru_api_auth_login_create': {
+        'api_auth_login_create': {
             'summary': 'Вход в аккаунт',
         },
-        'ru_api_auth_logout_create': {
+        'api_auth_logout_create': {
             'summary': 'Выход из аккаунта',
         },
-        'ru_api_auth_password_change_create': {
+        'api_auth_password_change_create': {
             'summary': 'Изменение пароля',
         },
-        'ru_api_auth_password_reset_create': {
+        'api_auth_password_reset_create': {
             'summary': 'Восстановление пароля',
         },
-        'ru_api_auth_password_reset_confirm_create': {
+        'api_auth_password_reset_confirm_create': {
             'summary': 'Подтверждение восстановления пароля',
         },
-        'ru_api_auth_registration_create': {
+        'api_auth_registration_create': {
             'summary': 'Регистрация',
         },
-        'ru_api_auth_registration_resend_email_create': {
+        'api_auth_registration_resend_email_create': {
             'summary': 'Повторная отправка сообщения с подтверждением e-mail адреса',
         },
-        'ru_api_auth_registration_verify_email_create': {
+        'api_auth_registration_verify_email_create': {
             'summary': 'Подтверждение e-mail адреса',
             'description': (
                 'Передайте в теле запроса ключ подтверждения, чтобы подтвердить '
