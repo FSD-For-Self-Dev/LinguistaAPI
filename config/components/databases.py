@@ -1,7 +1,12 @@
 import os
+import dj_database_url
+
+DATABASE_URL = os.getenv('DATABASE_URL', '')
 
 DATABASES = {
-    'default': {
+    'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600)
+    if DATABASE_URL
+    else {
         'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
         'NAME': os.getenv('DB_NAME', default='postgres'),
         'USER': os.getenv('DB_USER', default=''),
