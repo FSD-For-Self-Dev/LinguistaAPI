@@ -97,7 +97,7 @@ class CustomSchema(AutoSchema):
             ]
         except Exception:
             logger.warning(
-                f'Информация о методе отсутствует в данных схемы '
+                f'Информация об операции отсутствует в данных схемы (не передан `summary`) '
                 f'[{self.view.__class__.__name__}: {self.get_operation_id().lower()}]'
             )
             return super().get_summary()
