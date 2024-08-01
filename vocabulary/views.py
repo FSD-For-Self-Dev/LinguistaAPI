@@ -112,6 +112,7 @@ from .serializers import (
     LearningLanguageShortSerailizer,
     MainPageSerailizer,
     AllUserAssociationsSerializer,
+    CoverSetSerailizer,
 )
 
 logger = logging.getLogger(__name__)
@@ -2244,7 +2245,12 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         instance = kwargs.get('instance', self.get_object())
         logger.debug(f'Obtained instance: {instance}')
 
-        instance_data = self.get_serializer(instance).data
+        serializer_class = kwargs.get('serializer_class', None)
+        instance_data = (
+            serializer_class(instance, many=False, context={'request': request}).data
+            if serializer_class
+            else self.get_serializer(instance).data
+        )
 
         _words = instance.user.words.filter(language=instance.language).annotate(
             translations_count=Count('translations', distinct=True),
@@ -2412,7 +2418,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         methods=('get',),
         detail=True,
         url_path='cover-choices',
-        serializer_class=LearningLanguageSerailizer,
+        serializer_class=LanguageImageSerailizer,
         permission_classes=(IsAuthenticated,),
     )
     def cover_choices(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -2422,39 +2428,47 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         learning_language = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')
 
-        serializer = LanguageImageSerailizer(
+        serializer = self.get_serializer(
             learning_language.language.images.all(),
             many=True,
-            context={'request': request},
         )
         logger.debug(f'Serializer used for images: {type(serializer)}')
 
         return Response(serializer.data)
 
     @extend_schema(operation_id='language_cover_set', methods=('post',))
-    @cover_choices.mapping.post
+    @action(
+        methods=('post',),
+        detail=True,
+        url_path='set-cover',
+        serializer_class=CoverSetSerailizer,
+        permission_classes=(IsAuthenticated,),
+    )
     def set_language_cover(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Updates user learning language cover image."""
+        serializer = self.get_serializer(data=request.data)
+        logger.debug(f'Serializer used for instance: {type(serializer)}')
+
+        logger.debug('Validating data')
+        serializer.is_valid(raise_exception=True)
+
+        language_image = serializer.validated_data.get('images', None)
+        logger.debug(f'Obtained language image id: {language_image}')
+
         learning_language = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')
 
-        image_id = request.data.get('id', None)
+        logger.debug('Updating learning_language cover')
+        learning_language.cover = language_image.image
 
-        if image_id:
-            logger.debug(f'Obtaining image by id: {image_id}')
-            image = get_object_or_404(
-                learning_language.language.images.all(), id=image_id
-            ).image
+        logger.debug('Performing save')
+        learning_language.save()
 
-            logger.debug('Updating learning_language cover')
-            learning_language.cover = image
-
-            logger.debug('Performing save')
-            learning_language.save()
-        else:
-            logger.debug(f'No image id passed in data: {request.data}')
-
-        return self.retrieve(request, instance=learning_language)
+        return self.retrieve(
+            request,
+            instance=learning_language,
+            serializer_class=LearningLanguageSerailizer,
+        )
 
 
 @extend_schema(tags=['main_page'])

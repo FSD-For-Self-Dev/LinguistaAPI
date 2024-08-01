@@ -2024,6 +2024,24 @@ class LanguageImageSerailizer(serializers.ModelSerializer):
             return None
 
 
+class CoverSetSerailizer(serializers.ModelSerializer):
+    """
+    Serializer to use for setting new cover image for user's learning language.
+    """
+
+    image = serializers.PrimaryKeyRelatedField(
+        queryset=LanguageImage.objects.all(),
+        many=False,
+        read_only=False,
+        source='images',
+        required=True,
+    )
+
+    class Meta:
+        model = Language
+        fields = ('image',)
+
+
 class SynonymSerializer(
     ValidateLanguageMixin,
     CountObjsSerializerMixin,
