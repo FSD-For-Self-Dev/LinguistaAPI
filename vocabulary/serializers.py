@@ -8,6 +8,7 @@ from django.utils.translation import gettext as _
 from django.db.models import Count, Model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import QuerySet
+from django.db.models.fields.files import ImageFieldFile
 
 from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.fields import HybridImageField
@@ -38,7 +39,11 @@ from users.constants import UsersAmountLimits
 from languages.models import LanguageImage
 from languages.serializers import LanguageSerializer
 
-from .constants import VocabularyAmountLimits
+from .constants import (
+    VocabularyAmountLimits,
+    MAX_IMAGE_SIZE,
+    MAX_IMAGE_SIZE_MB,
+)
 from .models import (
     Antonym,
     Collection,
@@ -425,6 +430,12 @@ class ImageInLineSerializer(serializers.ModelSerializer):
     association_type = serializers.SerializerMethodField(
         'get_association_type',
     )
+    image_height = serializers.SerializerMethodField(
+        'get_image_height',
+    )
+    image_width = serializers.SerializerMethodField(
+        'get_image_width',
+    )
 
     class Meta:
         model = ImageAssociation
@@ -434,18 +445,44 @@ class ImageInLineSerializer(serializers.ModelSerializer):
             'id',
             'author',
             'image',
+            'image_height',
+            'image_width',
             'created',
         )
         read_only_fields = (
             'association_type',
             'id',
+            'image_height',
+            'image_width',
             'created',
         )
+
+    def validate_image(self, image: ImageFieldFile) -> ImageFieldFile:
+        """Check image size."""
+        if image.size > MAX_IMAGE_SIZE:
+            raise serializers.ValidationError(
+                _(f'Image file too large ( > {MAX_IMAGE_SIZE_MB} MB )')
+            )
+        return image
 
     @extend_schema_field({'type': 'string'})
     def get_association_type(self, obj: ImageAssociation) -> str:
         """Returns type of represented association"""
         return 'image'
+
+    @extend_schema_field({'type': 'int'})
+    def get_image_height(self, obj: LanguageImage) -> int | None:
+        try:
+            return obj.image.height
+        except ValueError:
+            return None
+
+    @extend_schema_field({'type': 'int'})
+    def get_image_width(self, obj: LanguageImage) -> int | None:
+        try:
+            return obj.image.width
+        except ValueError:
+            return None
 
 
 class QuoteInLineSerializer(serializers.ModelSerializer):
@@ -1866,6 +1903,8 @@ class ImageListSerializer(serializers.ModelSerializer):
         representation_field='username',
     )
     image = HybridImageField()
+    image_height = serializers.SerializerMethodField('get_image_height')
+    image_width = serializers.SerializerMethodField('get_image_width')
     other_words_count = KwargsMethodField(
         'get_other_words_count',
         objs_related_name='words',
@@ -1878,6 +1917,8 @@ class ImageListSerializer(serializers.ModelSerializer):
             'id',
             'author',
             'image',
+            'image_height',
+            'image_width',
             'other_words_count',
             'last_4_words',
         )
@@ -1886,6 +1927,20 @@ class ImageListSerializer(serializers.ModelSerializer):
             'other_words_count',
             'last_4_words',
         )
+
+    @extend_schema_field({'type': 'int'})
+    def get_image_height(self, obj: LanguageImage) -> int | None:
+        try:
+            return obj.image.height
+        except ValueError:
+            return None
+
+    @extend_schema_field({'type': 'int'})
+    def get_image_width(self, obj: LanguageImage) -> int | None:
+        try:
+            return obj.image.width
+        except ValueError:
+            return None
 
     @extend_schema_field({'type': 'integer'})
     def get_other_words_count(
@@ -1955,12 +2010,18 @@ class LanguageImageSerailizer(serializers.ModelSerializer):
         read_only_fields = fields
 
     @extend_schema_field({'type': 'int'})
-    def get_image_height(self, obj: LanguageImage) -> int:
-        return obj.image.height
+    def get_image_height(self, obj: LanguageImage) -> int | None:
+        try:
+            return obj.image.height
+        except ValueError:
+            return None
 
     @extend_schema_field({'type': 'int'})
-    def get_image_width(self, obj: LanguageImage) -> int:
-        return obj.image.width
+    def get_image_width(self, obj: LanguageImage) -> int | None:
+        try:
+            return obj.image.width
+        except ValueError:
+            return None
 
 
 class SynonymSerializer(

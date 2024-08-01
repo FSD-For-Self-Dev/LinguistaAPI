@@ -698,7 +698,7 @@ class WordRelatedModel(CreatedModel):
 
 
 class WordsFormGroups(WordRelatedModel):
-    """Words and its form groups intermediary model."""
+    """Words and form groups intermediary model."""
 
     id = models.UUIDField(
         primary_key=True,
@@ -728,14 +728,11 @@ class WordsFormGroups(WordRelatedModel):
         ]
 
     def __str__(self) -> str:
-        return _(
-            f'Word `{self.word}` ({self.word.language.name}) is in '
-            f'`{self.forms_group}` form'
-        )
+        return _(f'Word `{self.word}` is in `{self.forms_group}` form')
 
 
 class WordTranslations(GetObjectModelMixin, WordRelatedModel):
-    """Words and its translations intermediary model."""
+    """Words and translations intermediary model."""
 
     id = models.UUIDField(
         primary_key=True,
@@ -873,8 +870,7 @@ class WordImageAssociations(GetObjectModelMixin, WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'Image `{self.image}` was added to word `{self.word}` '
-            f'({self.word.language.name}) as association at {self.created:%Y-%m-%d}'
+            f'Image `{self.image}` was added to word `{self.word}` associations at {self.created:%Y-%m-%d}'
         )
 
 
@@ -907,8 +903,7 @@ class WordQuoteAssociations(GetObjectModelMixin, WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'Quote `{self.quote}` was added to word `{self.word}` '
-            f'({self.word.language.name}) as association at {self.created:%Y-%m-%d}'
+            f'Quote `{self.quote}` was added to word `{self.word}` associations at {self.created:%Y-%m-%d}'
         )
 
 
@@ -943,8 +938,7 @@ class WordsInCollections(GetObjectModelMixin, WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'Word `{self.word}` ({self.word.language.name}) was added to '
-            f'collection `{self.collection}` at {self.created:%Y-%m-%d}'
+            f'Word `{self.word}` was added to collection `{self.collection}` at {self.created:%Y-%m-%d}'
         )
 
 

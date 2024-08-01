@@ -41,7 +41,6 @@ class LengthLimits:
     MIN_TAG_LENGTH = 1
     MAX_FORMSGROUP_NAME_LENGTH = 64
     MIN_FORMSGROUP_NAME_LENGTH = 1
-    MAX_IMAGE_NAME_LENGTH = 64
     MAX_QUOTE_TEXT_LENGTH = 256
     MAX_QUOTE_AUTHOR_LENGTH = 64
 
@@ -56,3 +55,6 @@ REGEX_TEXT_MASK_DETAIL = (
 
 REGEX_HEXCOLOR_MASK = r'^#[\w]+$'
 REGEX_HEXCOLOR_MASK_DETAIL = 'Color must be in hex format.'
+
+MAX_IMAGE_SIZE_MB = 4  # 4 MB is max size for uploaded images
+MAX_IMAGE_SIZE = MAX_IMAGE_SIZE_MB * 1024 * 1024  # uploaded images max size in bytes
