@@ -2407,15 +2407,15 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         """Returns all available for interface translation languages."""
         return self.list(request)
 
-    @extend_schema(operation_id='language_images_choice_retrieve', methods=('get',))
+    @extend_schema(operation_id='language_cover_choices_retrieve', methods=('get',))
     @action(
         methods=('get',),
         detail=True,
-        url_path='images-choice',
+        url_path='cover-choices',
         serializer_class=LearningLanguageSerailizer,
         permission_classes=(IsAuthenticated,),
     )
-    def images_choice(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+    def cover_choices(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """
         Returns all available images to be set as cover for given learning language.
         """
@@ -2425,17 +2425,15 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         serializer = ImageShortSerailizer(
             learning_language.language.images.all(),
             many=True,
-            context=self.context,
+            context={'request': request},
         )
         logger.debug(f'Serializer used for images: {type(serializer)}')
 
         return Response(serializer.data)
 
-    @extend_schema(operation_id='language_image_update', methods=('post',))
-    @images_choice.mapping.post
-    def update_language_image(
-        self, request: HttpRequest, *args, **kwargs
-    ) -> HttpResponse:
+    @extend_schema(operation_id='language_cover_set', methods=('post',))
+    @cover_choices.mapping.post
+    def set_language_cover(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Updates user learning language cover image."""
         learning_language = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')

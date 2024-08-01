@@ -1328,14 +1328,14 @@ data = {
                 status.HTTP_200_OK: LanguageSerializer,
             },
         },
-        'language_images_choice_retrieve': {
+        'language_cover_choices_retrieve': {
             'summary': 'Просмотр всех доступных картинок для изучаемого языка',
             'request': None,
             'responses': {
                 status.HTTP_200_OK: ImageShortSerailizer,
             },
         },
-        'language_image_update': {
+        'language_cover_set': {
             'summary': 'Обновление выбранной картинки для изучаемого языка',
             'request': ImageShortSerailizer,
             'responses': {
