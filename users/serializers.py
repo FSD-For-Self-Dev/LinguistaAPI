@@ -63,6 +63,7 @@ class LearningLanguageShortSerailizer(
             'id',
             'user',
             'language',
+            'cover',
             'words_count',
             'inactive_words_count',
             'active_words_count',
@@ -70,6 +71,7 @@ class LearningLanguageShortSerailizer(
         )
         read_only_fields = (
             'id',
+            'cover',
             'words_count',
             'inactive_words_count',
             'active_words_count',
