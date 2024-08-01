@@ -1337,7 +1337,6 @@ data = {
         },
         'language_cover_set': {
             'summary': 'Обновление выбранной картинки для изучаемого языка',
-            'request': LanguageImageSerailizer,
             'responses': {
                 status.HTTP_201_CREATED: LearningLanguageSerailizer,
             },
