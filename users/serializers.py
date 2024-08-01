@@ -56,6 +56,8 @@ class LearningLanguageShortSerailizer(
     inactive_words_count = serializers.SerializerMethodField('get_inactive_words_count')
     active_words_count = serializers.SerializerMethodField('get_active_words_count')
     mastered_words_count = serializers.SerializerMethodField('get_mastered_words_count')
+    cover_height = serializers.SerializerMethodField('get_cover_height')
+    cover_width = serializers.SerializerMethodField('get_cover_width')
 
     class Meta:
         model = UserLearningLanguage
@@ -64,6 +66,8 @@ class LearningLanguageShortSerailizer(
             'user',
             'language',
             'cover',
+            'cover_height',
+            'cover_width',
             'words_count',
             'inactive_words_count',
             'active_words_count',
@@ -72,11 +76,27 @@ class LearningLanguageShortSerailizer(
         read_only_fields = (
             'id',
             'cover',
+            'cover_height',
+            'cover_width',
             'words_count',
             'inactive_words_count',
             'active_words_count',
             'mastered_words_count',
         )
+
+    @extend_schema_field({'type': 'int'})
+    def get_cover_height(self, obj: UserLearningLanguage) -> int | None:
+        try:
+            return obj.cover.height
+        except ValueError:
+            return None
+
+    @extend_schema_field({'type': 'int'})
+    def get_cover_width(self, obj: UserLearningLanguage) -> int | None:
+        try:
+            return obj.cover.width
+        except ValueError:
+            return None
 
     @extend_schema_field({'type': 'integer'})
     def get_words_count(self, obj: UserLearningLanguage) -> int:
@@ -111,6 +131,8 @@ class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
             'language',
             'level',
             'cover',
+            'cover_height',
+            'cover_width',
             'words_count',
             'inactive_words_count',
             'active_words_count',
@@ -120,6 +142,8 @@ class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
             'id',
             'slug',
             'cover',
+            'cover_height',
+            'cover_width',
             'words_count',
             'inactive_words_count',
             'active_words_count',

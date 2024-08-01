@@ -471,14 +471,14 @@ class ImageInLineSerializer(serializers.ModelSerializer):
         return 'image'
 
     @extend_schema_field({'type': 'int'})
-    def get_image_height(self, obj: LanguageImage) -> int | None:
+    def get_image_height(self, obj: ImageAssociation) -> int | None:
         try:
             return obj.image.height
         except ValueError:
             return None
 
     @extend_schema_field({'type': 'int'})
-    def get_image_width(self, obj: LanguageImage) -> int | None:
+    def get_image_width(self, obj: ImageAssociation) -> int | None:
         try:
             return obj.image.width
         except ValueError:
@@ -1929,14 +1929,14 @@ class ImageListSerializer(serializers.ModelSerializer):
         )
 
     @extend_schema_field({'type': 'int'})
-    def get_image_height(self, obj: LanguageImage) -> int | None:
+    def get_image_height(self, obj: ImageAssociation) -> int | None:
         try:
             return obj.image.height
         except ValueError:
             return None
 
     @extend_schema_field({'type': 'int'})
-    def get_image_width(self, obj: LanguageImage) -> int | None:
+    def get_image_width(self, obj: ImageAssociation) -> int | None:
         try:
             return obj.image.width
         except ValueError:
@@ -2248,6 +2248,8 @@ class LearningLanguageWithLastWordsSerailizer(LearningLanguageShortSerailizer):
             'language',
             'level',
             'cover',
+            'cover_height',
+            'cover_width',
             'words_count',
             'inactive_words_count',
             'active_words_count',
@@ -2258,6 +2260,8 @@ class LearningLanguageWithLastWordsSerailizer(LearningLanguageShortSerailizer):
             'id',
             'slug',
             'cover',
+            'cover_height',
+            'cover_width',
             'words_count',
             'inactive_words_count',
             'active_words_count',
