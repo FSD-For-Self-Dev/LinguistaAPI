@@ -1933,13 +1933,15 @@ class AssociationsCreateSerializer(serializers.Serializer):
         }
 
 
-class ImageShortSerailizer(serializers.ModelSerializer):
+class LanguageImageSerailizer(serializers.ModelSerializer):
     """Serializer to list available images for given language."""
 
     language = serializers.SlugRelatedField(
         slug_field='name',
         read_only=True,
     )
+    image_height = serializers.SerializerMethodField('get_image_height')
+    image_width = serializers.SerializerMethodField('get_image_width')
 
     class Meta:
         model = LanguageImage
@@ -1947,8 +1949,18 @@ class ImageShortSerailizer(serializers.ModelSerializer):
             'id',
             'language',
             'image',
+            'image_height',
+            'image_width',
         )
         read_only_fields = fields
+
+    @extend_schema_field({'type': 'int'})
+    def get_image_height(self, obj: LanguageImage) -> int:
+        return obj.image.height
+
+    @extend_schema_field({'type': 'int'})
+    def get_image_width(self, obj: LanguageImage) -> int:
+        return obj.image.width
 
 
 class SynonymSerializer(

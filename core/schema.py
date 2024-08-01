@@ -26,7 +26,7 @@ from vocabulary.serializers import (
     TagListSerializer,
     LearningLanguageWithLastWordsSerailizer,
     LearningLanguageShortSerailizer,
-    ImageShortSerailizer,
+    LanguageImageSerailizer,
     ImageListSerializer,
     ImageInLineSerializer,
     QuoteInLineSerializer,
@@ -1332,12 +1332,12 @@ data = {
             'summary': 'Просмотр всех доступных картинок для изучаемого языка',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: ImageShortSerailizer,
+                status.HTTP_200_OK: LanguageImageSerailizer,
             },
         },
         'language_cover_set': {
             'summary': 'Обновление выбранной картинки для изучаемого языка',
-            'request': ImageShortSerailizer,
+            'request': LanguageImageSerailizer,
             'responses': {
                 status.HTTP_201_CREATED: LearningLanguageSerailizer,
             },

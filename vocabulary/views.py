@@ -105,7 +105,7 @@ from .serializers import (
     NoteForWordSerializer,
     ImageInLineSerializer,
     ImageListSerializer,
-    ImageShortSerailizer,
+    LanguageImageSerailizer,
     QuoteInLineSerializer,
     AssociationsCreateSerializer,
     LearningLanguageWithLastWordsSerailizer,
@@ -2422,7 +2422,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         learning_language = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')
 
-        serializer = ImageShortSerailizer(
+        serializer = LanguageImageSerailizer(
             learning_language.language.images.all(),
             many=True,
             context={'request': request},
