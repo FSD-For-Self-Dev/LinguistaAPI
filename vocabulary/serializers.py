@@ -470,14 +470,14 @@ class ImageInLineSerializer(serializers.ModelSerializer):
         """Returns type of represented association"""
         return 'image'
 
-    @extend_schema_field({'type': 'int'})
+    @extend_schema_field({'type': 'integer'})
     def get_image_height(self, obj: ImageAssociation) -> int | None:
         try:
             return obj.image.height
         except ValueError:
             return None
 
-    @extend_schema_field({'type': 'int'})
+    @extend_schema_field({'type': 'integer'})
     def get_image_width(self, obj: ImageAssociation) -> int | None:
         try:
             return obj.image.width
@@ -1928,14 +1928,14 @@ class ImageListSerializer(serializers.ModelSerializer):
             'last_4_words',
         )
 
-    @extend_schema_field({'type': 'int'})
+    @extend_schema_field({'type': 'integer'})
     def get_image_height(self, obj: ImageAssociation) -> int | None:
         try:
             return obj.image.height
         except ValueError:
             return None
 
-    @extend_schema_field({'type': 'int'})
+    @extend_schema_field({'type': 'integer'})
     def get_image_width(self, obj: ImageAssociation) -> int | None:
         try:
             return obj.image.width
@@ -2009,14 +2009,14 @@ class LanguageImageSerailizer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
-    @extend_schema_field({'type': 'int'})
+    @extend_schema_field({'type': 'integer'})
     def get_image_height(self, obj: LanguageImage) -> int | None:
         try:
             return obj.image.height
         except ValueError:
             return None
 
-    @extend_schema_field({'type': 'int'})
+    @extend_schema_field({'type': 'integer'})
     def get_image_width(self, obj: LanguageImage) -> int | None:
         try:
             return obj.image.width

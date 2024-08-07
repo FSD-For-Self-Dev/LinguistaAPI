@@ -84,14 +84,14 @@ class LearningLanguageShortSerailizer(
             'mastered_words_count',
         )
 
-    @extend_schema_field({'type': 'int'})
+    @extend_schema_field({'type': 'integer'})
     def get_cover_height(self, obj: UserLearningLanguage) -> int | None:
         try:
             return obj.cover.height
         except ValueError:
             return None
 
-    @extend_schema_field({'type': 'int'})
+    @extend_schema_field({'type': 'integer'})
     def get_cover_width(self, obj: UserLearningLanguage) -> int | None:
         try:
             return obj.cover.width
