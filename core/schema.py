@@ -1,5 +1,6 @@
 """Custom schema generator."""
 
+import os
 import logging
 
 from rest_framework import status
@@ -133,28 +134,44 @@ data = {
     },
     'Fixed': {
         'tags': ['authentication'],
-        'api_auth_login_create': {
+        os.getenv('LOGIN_URL_REVERSE_NAME', default='api_auth_login_create'): {
             'summary': 'Вход в аккаунт',
         },
-        'api_auth_logout_create': {
+        os.getenv('LOGOUT_URL_REVERSE_NAME', default='api_auth_logout_create'): {
             'summary': 'Выход из аккаунта',
         },
-        'api_auth_password_change_create': {
+        os.getenv(
+            'PASSWORD_CHANGE_URL_REVERSE_NAME',
+            default='api_auth_password_change_create',
+        ): {
             'summary': 'Изменение пароля',
         },
-        'api_auth_password_reset_create': {
+        os.getenv(
+            'PASSWORD_RESET_URL_REVERSE_NAME', default='api_auth_password_reset_create'
+        ): {
             'summary': 'Восстановление пароля',
         },
-        'api_auth_password_reset_confirm_create': {
+        os.getenv(
+            'PASSWORD_RESET_CONFIRM_URL_REVERSE_NAME',
+            default='api_auth_password_reset_confirm_create',
+        ): {
             'summary': 'Подтверждение восстановления пароля',
         },
-        'api_auth_registration_create': {
+        os.getenv(
+            'REGISTRATION_URL_REVERSE_NAME', default='api_auth_registration_create'
+        ): {
             'summary': 'Регистрация',
         },
-        'api_auth_registration_resend_email_create': {
+        os.getenv(
+            'REGISTRATION_RESEND_EMAIL_URL_REVERSE_NAME',
+            default='api_auth_registration_resend_email_create',
+        ): {
             'summary': 'Повторная отправка сообщения с подтверждением e-mail адреса',
         },
-        'api_auth_registration_verify_email_create': {
+        os.getenv(
+            'REGISTRATION_VERIFY_EMAIL_URL_REVERSE_NAME',
+            default='api_auth_registration_verify_email_create',
+        ): {
             'summary': 'Подтверждение e-mail адреса',
             'description': (
                 'Передайте в теле запроса ключ подтверждения, чтобы подтвердить '
