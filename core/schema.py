@@ -4,12 +4,13 @@ import os
 import logging
 
 from rest_framework import status
-from rest_framework.serializers import Serializer
+from rest_framework.serializers import Serializer, CharField
 from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiTypes,
     OpenApiResponse,
+    inline_serializer,
 )
 
 from vocabulary.serializers import (
@@ -136,6 +137,13 @@ data = {
         'tags': ['authentication'],
         os.getenv('LOGIN_URL_REVERSE_NAME', default='api_auth_login_create'): {
             'summary': 'Вход в аккаунт',
+            'request': inline_serializer(
+                name='InlineLoginSerializer',
+                fields={
+                    'username': CharField(),
+                    'password': CharField(),
+                },
+            ),
         },
         os.getenv('LOGOUT_URL_REVERSE_NAME', default='api_auth_logout_create'): {
             'summary': 'Выход из аккаунта',
