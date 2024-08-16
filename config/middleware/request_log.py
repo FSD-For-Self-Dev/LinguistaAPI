@@ -32,6 +32,8 @@ class RequestLogMiddleware:
                 log_data['request_body'] = req_body
             except json.JSONDecodeError:
                 pass
+            except Exception:
+                pass
 
         # Pass request to controller
         response = self.get_response(request)
