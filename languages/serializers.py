@@ -13,9 +13,7 @@ class LanguageSerializer(serializers.ModelSerializer):
         fields = (
             'id',
             'name',
+            'name_local',
             'flag_icon',
         )
-        read_only_fields = (
-            'id',
-            'flag_icon',
-        )
+        read_only_fields = fields

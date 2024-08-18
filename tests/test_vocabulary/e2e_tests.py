@@ -3000,18 +3000,19 @@ class TestLanguagesEndpoints:
 
     def test_list_learning_available(self, auth_api_client, user, languages):
         objs = languages(
-            user, data=False, extra_data={'learning_available': True}, _quantity=2
+            name=False, extra_data={'learning_available': True}, _quantity=2
         )
+        UserLearningLanguage.objects.create(user=user, language=objs[0])
         languages(user, data=False, _quantity=3)
 
-        response = auth_api_client(user).get(f'{self.endpoint}available/')
+        response = auth_api_client(user).get(f'{self.endpoint}learning-available/')
 
         assert response.status_code == 200
-        assert response.data['count'] == len(objs), (
+        assert response.data['count'] == len(objs) - 1, (
             f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются правильные данные. '
             f'Значение параметра `count` неправильное'
         )
-        assert len(response.data['results']) == len(objs)
+        assert len(response.data['results']) == len(objs) - 1
 
     def test_list_interface_available(self, auth_api_client, user, languages):
         objs = languages(
@@ -3027,27 +3028,6 @@ class TestLanguagesEndpoints:
             f'Значение параметра `count` неправильное'
         )
         assert len(response.data['results']) == len(objs)
-
-    def test_list_learning_and_available(self, auth_api_client, user, languages):
-        objs = languages(
-            name=False, extra_data={'learning_available': True}, _quantity=2
-        )
-        UserLearningLanguage.objects.create(user=user, language=objs[0])
-        languages(user, data=False, _quantity=1)
-
-        response = auth_api_client(user).get(f'{self.endpoint}learning-available/')
-
-        assert response.status_code == 200
-        assert response.data['available']['count'] == len(objs), (
-            f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются правильные данные. '
-            f'Значение параметра `count` неправильное'
-        )
-        assert len(response.data['available']['results']) == len(objs)
-        assert response.data['learning']['count'] == 1, (
-            f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются правильные данные. '
-            f'Значение параметра `count` неправильное'
-        )
-        assert len(response.data['learning']['results']) == 1
 
     def test_list_native(self, auth_api_client, user, native_languages):
         """

@@ -111,7 +111,6 @@ from .serializers import (
     QuoteInLineSerializer,
     AssociationsCreateSerializer,
     LearningLanguageWithLastWordsSerailizer,
-    LearningLanguageShortSerailizer,
     MainPageSerailizer,
     AllUserAssociationsSerializer,
     CoverSetSerailizer,
@@ -2169,9 +2168,11 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 return Language.objects.none()
             case 'all':
                 return Language.objects.annotate(words_count=Count('words'))
-            case 'available':
-                return Language.objects.filter(learning_available=True).annotate(
-                    words_count=Count('words')
+            case 'learning_available':
+                return (
+                    Language.objects.filter(learning_available=True)
+                    .exclude(learning_by=self.request.user)
+                    .annotate(words_count=Count('words'))
                 )
             case 'interface':
                 return Language.objects.filter(interface_available=True).annotate(
@@ -2380,41 +2381,13 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     @action(
         methods=('get',),
         detail=False,
+        url_path='learning-available',
         serializer_class=LanguageSerializer,
         permission_classes=(AllowAny,),
     )
-    def available(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+    def learning_available(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns available for learning languages."""
         return self.list(request)
-
-    @extend_schema(
-        operation_id='learning_and_available_languages_list', methods=('get',)
-    )
-    @action(
-        methods=('get',),
-        detail=False,
-        url_path='learning-available',
-        serializer_class=LearningLanguageShortSerailizer,
-        permission_classes=(IsAuthenticated,),
-    )
-    def learning_available(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """
-        Returns current learning languages and available for lerning languages for
-        current user.
-        """
-        learning_data = self.list(request).data
-        serializer = LanguageSerializer(
-            Language.objects.filter(learning_available=True), many=True
-        )
-        return Response(
-            {
-                'learning': learning_data,
-                'available': {
-                    'count': len(serializer.data),
-                    'results': serializer.data,
-                },
-            }
-        )
 
     @extend_schema(operation_id='interface_switch_languages_list', methods=('get',))
     @action(
