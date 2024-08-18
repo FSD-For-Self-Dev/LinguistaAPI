@@ -9,7 +9,13 @@ from django.db.models.signals import pre_save
 from django.dispatch import receiver
 
 from core.constants import GENDERS
-from core.models import CreatedModel, ModifiedModel, SlugModel, slug_filler
+from core.models import (
+    CreatedModel,
+    ModifiedModel,
+    SlugModel,
+    GetObjectBySlugModelMixin,
+    slug_filler,
+)
 from languages.models import Language
 
 
@@ -108,7 +114,12 @@ class UserDefaultWordsView(CreatedModel):
         return f'Default words view for user {self.user} is {self.words_view}'
 
 
-class UserLearningLanguage(SlugModel, CreatedModel, ModifiedModel):
+class UserLearningLanguage(
+    GetObjectBySlugModelMixin,
+    SlugModel,
+    CreatedModel,
+    ModifiedModel,
+):
     """Users learning languages."""
 
     id = models.UUIDField(

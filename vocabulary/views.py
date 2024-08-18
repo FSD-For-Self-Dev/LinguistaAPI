@@ -5,7 +5,7 @@ import logging
 from itertools import chain
 
 from django.contrib.auth import get_user_model
-from django.db import transaction, IntegrityError
+from django.db import transaction
 from django.db.models import Count, Q, F, Model
 from django.db.models.query import QuerySet
 from django.utils.translation import gettext as _
@@ -32,15 +32,17 @@ from core.exceptions import (
 )
 from core.mixins import (
     ActionsWithRelatedObjectsMixin,
+    AmountLimitExceededHandler,
     ObjectAlreadyExistHandler,
     DestroyReturnListMixin,
     FavoriteMixin,
 )
-from core.utils import get_admin_user
+from core.utils import get_admin_user, check_amount_limit
 from languages.serializers import LanguageSerializer
 from users.models import (
     UserDefaultWordsView,
     UserLearningLanguage,
+    UserNativeLanguage,
 )
 from users.serializers import (
     LearningLanguageSerailizer,
@@ -393,6 +395,7 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
 )
 class WordViewSet(
     ActionsWithRelatedObjectsMixin,
+    AmountLimitExceededHandler,
     ObjectAlreadyExistHandler,
     DestroyReturnListMixin,
     FavoriteMixin,
@@ -615,6 +618,7 @@ class WordViewSet(
             request,
             objs_related_name='translations',
             amount_limit=VocabularyAmountLimits.MAX_TRANSLATIONS_AMOUNT,
+            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.TRANSLATIONS_AMOUNT_EXCEEDED,
             set_objs=True,
             response_serializer_class=WordSerializer,
         )
@@ -663,6 +667,7 @@ class WordViewSet(
             request,
             objs_related_name='definitions',
             amount_limit=VocabularyAmountLimits.MAX_DEFINITIONS_AMOUNT,
+            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.DEFINITIONS_AMOUNT_EXCEEDED,
             set_objs=True,
             response_serializer_class=WordSerializer,
         )
@@ -709,6 +714,7 @@ class WordViewSet(
             request,
             objs_related_name='examples',
             amount_limit=VocabularyAmountLimits.MAX_EXAMPLES_AMOUNT,
+            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.EXAMPLES_AMOUNT_EXCEEDED,
             set_objs=True,
             response_serializer_class=WordSerializer,
         )
@@ -755,6 +761,7 @@ class WordViewSet(
             request,
             objs_related_name='notes',
             amount_limit=VocabularyAmountLimits.MAX_NOTES_AMOUNT,
+            amount_limit_exceeded_detail=VocabularyAmountLimits.MAX_NOTES_AMOUNT,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -801,6 +808,7 @@ class WordViewSet(
             objs_related_name='synonym_to_words',
             response_objs_name='synonyms',
             amount_limit=VocabularyAmountLimits.MAX_SYNONYMS_AMOUNT,
+            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.SYNONYMS_AMOUNT_EXCEEDED,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -848,6 +856,7 @@ class WordViewSet(
             objs_related_name='antonym_to_words',
             response_objs_name='antonyms',
             amount_limit=VocabularyAmountLimits.MAX_ANTONYMS_AMOUNT,
+            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.ANTONYMS_AMOUNT_EXCEEDED,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -895,6 +904,7 @@ class WordViewSet(
             objs_related_name='form_to_words',
             response_objs_name='forms',
             amount_limit=VocabularyAmountLimits.MAX_FORMS_AMOUNT,
+            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.FORMS_AMOUNT_EXCEEDED,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -942,6 +952,7 @@ class WordViewSet(
             objs_related_name='similar_to_words',
             response_objs_name='similars',
             amount_limit=VocabularyAmountLimits.MAX_SIMILARS_AMOUNT,
+            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.SIMILARS_AMOUNT_EXCEEDED,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -1031,20 +1042,19 @@ class WordViewSet(
 
         logger.debug('Checking amount limits')
         try:
-            VocabularyAmountLimits.check_amount_limit(
-                instance.quotes_associations.count(),
-                len(_quotes),
-                VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
-                attr_name='quotes_associations',
+            check_amount_limit(
+                current_amount=instance.images_associations.count(),
+                new_objects_amount=len(_images),
+                amount_limit=VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
+                detail=VocabularyAmountLimits.Details.IMAGES_AMOUNT_EXCEEDED,
             )
-            VocabularyAmountLimits.check_amount_limit(
-                instance.images_associations.count(),
-                len(_images),
-                VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
-                attr_name='images_associations',
+            check_amount_limit(
+                current_amount=instance.quotes_associations.count(),
+                new_objects_amount=len(_quotes),
+                amount_limit=VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
+                detail=VocabularyAmountLimits.Details.QUOTES_AMOUNT_EXCEEDED,
             )
         except AmountLimitExceeded as exception:
-            logger.error(f'AmountLimitExceeded exception occured: {exception}')
             return exception.get_detail_response(request)
 
         logger.debug('Associate objects with instance')
@@ -2178,7 +2188,16 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
 
     def get_serializer_class(self) -> Serializer:
         match self.action:
-            case 'list' | 'destroy':
+            case 'list' | 'create' | 'destroy':
+                # Check if `no_words_param` passed to use serializer without
+                # languages last words
+                no_words_param = self.request.query_params.get('no_words', None)
+                logger.debug(
+                    f'Languages last words representation option query parameter '
+                    f'passed: {no_words_param}'
+                )
+                if no_words_param is not None:
+                    return LearningLanguageSerailizer
                 return LearningLanguageWithLastWordsSerailizer
             case _:
                 return super().get_serializer_class()
@@ -2188,8 +2207,9 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         response_data = super().list(request, *args, **kwargs).data
         return Response({'count': len(response_data), 'results': response_data})
 
+    @transaction.atomic
     def create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Adds language to user's learning languages."""
+        """Adds passed languages to user's learning languages."""
         try:
             serializer = self.get_serializer(data=request.data, many=True)
             logger.debug(f'Serializer used: {type(serializer)}')
@@ -2199,20 +2219,21 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
 
             # Amount limit check
             logger.debug('Checking amount limits')
-            amount_limit = kwargs.get(
-                'amount_limit', UsersAmountLimits.MAX_LEARNING_LANGUAGES_AMOUNT
-            )
-            logger.debug(f'Objects amount limit: {amount_limit}')
-            current_amount = kwargs.get(
-                'current_amount', request.user.learning_languages.count()
-            )
-            logger.debug(f'Objects current amount: {current_amount}')
             try:
-                UsersAmountLimits.check_amount_limit(
-                    current_amount, len(serializer.validated_data), amount_limit
+                check_amount_limit(
+                    current_amount=kwargs.get(
+                        'current_amount', request.user.learning_languages.count()
+                    ),
+                    new_objects_amount=len(serializer.validated_data),
+                    amount_limit=kwargs.get(
+                        'amount_limit', UsersAmountLimits.MAX_LEARNING_LANGUAGES_AMOUNT
+                    ),
+                    detail=kwargs.get(
+                        'amount_limit_exceeded_detail',
+                        UsersAmountLimits.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
+                    ),
                 )
             except AmountLimitExceeded as exception:
-                logger.error(f'AmountLimitExceeded exception occured: {exception}')
                 return exception.get_detail_response(request)
 
             logger.debug('Performing create')
@@ -2226,18 +2247,10 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 headers=headers,
             )
 
-        except IntegrityError:
-            logger.error('IntegrityError exception occured.')
-            return Response(
-                {
-                    'detail': _(
-                        kwargs.get(
-                            'integrityerror_detail',
-                            'Этот язык уже добавлен в изучаемые.',
-                        )
-                    )
-                },
-                status=status.HTTP_409_CONFLICT,
+        except ObjectAlreadyExist as exception:
+            return exception.get_detail_response(
+                request,
+                existing_obj_representation=self.existing_user_language_represent,
             )
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -2340,11 +2353,12 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     def add_native_languages(
         self, request: HttpRequest, *args, **kwargs
     ) -> HttpResponse:
-        """Adds language to user's native languages."""
+        """Adds passed languages to user's native languages."""
         return self.create(
             request,
             integrityerror_detail='Этот язык уже добавлен в родные.',
             amount_limit=UsersAmountLimits.MAX_NATIVE_LANGUAGES_AMOUNT,
+            amount_limit_exceeded_detail=UsersAmountLimits.Details.NATIVE_LANGUAGES_AMOUNT_EXCEEDED,
             current_amount=request.user.native_languages.count(),
         )
 
@@ -2469,6 +2483,12 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             instance=learning_language,
             serializer_class=LearningLanguageSerailizer,
         )
+
+    @staticmethod
+    def existing_user_language_represent(
+        user_language: UserLearningLanguage | UserNativeLanguage
+    ):
+        return user_language.language.name
 
 
 @extend_schema(tags=['main_page'])

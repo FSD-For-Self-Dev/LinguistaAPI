@@ -199,7 +199,7 @@ class Migration(migrations.Migration):
                         verbose_name="Exercise chosen mode",
                     ),
                 ),
-                ("set_time_limit", models.TimeField(verbose_name="Set time limit")),
+                ("answer_time_limit", models.TimeField(verbose_name="Set time limit")),
                 (
                     "repetitions_amount",
                     models.IntegerField(verbose_name="Every word repetitions amount"),
@@ -254,7 +254,7 @@ class Migration(migrations.Migration):
                     "incorrects_amount",
                     models.IntegerField(verbose_name="Incorrect answers amount"),
                 ),
-                ("set_time_limit", models.TimeField(verbose_name="Set time limit")),
+                ("answer_time_limit", models.TimeField(verbose_name="Set time limit")),
                 (
                     "mode",
                     models.CharField(

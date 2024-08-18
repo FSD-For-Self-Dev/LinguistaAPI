@@ -1,9 +1,9 @@
 """Vocabulary constants."""
 
-from core.constants import AmountLimits
+from django.utils.translation import gettext as _
 
 
-class VocabularyAmountLimits(AmountLimits):
+class VocabularyAmountLimits:
     """Amount limits constants."""
 
     MAX_TYPES_AMOUNT = 3
@@ -18,10 +18,25 @@ class VocabularyAmountLimits(AmountLimits):
     MAX_SYNONYMS_AMOUNT = 16
     MAX_ANTONYMS_AMOUNT = 16
     MAX_SIMILARS_AMOUNT = 16
-    MAX_FORMS_GROUPS_AMOUNT = 4
+    MAX_FORM_GROUPS_AMOUNT = 4
+
+    class Details:
+        TYPES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во типов')
+        TAGS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во тегов')
+        TRANSLATIONS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во переводов')
+        NOTES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во заметок')
+        EXAMPLES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во примеров')
+        DEFINITIONS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во определений')
+        FORMS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во форм')
+        IMAGES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во картинок-ассоциаций')
+        QUOTES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во цитат-ассоциаций')
+        SYNONYMS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во синонимов')
+        ANTONYMS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во антонимов')
+        SIMILARS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во похожих слов')
+        FORM_GROUPS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во групп форм')
 
 
-class LengthLimits:
+class VocabularyLengthLimits:
     """Length limits constants."""
 
     MAX_WORD_LENGTH = 256

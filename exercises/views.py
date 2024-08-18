@@ -21,6 +21,7 @@ from rest_framework.serializers import Serializer
 from core.pagination import LimitPagination
 from core.mixins import FavoriteMixin
 from core.utils import get_admin_user
+from core.exceptions import AmountLimitExceeded
 from vocabulary.views import ActionsWithRelatedWordsMixin, CollectionViewSet
 from vocabulary.serializers import CollectionShortSerializer
 
@@ -136,7 +137,8 @@ class ExerciseViewSet(
         return self.create_related_objs(
             request,
             objs_related_name='word_sets',
-            amount_limit=ExercisesAmountLimits.EXERCISE_MAX_WORD_SETS,
+            amount_limit=ExercisesAmountLimits.MAX_WORD_SETS_AMOUNT_LIMIT,
+            amount_limit_exceeded_detail=ExercisesAmountLimits.Details.WORD_SETS_AMOUNT_EXCEEDED,
             set_objs=False,
             return_objs_list=True,
         )
@@ -296,8 +298,8 @@ class ExerciseViewSet(
         try:
             translator_settings = request.user.translator_settings
             logger.debug(f'Obtained user settings: {translator_settings}')
-        except TranslatorUserDefaultSettings.DoesNotExist as e:
-            logger.debug(f'RelatedObjectDoesNotExist exception occured: {e}')
+        except TranslatorUserDefaultSettings.DoesNotExist as exception:
+            logger.debug(f'RelatedObjectDoesNotExist exception occured: {exception}')
             admin_user = get_admin_user(User)
             translator_settings = admin_user.translator_settings
             logger.debug(
@@ -324,12 +326,15 @@ class ExerciseViewSet(
 
             serializer = self.get_serializer(instance, data=request.data, partial=True)
             logger.debug(f'Serializer used: {type(serializer)}')
-        except TranslatorUserDefaultSettings.DoesNotExist as e:
-            logger.debug(f'RelatedObjectDoesNotExist exception occured: {e}')
+        except TranslatorUserDefaultSettings.DoesNotExist as exception:
+            logger.debug(f'RelatedObjectDoesNotExist exception occured: {exception}')
             instance = None
 
             serializer = self.get_serializer(data=request.data)
             logger.debug(f'Serializer used: {type(serializer)}')
+        except AmountLimitExceeded as exception:
+            logger.error(f'AmountLimitExceeded exception occured: {exception}')
+            return exception.get_detail_response(request)
 
         logger.debug('Validating data')
         serializer.is_valid(raise_exception=True)

@@ -3,7 +3,7 @@
 from datetime import timedelta
 
 from django.utils.translation import gettext as _
-from django.core.exceptions import ObjectDoesNotExist, ValidationError
+from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import QuerySet
 
 from rest_framework import serializers
@@ -17,7 +17,11 @@ from core.serializers_mixins import (
     FavoriteSerializerMixin,
     AlreadyExistSerializerHandler,
 )
-from core.serializers_fields import KwargsMethodField, ReadableHiddenField
+from core.serializers_fields import (
+    KwargsMethodField,
+    ReadableHiddenField,
+)
+from core.exceptions import AmountLimitExceeded
 from vocabulary.serializers import (
     WordShortCardSerializer,
     WordSuperShortSerializer,
@@ -263,7 +267,7 @@ class LastApproachShortSerializer(serializers.ModelSerializer):
             'words_amount',
             'corrects_amount',
             'incorrects_amount',
-            'set_time_limit',
+            'answer_time_limit',
             'complete_time',
             'mode',
             'details',
@@ -437,7 +441,7 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
         model = TranslatorUserDefaultSettings
         fields = (
             'mode',
-            'set_time_limit',
+            'answer_time_limit',
             'repetitions_amount',
             'from_language',
             'user',
@@ -453,30 +457,42 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
         """Get mode full text for display."""
         return obj.get_mode_display()
 
-    def validate_set_time_limit(self, set_time_limit: timedelta) -> timedelta:
+    def validate_answer_time_limit(self, answer_time_limit: timedelta) -> timedelta:
         """
-        Checks that `set_time` value does not exceed the specified limits.
+        Checks that `answer_time` value does not exceed the specified limits.
         """
-        min_limit = ExercisesAmountLimits.TRANSLATOR_MIN_TIME_LIMIT
-        max_limit = ExercisesAmountLimits.TRANSLATOR_MAX_TIME_LIMIT
-        if not (min_limit <= set_time_limit <= max_limit):
-            raise ValidationError(
-                (f'Time limit must be in range from {min_limit} to {max_limit}.'),
-                code='set_time_limit_exceeded',
+        min_limit = ExercisesAmountLimits.MIN_ANSWER_TIME_LIMIT
+        if answer_time_limit < min_limit:
+            raise AmountLimitExceeded(
+                detail=ExercisesAmountLimits.Details.MIN_ANSWER_TIME_EXCEEDED,
+                amount_limit=min_limit,
             )
-        return set_time_limit
+
+        max_limit = ExercisesAmountLimits.MAX_ANSWER_TIME_LIMIT
+        if answer_time_limit > max_limit:
+            raise AmountLimitExceeded(
+                detail=ExercisesAmountLimits.Details.MAX_ANSWER_TIME_EXCEEDED,
+                amount_limit=max_limit,
+            )
+
+        return answer_time_limit
 
     def validate_repetitions_amount(self, repetitions_amount: int) -> int:
         """
         Checks that `repetitions_amount` value does not exceed the specified limits.
         """
-        min_amount = ExercisesAmountLimits.EXERCISE_MIN_REPETITIONS_AMOUNT
-        max_amount = ExercisesAmountLimits.EXERCISE_MAX_REPETITIONS_AMOUNT
-        if not (min_amount <= repetitions_amount <= max_amount):
-            raise ValidationError(
-                (
-                    f'Repetitions amount must be in range from {min_amount} to {max_amount}.'
-                ),
-                code='repetitions_amount_exceeded',
+        min_limit = ExercisesAmountLimits.MIN_REPETITIONS_AMOUNT_LIMIT
+        if repetitions_amount < min_limit:
+            raise AmountLimitExceeded(
+                detail=ExercisesAmountLimits.Details.MIN_REPETITIONS_LIMIT_EXCEEDED,
+                amount_limit=min_limit,
             )
+
+        max_limit = ExercisesAmountLimits.MAX_REPETITIONS_AMOUNT_LIMIT
+        if repetitions_amount > max_limit:
+            raise AmountLimitExceeded(
+                detail=ExercisesAmountLimits.Details.MAX_REPETITIONS_LIMIT_EXCEEDED,
+                amount_limit=max_limit,
+            )
+
         return repetitions_amount

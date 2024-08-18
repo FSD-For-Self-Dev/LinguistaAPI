@@ -1,5 +1,6 @@
 """Core serializer mixins."""
 
+import logging
 from typing import Any, Type
 from collections import OrderedDict
 
@@ -7,24 +8,24 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Model
 from django.db.models.query import QuerySet
-from django.utils.translation import gettext as _
 
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
 from .serializers_fields import ReadWriteSerializerMethodField
-from .exceptions import ObjectAlreadyExist
-from .constants import AmountLimits
+from .exceptions import ObjectAlreadyExist, AmountLimitExceeded
 from .utils import get_object_by_pk
+
+logger = logging.getLogger(__name__)
 
 
 class AlreadyExistSerializerHandler:
     """
     Custom mixin to use in ModelSerializer.
-    Add `ObjectAlreadyExist` custom exception handling.
+    Adds `ObjectAlreadyExist` custom exception handling.
     """
 
-    already_exist_detail = 'Object already exist.'
+    already_exist_detail = ObjectAlreadyExist.default_detail
 
     def check_existing_obj(
         self, data: dict | OrderedDict, *args, **kwargs
@@ -34,12 +35,18 @@ class AlreadyExistSerializerHandler:
         Returns existing object if data the same, else raise the exception.
         """
         meta_model = self.Meta.model
+        logger.debug(f'Model used: {meta_model}')
+
         # To get object that matches passed data for unique fields
         # (avoid IntegrityError), `get_object` method must be implemented in Model
         # or it will be gotten by objects filter with passed data
         # (an TypeError may be occured).
         if hasattr(meta_model, 'get_object'):
+            logger.debug('Method used: get_object')
+
             _existing_obj = meta_model.get_object(data)
+            logger.debug(f'Obtained existing object: {_existing_obj}')
+
             if _existing_obj:
                 if all(
                     [
@@ -48,6 +55,8 @@ class AlreadyExistSerializerHandler:
                     ]
                 ):
                     return _existing_obj
+
+                logger.error('ObjectAlreadyExist exception occured.')
                 raise ObjectAlreadyExist(
                     detail=self.already_exist_detail,
                     existing_object=_existing_obj,
@@ -55,6 +64,7 @@ class AlreadyExistSerializerHandler:
                 )
         else:
             try:
+                logger.debug('Method used: filter')
                 _existing_obj = meta_model.objects.filter(**data).first()
             except TypeError:
                 raise AssertionError(
@@ -63,6 +73,7 @@ class AlreadyExistSerializerHandler:
                     'not passed or set `get_object` method to model instance, '
                     'specifying which fields to use in `Model.objects.get`.'
                 )
+
         return None
 
     def create(self, validated_data: OrderedDict, *args, **kwargs) -> Type[Model]:
@@ -72,6 +83,7 @@ class AlreadyExistSerializerHandler:
         If existing object does not completely match data,
         ObjectAlreadyExist exception may be raised.
         """
+        logger.debug(f'Check if object with passed data exist: {validated_data}')
         _existing_obj = self.check_existing_obj(validated_data)
         return (
             _existing_obj
@@ -99,6 +111,30 @@ class AlreadyExistSerializerHandler:
                     {'detail': self.already_exist_detail, 'obj_lookup': obj_lookup}
                 )
         return super().update(instance, validated_data)
+
+
+class AmountLimitsSerializerHandler:
+    """
+    Custom mixin to use in ModelSerializer.
+    Adds `AmountLimitExceeded` custom exception handling.
+    Required `amount_limits_check` Meta class attribute with objects list
+    and its limits in format: objects_related_name: (amount_limit, detail_message).
+    """
+
+    amount_limit_exceeded_detail = AmountLimitExceeded.default_detail
+
+    def validate(self, attrs: dict[str, Any]) -> OrderedDict:
+        """Adds nested objects amount limit check."""
+        if hasattr(self.Meta, 'amount_limits_check'):
+            for objects_related_name, data in self.Meta.amount_limits_check.items():
+                objects_data = attrs.get(objects_related_name, None)
+                amount_limit, detail = data
+                if objects_data and len(objects_data) > amount_limit:
+                    raise AmountLimitExceeded(
+                        detail=detail,
+                        amount_limit=amount_limit,
+                    )
+        return super().validate(attrs)
 
 
 class ListUpdateSerializer(serializers.ListSerializer):
@@ -214,25 +250,9 @@ class NestedSerializerMixin(serializers.ModelSerializer):
     of this nested serializer must be set to ListUpdateSerializer for update method to
     work correctly and handle IntegrityError.
     Also validates nested objects amount limits, if field name, amount limit are
-    specified in `amount_limit_fields` Meta atribute
+    specified in `amount_limits_check` Meta atribute
     (format: {field_name: amount_limit}).
     """
-
-    def validate(self, attrs: dict[str, Any]) -> OrderedDict:
-        """Add nested objects amount limit check."""
-        if hasattr(self.Meta, 'amount_limit_fields'):
-            for field_name, limit in self.Meta.amount_limit_fields.items():
-                obj_list = attrs.get(field_name, None)
-                if obj_list and len(obj_list) > limit:
-                    raise serializers.ValidationError(
-                        _(
-                            AmountLimits.get_error_message(
-                                limit,
-                                attr_name=self.Meta.model._meta.verbose_name_plural,
-                            )
-                        )
-                    )
-        return super().validate(attrs)
 
     def create_child_objects(
         self,

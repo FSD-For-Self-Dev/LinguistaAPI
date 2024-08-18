@@ -132,7 +132,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name="translatoruserdefaultsettings",
-            name="set_time_limit",
+            name="answer_time_limit",
             field=models.TimeField(
                 blank=True, null=True, verbose_name="Set time limit"
             ),
@@ -153,7 +153,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterField(
             model_name="usersexerciseshistory",
-            name="set_time_limit",
+            name="answer_time_limit",
             field=models.TimeField(
                 blank=True, null=True, verbose_name="Set time limit"
             ),

@@ -21,7 +21,7 @@ from core.models import (
 from languages.models import Language
 
 from .constants import (
-    LengthLimits,
+    VocabularyLengthLimits,
     REGEX_TEXT_MASK_DETAIL,
     REGEX_TEXT_MASK,
     REGEX_HEXCOLOR_MASK,
@@ -103,9 +103,9 @@ class Word(
     text = models.CharField(
         _('Word or phrase'),
         blank=False,
-        max_length=LengthLimits.MAX_WORD_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_WORD_LENGTH,
         validators=(
-            MinLengthValidator(LengthLimits.MIN_WORD_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_WORD_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
@@ -281,10 +281,10 @@ class Tag(
     )
     name = models.CharField(
         _('Tag name'),
-        max_length=LengthLimits.MAX_TAG_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_TAG_LENGTH,
         unique=True,
         validators=(
-            MinLengthValidator(LengthLimits.MIN_TAG_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_TAG_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
@@ -319,10 +319,10 @@ class FormsGroup(
     )
     name = models.CharField(
         _('Group name'),
-        max_length=LengthLimits.MAX_FORMSGROUP_NAME_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_FORMSGROUP_NAME_LENGTH,
         blank=False,
         validators=(
-            MinLengthValidator(LengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
@@ -346,10 +346,10 @@ class FormsGroup(
     )
     translation = models.CharField(
         _('Group name translation'),
-        max_length=LengthLimits.MAX_FORMSGROUP_NAME_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_FORMSGROUP_NAME_LENGTH,
         blank=True,
         validators=(
-            MinLengthValidator(LengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
@@ -392,10 +392,10 @@ class WordTranslation(
     )
     text = models.CharField(
         _('Translation'),
-        max_length=LengthLimits.MAX_TRANSLATION_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_TRANSLATION_LENGTH,
         help_text=_('A translation of a word or phrase'),
         validators=(
-            MinLengthValidator(LengthLimits.MIN_TRANSLATION_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_TRANSLATION_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
@@ -442,10 +442,10 @@ class Definition(
     )
     text = models.CharField(
         _('Definition'),
-        max_length=LengthLimits.MAX_DEFINITION_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_DEFINITION_LENGTH,
         help_text=_('A definition of a word or phrase'),
         validators=(
-            MinLengthValidator(LengthLimits.MIN_DEFINITION_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_DEFINITION_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
@@ -458,10 +458,10 @@ class Definition(
     )
     translation = models.CharField(
         _('A translation of the definition'),
-        max_length=LengthLimits.MAX_DEFINITION_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_DEFINITION_LENGTH,
         blank=True,
         validators=(
-            MinLengthValidator(LengthLimits.MIN_DEFINITION_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_DEFINITION_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
@@ -503,10 +503,10 @@ class UsageExample(
     )
     text = models.CharField(
         _('Usage example'),
-        max_length=LengthLimits.MAX_EXAMPLE_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_EXAMPLE_LENGTH,
         help_text=_('An usage example of a word or phrase'),
         validators=(
-            MinLengthValidator(LengthLimits.MIN_EXAMPLE_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_EXAMPLE_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
@@ -519,10 +519,10 @@ class UsageExample(
     )
     translation = models.CharField(
         _('A translation of the example'),
-        max_length=LengthLimits.MAX_EXAMPLE_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_EXAMPLE_LENGTH,
         blank=True,
         validators=(
-            MinLengthValidator(LengthLimits.MIN_EXAMPLE_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_EXAMPLE_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
@@ -597,7 +597,7 @@ class QuoteAssociation(
     )
     text = models.CharField(
         _('Quote text'),
-        max_length=LengthLimits.MAX_QUOTE_TEXT_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_QUOTE_TEXT_LENGTH,
         blank=False,
         validators=(
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
@@ -605,7 +605,7 @@ class QuoteAssociation(
     )
     quote_author = models.CharField(
         _('Quote author'),
-        max_length=LengthLimits.MAX_QUOTE_AUTHOR_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_QUOTE_AUTHOR_LENGTH,
         blank=True,
         validators=(
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
@@ -646,15 +646,15 @@ class Collection(
     )
     title = models.CharField(
         _('Collection title'),
-        max_length=LengthLimits.MAX_COLLECTION_NAME_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_COLLECTION_NAME_LENGTH,
         validators=(
-            MinLengthValidator(LengthLimits.MIN_COLLECTION_NAME_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_COLLECTION_NAME_LENGTH),
             RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     description = models.CharField(
         _('Description'),
-        max_length=LengthLimits.MAX_COLLECTION_DESCRIPTION_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_COLLECTION_DESCRIPTION_LENGTH,
         blank=True,
     )
     words = models.ManyToManyField(
@@ -1118,7 +1118,7 @@ class Note(
     )
     text = models.CharField(
         _('Note text'),
-        max_length=LengthLimits.MAX_NOTE_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_NOTE_LENGTH,
         blank=False,
     )
 

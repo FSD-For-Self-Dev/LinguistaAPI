@@ -208,13 +208,13 @@ class TestExercisesEndpoints:
         exercise_default_settings = baker.prepare(
             TranslatorUserDefaultSettings,
             user=user,
-            set_time_limit='00:00:30',
+            answer_time_limit='00:00:30',
             repetitions_amount=5,
             _fill_optional=True,
         )
         source_data = {
             'mode': exercise_default_settings.mode,
-            'set_time_limit': exercise_default_settings.set_time_limit,
+            'answer_time_limit': exercise_default_settings.answer_time_limit,
             'repetitions_amount': exercise_default_settings.repetitions_amount,
             'from_language': exercise_default_settings.from_language,
         }

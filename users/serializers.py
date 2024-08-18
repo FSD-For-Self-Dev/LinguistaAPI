@@ -3,7 +3,6 @@
 from collections import OrderedDict
 
 from django.contrib.auth import get_user_model
-from django.utils.translation import gettext as _
 
 from rest_framework import serializers
 from drf_extra_fields.fields import HybridImageField
@@ -12,8 +11,12 @@ from drf_spectacular.utils import extend_schema_field
 
 from languages.models import Language
 from languages.serializers import LanguageSerializer
-from core.serializers_mixins import CountObjsSerializerMixin
+from core.serializers_mixins import (
+    CountObjsSerializerMixin,
+    AlreadyExistSerializerHandler,
+)
 from core.serializers_fields import KwargsMethodField
+from core.exceptions import ExceptionDetails
 
 from .models import UserLearningLanguage, UserNativeLanguage
 
@@ -119,8 +122,13 @@ class LearningLanguageShortSerailizer(
         return obj.user.words.filter(language=obj.language, activity_status='M').count()
 
 
-class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
+class LearningLanguageSerailizer(
+    AlreadyExistSerializerHandler,
+    LearningLanguageShortSerailizer,
+):
     """Serializer to retrieve users's learning language details."""
+
+    already_exist_detail = ExceptionDetails.Users.LEARNING_LANGUAGE_ALREADY_EXIST
 
     class Meta:
         model = UserLearningLanguage
@@ -157,7 +165,7 @@ class LearningLanguageSerailizer(LearningLanguageShortSerailizer):
         ):
             return super().validate(attrs)
         raise serializers.ValidationError(
-            {'language': _('The selected language is not yet able for learning.')}
+            {'language': ExceptionDetails.Users.LANGUAGE_NOT_AVAILABLE}
         )
 
 

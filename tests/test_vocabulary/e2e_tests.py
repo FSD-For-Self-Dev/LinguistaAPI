@@ -744,7 +744,7 @@ class TestVocabularyEndpoints:
             (
                 'forms_groups',
                 'word_forms_groups',
-                VocabularyAmountLimits.MAX_FORMS_GROUPS_AMOUNT,
+                VocabularyAmountLimits.MAX_FORM_GROUPS_AMOUNT,
             ),
             (
                 'synonyms',
@@ -801,7 +801,7 @@ class TestVocabularyEndpoints:
             self.endpoint, data=source_json, format='json'
         )
 
-        assert response.status_code == 400
+        assert response.status_code == 409
 
     def test_word_retrieve(self, auth_api_client, user, word):
         """При запросе от автора возвращает нужное слово."""

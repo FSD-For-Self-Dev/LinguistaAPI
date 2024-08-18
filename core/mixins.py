@@ -19,10 +19,50 @@ from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
-from core.exceptions import ObjectAlreadyExist
-from core.constants import AmountLimits
+from core.exceptions import ObjectAlreadyExist, AmountLimitExceeded
+from core.utils import check_amount_limit
 
 logger = logging.getLogger(__name__)
+
+
+class ObjectAlreadyExistHandler:
+    """Custom mixin to add custom ObjectAlreadyExist exception handling."""
+
+    def create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Handle ObjectAlreadyExist exception defore creating."""
+        try:
+            return super().create(request, *args, **kwargs)
+        except ObjectAlreadyExist as exception:
+            logger.error(f'ObjectAlreadyExist exception occured: {exception}')
+            return exception.get_detail_response(request)
+
+    def update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Handle ObjectAlreadyExist exception defore updating."""
+        try:
+            return super().update(request, *args, **kwargs)
+        except ObjectAlreadyExist as exception:
+            logger.error(f'ObjectAlreadyExist exception occured: {exception}')
+            return exception.get_detail_response(request)
+
+
+class AmountLimitExceededHandler:
+    """Custom mixin to add custom AmountLimitExceeded exception handling."""
+
+    def create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Handle AmountLimitExceeded exception defore creating."""
+        try:
+            return super().create(request, *args, **kwargs)
+        except AmountLimitExceeded as exception:
+            logger.error(f'AmountLimitExceeded exception occured: {exception}')
+            return exception.get_detail_response(request)
+
+    def update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Handle AmountLimitExceeded exception defore updating."""
+        try:
+            return super().update(request, *args, **kwargs)
+        except AmountLimitExceeded as exception:
+            logger.error(f'AmountLimitExceeded exception occured: {exception}')
+            return exception.get_detail_response(request)
 
 
 class ActionsWithRelatedObjectsMixin:
@@ -187,6 +227,7 @@ class ActionsWithRelatedObjectsMixin:
         serializer_class: Serializer | None = None,
         response_serializer_class: Serializer | None = None,
         response_objs_name: str = '',
+        amount_limit_exceeded_detail: str = AmountLimitExceeded.default_detail,
         *args,
         **kwargs,
     ) -> HttpResponse:
@@ -231,6 +272,8 @@ class ActionsWithRelatedObjectsMixin:
                                                        default None.
             response_objs_name (str): objects name to be returned in response,
                                       uses objs_related_name if not passed.
+            amount_limit_exceeded_detail (str): detail message if AmountLimitExceeded
+                                                exception was raised.
 
         """
         logger.debug(f'Creating related objects: {objs_related_name}')
@@ -249,20 +292,23 @@ class ActionsWithRelatedObjectsMixin:
         serializer.is_valid(raise_exception=True)
 
         # Validate objects amount limits if `amount_limit` is passed
-        logger.debug('Checking amount limits')
-        logger.debug(f'Objects amount limit: {amount_limit}')
         if amount_limit:
-            existing_objs_amount = instance.__getattribute__(objs_related_name).count()
-            new_objs_amount = len(serializer.validated_data)
-            AmountLimits.check_amount_limit(
-                existing_objs_amount, new_objs_amount, amount_limit, objs_related_name
-            )
+            logger.debug('Checking amount limits')
+            try:
+                check_amount_limit(
+                    current_amount=instance.__getattribute__(objs_related_name).count(),
+                    new_objects_amount=len(serializer.validated_data),
+                    amount_limit=amount_limit,
+                    detail=amount_limit_exceeded_detail,
+                )
+            except AmountLimitExceeded as exception:
+                return exception.get_detail_response(request)
 
         try:
             logger.debug('Performing save')
             _new_objs = serializer.save()
 
-            # Set related objs if needed
+            # Set related objects throught related manager if needed
             if set_objs:
                 logger.debug(
                     'Setting new related objects to instance through related manager'
@@ -407,26 +453,6 @@ class ActionsWithRelatedObjectsMixin:
 
                 logger.debug('Returning no data')
                 return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-class ObjectAlreadyExistHandler:
-    """Custom mixin to add custom ObjectAlreadyExist exception handling."""
-
-    def create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Handle ObjectAlreadyExist exception defore creating."""
-        try:
-            return super().create(request, *args, **kwargs)
-        except ObjectAlreadyExist as exception:
-            logger.error(f'ObjectAlreadyExist exception occured: {exception}')
-            return exception.get_detail_response(request)
-
-    def update(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Handle ObjectAlreadyExist exception defore updating."""
-        try:
-            return super().update(request, *args, **kwargs)
-        except ObjectAlreadyExist as exception:
-            logger.error(f'ObjectAlreadyExist exception occured: {exception}')
-            return exception.get_detail_response(request)
 
 
 class DestroyReturnListMixin:

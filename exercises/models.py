@@ -150,7 +150,7 @@ class UsersExercisesHistory(CreatedModel):
     incorrects_amount = models.IntegerField(
         _('Incorrect answers amount'),
     )
-    set_time_limit = models.TimeField(
+    answer_time_limit = models.TimeField(
         _('Set time limit'),
         null=True,
         blank=True,
@@ -347,7 +347,7 @@ class TranslatorUserDefaultSettings(models.Model):
         choices=UsersExercisesHistory.MODE_OPTIONS,
         default=UsersExercisesHistory.FREE_INPUT,
     )
-    set_time_limit = models.TimeField(
+    answer_time_limit = models.TimeField(
         _('Set time limit'),
         null=True,
         blank=True,
