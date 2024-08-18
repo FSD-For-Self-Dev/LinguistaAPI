@@ -4,12 +4,18 @@ import os
 import logging
 
 from rest_framework import status
-from rest_framework.serializers import Serializer, CharField
+from rest_framework.serializers import (
+    Serializer,
+    CharField,
+    IntegerField,
+    ListField,
+)
 from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiTypes,
     OpenApiResponse,
+    OpenApiExample,
     inline_serializer,
 )
 
@@ -27,7 +33,6 @@ from vocabulary.serializers import (
     MultipleWordsSerializer,
     TagListSerializer,
     LearningLanguageWithLastWordsSerailizer,
-    LearningLanguageShortSerailizer,
     LanguageImageSerailizer,
     ImageListSerializer,
     ImageInLineSerializer,
@@ -70,7 +75,10 @@ from users.serializers import (
     NativeLanguageSerailizer,
     UserShortSerializer,
 )
+from users.constants import UsersAmountLimits
 from languages.serializers import LanguageSerializer
+
+from .exceptions import ExceptionCodes, ExceptionDetails
 
 logger = logging.getLogger(__name__)
 
@@ -119,6 +127,14 @@ class CustomSchema(AutoSchema):
             ]
         except Exception:
             return super().get_response_serializers()
+
+    def get_examples(self):
+        try:
+            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
+                'examples'
+            ]
+        except Exception:
+            return super().get_examples()
 
     def get_override_parameters(self) -> list[OpenApiParameter]:
         try:
@@ -1284,10 +1300,126 @@ data = {
             },
         },
         'learning_language_create': {
-            'summary': 'Добавление изучаемого языка',
-            'request': LearningLanguageSerailizer,
+            'summary': 'Добавление изучаемых языков',
+            'description': (
+                'Добавляет переданные языки в изучаемые для пользователя. '
+                'Требуется авторизация.'
+            ),
+            'parameters': [
+                OpenApiParameter(
+                    'no_words',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Если передан этот параметр, в ответе не будут отображаться '
+                        'последние добавленные слова для каждого языка. '
+                        'Используется для оптимизации времени ответа сервера. '
+                        'Пример использования: `api/languages/?no_words`.'
+                    ),
+                ),
+            ],
+            'request': LearningLanguageSerailizer(many=True),
             'responses': {
-                status.HTTP_201_CREATED: LearningLanguageWithLastWordsSerailizer,
+                status.HTTP_201_CREATED: OpenApiResponse(
+                    description=(
+                        'Языки успешно добавлены в изучаемые. '
+                        'Возвращается обновленный список всех изучаемых языков.'
+                    ),
+                    response=inline_serializer(
+                        name='learning_languages_list',
+                        fields={
+                            'count': IntegerField(),
+                            'results': LearningLanguageWithLastWordsSerailizer(
+                                many=True
+                            ),
+                        },
+                    ),
+                ),
+                status.HTTP_409_CONFLICT: OpenApiResponse(
+                    description=(
+                        'Возможные конфликты:\n'
+                        '\tОдин или несколько языков уже являются изучаемыми.'
+                        '\tПревышено ограничение на количество изучаемых языков.'
+                    ),
+                    response=inline_serializer(
+                        name='exception_details',
+                        fields={
+                            'exception_code': CharField(),
+                            'detail': CharField(),
+                        },
+                    ),
+                    examples=[
+                        OpenApiExample(
+                            name=ExceptionCodes.ALREADY_EXIST,
+                            value={
+                                'exception_code': ExceptionCodes.ALREADY_EXIST,
+                                'detail': ExceptionDetails.Users.LEARNING_LANGUAGE_ALREADY_EXIST,
+                                'existing_object': 'English',
+                            },
+                        ),
+                        OpenApiExample(
+                            name=ExceptionCodes.AMOUNT_LIMIT_EXCEEDED,
+                            value={
+                                'exception_code': ExceptionCodes.AMOUNT_LIMIT_EXCEEDED,
+                                'detail': UsersAmountLimits.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
+                                'amount_limit': UsersAmountLimits.MAX_LEARNING_LANGUAGES_AMOUNT,
+                            },
+                        ),
+                    ],
+                ),
+                status.HTTP_400_BAD_REQUEST: OpenApiResponse(
+                    description=(
+                        'Ошибки валидации:\n'
+                        '\tОдин или несколько языков недоступны для изучения на данный момент.'
+                        '\tОдин или несколько языков не найдены по переданному названию.'
+                    ),
+                    response=inline_serializer(
+                        name='exception_details',
+                        fields={
+                            'language': ListField(),
+                        },
+                    ),
+                    examples=[
+                        OpenApiExample(
+                            name='language_not_available',
+                            value=[
+                                {},
+                                {
+                                    'language': [
+                                        ExceptionDetails.Users.LANGUAGE_NOT_AVAILABLE
+                                    ]
+                                },
+                            ],
+                        ),
+                        OpenApiExample(
+                            name='language_not_found',
+                            value=[
+                                {},
+                                {'language': ['Объект с name=Jaanese не существует.']},
+                            ],
+                        ),
+                    ],
+                ),
+                status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
+                    description=(
+                        'Пользователь не авторизован.\n'
+                        'Не был передан заголовок Authorization.',
+                    ),
+                    response=inline_serializer(
+                        name='unauthorized',
+                        fields={
+                            'detail': CharField(),
+                        },
+                    ),
+                    examples=[
+                        OpenApiExample(
+                            name='unauthorized',
+                            value={
+                                'detail': 'Учетные данные не были предоставлены.',
+                            },
+                        ),
+                    ],
+                ),
             },
         },
         'learning_language_retrieve': {
@@ -1319,8 +1451,8 @@ data = {
             },
         },
         'native_language_create': {
-            'summary': 'Добавление родного языка',
-            'request': NativeLanguageSerailizer,
+            'summary': 'Добавление родных языков',
+            'request': NativeLanguageSerailizer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: NativeLanguageSerailizer(many=True),
             },
@@ -1337,13 +1469,6 @@ data = {
             'request': None,
             'responses': {
                 status.HTTP_200_OK: LanguageSerializer,
-            },
-        },
-        'learning_and_available_languages_list': {
-            'summary': 'Просмотр текущих изучаемых языков и языков доступных для изучения',
-            'request': None,
-            'responses': {
-                status.HTTP_200_OK: LearningLanguageShortSerailizer,
             },
         },
         'interface_switch_languages_list': {
