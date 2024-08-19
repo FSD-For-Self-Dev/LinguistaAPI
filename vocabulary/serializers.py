@@ -559,36 +559,6 @@ class WordSuperShortSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class WordSuperShortWithTranslations(WordSuperShortSerializer):
-    """
-    Serializer to list words with 4 last added translations.
-    """
-
-    last_4_translations = serializers.SerializerMethodField('get_last_4_translations')
-    other_translations_count = serializers.SerializerMethodField(
-        'get_other_translations_count'
-    )
-
-    class Meta(WordSuperShortSerializer.Meta):
-        fields = WordSuperShortSerializer.Meta.fields + (
-            'last_4_translations',
-            'other_translations_count',
-        )
-
-    @extend_schema_field({'type': 'integer'})
-    def get_other_translations_count(self, obj: Word) -> int:
-        """Returns amount of translations for the given word minus 4 last added."""
-        translations_count = obj.translations.count()
-        return translations_count - 4 if translations_count > 4 else 0
-
-    @extend_schema_field({'type': 'string'})
-    def get_last_4_translations(self, obj: Word) -> QuerySet[WordTranslation]:
-        """Returns list of 4 last added translations for the given word."""
-        return obj.translations.order_by('-wordtranslations__created').values('text')[
-            :4
-        ]
-
-
 class WordShortCardSerializer(
     FavoriteSerializerMixin,
     WordSuperShortSerializer,
@@ -626,16 +596,32 @@ class WordShortCardSerializer(
 
 class GetImagesSerializerMixin(serializers.ModelSerializer):
     """
-    Custom serializer mixin to add `images` field obtained from object through
-    related manager.
+    Custom serializer mixin to add `images` and `image` field obtained through
+    related manager to retrieve one latest image-association or full list.
     Related name for images must be `images_associations`.
     """
 
+    image = serializers.SerializerMethodField('get_last_image')
+
     images = serializers.SerializerMethodField('get_images')
 
+    @extend_schema_field({'type': 'string'})
+    def get_last_image(self, obj: Word) -> str | None:
+        """Returns last added image association."""
+        try:
+            url = obj.images_associations.latest().image.url
+            request = self.context.get('request', None)
+            if request is not None:
+                return request.build_absolute_uri(url)
+            return url
+        except ObjectDoesNotExist:
+            return None
+        except ValueError:
+            return None
+
     @extend_schema_field({'type': 'object'})
-    def get_images(self, obj: Word) -> QuerySet[ImageAssociation]:
-        """Returns list of object related images."""
+    def get_images(self, obj: Word) -> list[str]:
+        """Returns list of image associations."""
         return obj.images_associations.values_list('image', flat=True)
 
 
@@ -646,10 +632,6 @@ class WordLongCardSerializer(
 ):
     """Serializer to list words with 6 last added translations."""
 
-    images_count = KwargsMethodField(
-        'get_objs_count',
-        objs_related_name='images_associations',
-    )
     other_translations_count = serializers.SerializerMethodField(
         'get_other_translations_count'
     )
@@ -659,8 +641,7 @@ class WordLongCardSerializer(
         fields = WordShortCardSerializer.Meta.fields + (
             'last_6_translations',
             'other_translations_count',
-            'images_count',
-            'images',
+            'image',
         )
 
     @extend_schema_field({'type': 'integer'})
@@ -684,10 +665,6 @@ class WordStandartCardSerializer(
 ):
     """Serializer to list words in standart form with all translations."""
 
-    images_count = KwargsMethodField(
-        'get_objs_count',
-        objs_related_name='images_associations',
-    )
     translations_count = KwargsMethodField(
         'get_objs_count',
         objs_related_name='translations',
@@ -698,8 +675,7 @@ class WordStandartCardSerializer(
         fields = WordShortCardSerializer.Meta.fields + (
             'translations_count',
             'translations',
-            'images_count',
-            'images',
+            'image',
         )
 
     @extend_schema_field({'type': 'string'})
@@ -2128,10 +2104,6 @@ class SynonymSerializer(
         slug_field='name',
         read_only=True,
     )
-    images_count = KwargsMethodField(
-        'get_objs_count',
-        objs_related_name='images_associations',
-    )
 
     already_exist_detail = _('This word already exists in your vocabulary. Update it?')
 
@@ -2143,14 +2115,12 @@ class SynonymSerializer(
             'author',
             'language',
             'text',
-            'images_count',
-            'images',
+            'image',
         )
         read_only_fields = (
             'id',
             'slug',
-            'images_count',
-            'images',
+            'image',
         )
 
     def validate_language(self, language: Language) -> Language | None:

@@ -20,7 +20,7 @@ from rest_framework import filters, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-from rest_framework.parsers import MultiPartParser, FormParser
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.serializers import Serializer
 from rest_framework.exceptions import NotFound
 
@@ -150,7 +150,7 @@ def get_words_view(request: HttpRequest) -> Serializer:
                 f'Word cards view parameter is set to default: {words_view_param}'
             )
 
-    return words_view.get(words_view_param)
+    return words_view.get(words_view_param, words_view.get(default_words_view))
 
 
 def annotate_words_with_counters(
@@ -1172,7 +1172,7 @@ class WordViewSet(
         detail=False,
         permission_classes=(IsAuthenticated,),
         url_path='images-upload',
-        parser_classes=(MultiPartParser, FormParser),
+        parser_classes=(MultiPartParser, FormParser, JSONParser),
         serializer_class=ImageInLineSerializer,
     )
     def images_upload(
