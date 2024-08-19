@@ -534,19 +534,21 @@ class WordSuperShortSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class ActivityProgressSerializerMixin(serializers.ModelSerializer):
+    activity_progress = serializers.SerializerMethodField('get_activity_progress')
+
+    @extend_schema_field({'type': 'integer'})
+    def get_activity_progress(self, obj: Word) -> int:
+        return 0
+
+
 class WordShortCardSerializer(
     FavoriteSerializerMixin,
+    ActivityProgressSerializerMixin,
     WordSuperShortSerializer,
 ):
     """Serializer to list words with minimum details."""
 
-    types = serializers.SlugRelatedField(slug_field='name', read_only=True, many=True)
-    tags = serializers.SlugRelatedField(slug_field='name', read_only=True, many=True)
-    form_groups = serializers.SlugRelatedField(
-        slug_field='name',
-        read_only=True,
-        many=True,
-    )
     language = serializers.SlugRelatedField(slug_field='name', read_only=True)
     activity_status = serializers.SerializerMethodField('get_activity_status_display')
 
@@ -554,12 +556,10 @@ class WordShortCardSerializer(
         favorite_model = FavoriteWord
         favorite_model_field = 'word'
         fields = WordSuperShortSerializer.Meta.fields + (
-            'types',
-            'tags',
-            'form_groups',
             'favorite',
             'is_problematic',
             'activity_status',
+            'activity_progress',
             'last_exercise_date',
         )
 
@@ -670,6 +670,7 @@ class WordShortCreateSerializer(
     NestedSerializerMixin,
     CountObjsSerializerMixin,
     GetImageAssociationsSerializerMixin,
+    ActivityProgressSerializerMixin,
     serializers.ModelSerializer,
 ):
     """
@@ -752,6 +753,7 @@ class WordShortCreateSerializer(
         write_only=True,
     )
     activity_status = serializers.SerializerMethodField('get_activity_status_display')
+    activity_progress = serializers.SerializerMethodField('get_activity_progress')
 
     already_exist_detail = _('This word already exists in your vocabulary. Update it?')
     default_error_messages = {
