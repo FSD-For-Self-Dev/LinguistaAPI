@@ -10,6 +10,7 @@ from .models import Language
 class LanguageSerializer(serializers.ModelSerializer):
     """Serializer to list languages."""
 
+    name = CapitalizedCharField()
     name_local = CapitalizedCharField()
 
     class Meta:

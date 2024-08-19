@@ -74,7 +74,7 @@ def learning_languages(request):
         if data:
             source_data = [
                 {
-                    'name': language.name,
+                    'name': language.name.capitalize(),
                     'flag_icon': language.flag_icon,
                 }
                 for language in languages
