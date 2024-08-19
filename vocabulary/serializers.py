@@ -31,6 +31,7 @@ from core.serializers_mixins import (
     AmountLimitsSerializerHandler,
     UpdateSerializerMixin,
 )
+from core.exceptions import ExceptionDetails
 from users.models import UserLearningLanguage
 from users.serializers import (
     UserShortSerializer,
@@ -131,16 +132,26 @@ class ValidateLanguageMixin:
             )
         return language
 
-    def validate_language_is_learning(self, language: Language) -> Language | None:
+    def validate_language_is_learning(
+        self, language: Language, add_to_learning=True
+    ) -> Language | None:
         """
         Raises ValidationError if language does not belong to user's
         learning languages.
         """
         user = self.context.get('request').user
         if language not in user.learning_languages.all():
+            if add_to_learning:
+                if language.learning_available:
+                    # Adds language to learning if available
+                    UserLearningLanguage.objects.create(user=user, language=language)
+                    return language
+                else:
+                    raise serializers.ValidationError(
+                        ExceptionDetails.Users.LANGUAGE_NOT_AVAILABLE
+                    )
             raise serializers.ValidationError(
-                _('Language must be in your learning languages.'),
-                code='invalid_language',
+                ExceptionDetails.Vocabulary.LANGUAGE_MUST_BE_LEARNING,
             )
         return language
 
@@ -919,6 +930,10 @@ class WordShortCreateSerializer(
         clear_extra_objects(sender=Word)
         return instance
 
+    def validate_language(self, language: Language) -> Language | None:
+        """Check if passed language belongs to users learning languages."""
+        return self.validate_language_is_learning(language)
+
     def validate(self, attrs: dict) -> OrderedDict:
         """
         Check if languages if related objects in `objs_with_same_language` meta
@@ -969,10 +984,6 @@ class WordShortCreateSerializer(
     def get_activity_status_display(self, obj: Word) -> str:
         """Get activity status full text for display."""
         return obj.get_activity_status_display()
-
-    def validate_language(self, language: Language) -> Language | None:
-        """Check if passed language belongs to users learning languages."""
-        return self.validate_language_is_learning(language)
 
 
 class WordSelfRelatedSerializer(NestedSerializerMixin, serializers.ModelSerializer):
