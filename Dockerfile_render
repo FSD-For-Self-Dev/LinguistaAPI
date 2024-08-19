@@ -17,10 +17,6 @@ RUN python manage.py importlanguages
 RUN python manage.py importwordtypes
 RUN python manage.py makesuperuser
 
-RUN django-admin makemessages -l ru_RU
-RUN django-admin makemessages -l en
-RUN django-admin compilemessages
-
 EXPOSE 8000
 
 CMD export && (gunicorn --log-level debug --bind 0.0.0.0:8000 config.wsgi)
