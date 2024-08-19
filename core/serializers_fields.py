@@ -78,3 +78,10 @@ class KwargsMethodField(serializers.SerializerMethodField):
     def to_representation(self, value: Any) -> Any:
         method = getattr(self.parent, self.method_name)
         return method(value, **self.func_kwargs)
+
+
+class CapitalizedCharField(serializers.CharField):
+    """Custom CharField to represent with capital letter."""
+
+    def to_representation(self, value: str) -> str:
+        return value.capitalize()
