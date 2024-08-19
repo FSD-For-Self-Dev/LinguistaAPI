@@ -132,7 +132,7 @@ class Word(
         related_name='words',
         blank=True,
     )
-    forms_groups = models.ManyToManyField(
+    form_groups = models.ManyToManyField(
         'FormsGroup',
         through='WordsFormGroups',
         related_name='words',
@@ -330,7 +330,7 @@ class FormsGroup(
         Language,
         verbose_name=_('Language'),
         on_delete=models.SET_NULL,
-        related_name='forms_groups',
+        related_name='form_groups',
         null=True,
     )
     color = models.CharField(

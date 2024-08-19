@@ -189,8 +189,8 @@ def word_tags(request):
 
 
 @pytest.fixture
-def word_forms_groups(request):
-    def get_word_forms_groups(user, data=False, _quantity=1, make=False, **kwargs):
+def word_form_groups(request):
+    def get_word_form_groups(user, data=False, _quantity=1, make=False, **kwargs):
         language = kwargs.get('language', None)
         if not language:
             language = baker.make(Language)
@@ -233,7 +233,7 @@ def word_forms_groups(request):
             return (objs, source, expected)
         return objs
 
-    return get_word_forms_groups
+    return get_word_form_groups
 
 
 @pytest.fixture

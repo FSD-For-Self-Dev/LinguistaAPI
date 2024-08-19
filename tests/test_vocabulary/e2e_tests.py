@@ -438,7 +438,7 @@ class TestVocabularyEndpoints:
     @pytest.mark.parametrize(
         'objs_related_name, fixture_name, counter, res_name',
         [
-            ('forms_groups', 'word_forms_groups', False, 'forms_groups'),
+            ('form_groups', 'word_form_groups', False, 'form_groups'),
             ('translations', 'word_translations', True, 'translations'),
             ('examples', 'word_usage_examples', True, 'examples'),
             ('definitions', 'word_definitions', True, 'definitions'),
@@ -579,7 +579,7 @@ class TestVocabularyEndpoints:
             ('examples', 'word_usage_examples', UsageExample, 'text'),
             ('definitions', 'word_definitions', Definition, 'text'),
             ('tags', 'word_tags', Tag, 'name'),
-            ('forms_groups', 'word_forms_groups', FormsGroup, 'name'),
+            ('form_groups', 'word_form_groups', FormsGroup, 'name'),
             ('synonyms', 'related_words_data', Word, 'text'),
             ('antonyms', 'related_words_data', Word, 'text'),
             ('forms', 'related_words_data', Word, 'text'),
@@ -689,7 +689,7 @@ class TestVocabularyEndpoints:
             ('antonyms', [{'from_word': {'language': 'French', 'text': 'Some text'}}]),
             ('forms', [{'from_word': {'language': 'French', 'text': 'Some text'}}]),
             ('similars', [{'from_word': {'language': 'French', 'text': 'Some text'}}]),
-            ('forms_groups', [{'language': 'French', 'name': 'Some text'}]),
+            ('form_groups', [{'language': 'French', 'name': 'Some text'}]),
         ],
     )
     def test_word_validate_related_objs_language(
@@ -742,8 +742,8 @@ class TestVocabularyEndpoints:
             ('types', 'word_types', VocabularyAmountLimits.MAX_TYPES_AMOUNT),
             ('tags', 'word_tags', VocabularyAmountLimits.MAX_TAGS_AMOUNT),
             (
-                'forms_groups',
-                'word_forms_groups',
+                'form_groups',
+                'word_form_groups',
                 VocabularyAmountLimits.MAX_FORM_GROUPS_AMOUNT,
             ),
             (
@@ -1050,7 +1050,7 @@ class TestVocabularyEndpoints:
             ('examples', UsageExample),
             ('definitions', Definition),
             ('tags', Tag),
-            ('forms_groups', FormsGroup),
+            ('form_groups', FormsGroup),
             ('images_associations', ImageAssociation),
             ('quotes_associations', QuoteAssociation),
         ],
@@ -1666,12 +1666,12 @@ class TestTagsEndpoints:
 class TestFormGroupsEndpoints:
     endpoint = '/api/forms-groups/'
 
-    def test_list(self, auth_api_client, user, word_forms_groups):
+    def test_list(self, auth_api_client, user, word_form_groups):
         """
         По запросу групп форм слов и фраз пользователя возвращается список групп форм слов
         авторизованного пользователя.
         """
-        form_groups = word_forms_groups(user, make=True)
+        form_groups = word_form_groups(user, make=True)
 
         response = auth_api_client(user).get(self.endpoint)
 

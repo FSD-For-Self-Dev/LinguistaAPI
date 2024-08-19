@@ -1518,7 +1518,7 @@ data = {
                                             'modified': '2024-08-17 14:04',
                                             'types': ['Adjective', 'Verb', 'Noun'],
                                             'tags': [],
-                                            'forms_groups': [],
+                                            'form_groups': [],
                                             'favorite': False,
                                             'is_problematic': False,
                                             'activity_status': 'Неактивное',

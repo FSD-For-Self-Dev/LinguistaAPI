@@ -567,7 +567,7 @@ class WordShortCardSerializer(
 
     types = serializers.SlugRelatedField(slug_field='name', read_only=True, many=True)
     tags = serializers.SlugRelatedField(slug_field='name', read_only=True, many=True)
-    forms_groups = serializers.SlugRelatedField(
+    form_groups = serializers.SlugRelatedField(
         slug_field='name',
         read_only=True,
         many=True,
@@ -581,7 +581,7 @@ class WordShortCardSerializer(
         fields = WordSuperShortSerializer.Meta.fields + (
             'types',
             'tags',
-            'forms_groups',
+            'form_groups',
             'favorite',
             'is_problematic',
             'activity_status',
@@ -718,7 +718,7 @@ class WordShortCreateSerializer(
         many=True,
         required=False,
     )
-    forms_groups = FormsGroupInLineSerializer(
+    form_groups = FormsGroupInLineSerializer(
         many=True,
         required=False,
     )
@@ -790,8 +790,8 @@ class WordShortCreateSerializer(
                 'The definitions should be in the same language as the word itself.'
             )
         },
-        'forms_groups_same_language_detail': {
-            'forms_groups': _(
+        'form_groups_same_language_detail': {
+            'form_groups': _(
                 'The form groups should be in the same language as the word itself.'
             )
         },
@@ -810,7 +810,7 @@ class WordShortCreateSerializer(
             'author',
             'types',
             'tags',
-            'forms_groups',
+            'form_groups',
             'favorite',
             'is_problematic',
             'activity_status',
@@ -853,7 +853,7 @@ class WordShortCreateSerializer(
             'examples': 'examples',
             'definitions': 'definitions',
             'tags': 'tags',
-            'forms_groups': 'forms_groups',
+            'form_groups': 'form_groups',
             'quotes_associations': 'quotes_associations',
         }
         # Limits for related objects amount
@@ -866,7 +866,7 @@ class WordShortCreateSerializer(
                 VocabularyAmountLimits.MAX_TYPES_AMOUNT,
                 VocabularyAmountLimits.Details.TYPES_AMOUNT_EXCEEDED,
             ),
-            'forms_groups': (
+            'form_groups': (
                 VocabularyAmountLimits.MAX_FORM_GROUPS_AMOUNT,
                 VocabularyAmountLimits.Details.FORM_GROUPS_AMOUNT_EXCEEDED,
             ),
@@ -899,7 +899,7 @@ class WordShortCreateSerializer(
         objs_with_same_language = [
             'examples',
             'definitions',
-            'forms_groups',
+            'form_groups',
         ]
 
     def create(self, validated_data: OrderedDict, parent_first: bool = True) -> Word:
@@ -1162,7 +1162,7 @@ class WordSerializer(WordShortCreateSerializer):
         required=False,
     )
     tags = TagSerializer(many=True, required=False)
-    forms_groups = FormsGroupInLineSerializer(many=True, required=False)
+    form_groups = FormsGroupInLineSerializer(many=True, required=False)
     translations_count = KwargsMethodField(
         'get_objs_count',
         objs_related_name='translations',
@@ -1220,7 +1220,7 @@ class WordSerializer(WordShortCreateSerializer):
             'is_problematic',
             'types',
             'tags',
-            'forms_groups',
+            'form_groups',
             'activity_status',
             'translations_count',
             'translations',
@@ -1276,7 +1276,7 @@ class WordSerializer(WordShortCreateSerializer):
             'definitions': 'definitions',
             'translations': 'translations',
             'tags': 'tags',
-            'forms_groups': 'forms_groups',
+            'form_groups': 'form_groups',
             'collections': 'collections',
             'quotes_associations': 'quotes_associations',
         }
@@ -1290,7 +1290,7 @@ class WordSerializer(WordShortCreateSerializer):
                 VocabularyAmountLimits.MAX_TYPES_AMOUNT,
                 VocabularyAmountLimits.Details.TYPES_AMOUNT_EXCEEDED,
             ),
-            'forms_groups': (
+            'form_groups': (
                 VocabularyAmountLimits.MAX_FORM_GROUPS_AMOUNT,
                 VocabularyAmountLimits.Details.FORM_GROUPS_AMOUNT_EXCEEDED,
             ),
@@ -2181,7 +2181,7 @@ class FormsGroupListSerializer(
         slug_field='name',
         required=True,
     )
-    words_count = KwargsMethodField('get_objs_count', objs_related_name='forms_groups')
+    words_count = KwargsMethodField('get_objs_count', objs_related_name='form_groups')
 
     class Meta:
         model = FormsGroup
