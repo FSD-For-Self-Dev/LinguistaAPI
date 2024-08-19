@@ -56,7 +56,7 @@ def native_language(request):
 def languages(request):
     def get_languages(name=False, extra_data={}, _quantity=1, **kwargs):
         languages = baker.make(
-            Language, **extra_data, _quantity=_quantity, _fill_optional=True
+            Language, **extra_data, _quantity=_quantity, _fill_optional=False
         )
         return [language.name for language in languages] if name else languages
 
