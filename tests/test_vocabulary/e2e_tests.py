@@ -2927,7 +2927,7 @@ class TestLanguagesEndpoints:
         baker.make(Word, author=user, language=objs[0].language)
 
         response = auth_api_client(user).get(
-            f'{self.endpoint}{objs[0].slug}/',
+            f'{self.endpoint}{objs[0].language.name}/',
         )
         response_content = json.loads(response.content)
 
@@ -2946,7 +2946,7 @@ class TestLanguagesEndpoints:
         language = learning_languages(user, data=False, _quantity=1)[0]
 
         response = auth_api_client(user).delete(
-            f'{self.endpoint}{language.slug}/',
+            f'{self.endpoint}{language.language.name}/',
         )
 
         assert response.status_code == 204
@@ -2974,7 +2974,7 @@ class TestLanguagesEndpoints:
         word.__getattribute__(objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
-            f'{self.endpoint}{language.slug}/{res_name or objs_related_name}/',
+            f'{self.endpoint}{language.language.name}/{res_name or objs_related_name}/',
         )
         response_content = json.loads(response.content)
 
