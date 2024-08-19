@@ -1296,7 +1296,7 @@ data = {
             'summary': 'Просмотр списка изучаемых языков пользователя',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LearningLanguageWithLastWordsSerailizer,
+                status.HTTP_200_OK: LearningLanguageWithLastWordsSerailizer(many=True),
             },
         },
         'learning_language_create': {
@@ -1433,21 +1433,21 @@ data = {
             'summary': 'Удаление языка из изучаемых',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LearningLanguageWithLastWordsSerailizer,
+                status.HTTP_204_NO_CONTENT: None,
             },
         },
         'language_collections_list': {
             'summary': 'Просмотр всех коллекций изучаемого языка',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LearningLanguageSerailizer,
+                status.HTTP_200_OK: LearningLanguageSerailizer(many=True),
             },
         },
         'native_languages_list': {
             'summary': 'Просмотр всех родных языков пользователя',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: NativeLanguageSerailizer,
+                status.HTTP_200_OK: NativeLanguageSerailizer(many=True),
             },
         },
         'native_language_create': {
@@ -1461,28 +1461,28 @@ data = {
             'summary': 'Просмотр списка всех языков',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LanguageSerializer,
+                status.HTTP_200_OK: LanguageSerializer(many=True),
             },
         },
         'languages_available_for_learning_list': {
             'summary': 'Просмотр всех языков доступных для изучения',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LanguageSerializer,
+                status.HTTP_200_OK: LanguageSerializer(many=True),
             },
         },
         'interface_switch_languages_list': {
             'summary': 'Просмотр всех языков доступных для перевода интерфейса',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LanguageSerializer,
+                status.HTTP_200_OK: LanguageSerializer(many=True),
             },
         },
         'language_cover_choices_retrieve': {
             'summary': 'Просмотр всех доступных картинок для изучаемого языка',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LanguageImageSerailizer,
+                status.HTTP_200_OK: LanguageImageSerailizer(many=True),
             },
         },
         'language_cover_set': {

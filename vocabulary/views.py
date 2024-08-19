@@ -8,7 +8,6 @@ from django.contrib.auth import get_user_model
 from django.db import transaction
 from django.db.models import Count, Q, F, Model
 from django.db.models.query import QuerySet
-from django.utils.translation import gettext as _
 from django.shortcuts import get_object_or_404
 from django.http import HttpRequest, HttpResponse
 
@@ -2190,7 +2189,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     def get_serializer_class(self) -> Serializer:
         match self.action:
             case 'list' | 'create' | 'destroy':
-                # Check if `no_words_param` passed to use serializer without
+                # Check if `no_words` query param passed to use serializer without
                 # languages last words
                 no_words_param = self.request.query_params.get('no_words', None)
                 logger.debug(
@@ -2292,15 +2291,27 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         instance = self.get_object()
         logger.debug(f'Obtained instance: {instance}')
 
-        if instance.user.words.filter(language=instance.language).exists():
-            logger.debug('Deletion is prohibited')
+        # Check if `delete_words` query param passed to delete words
+        # related to this language
+        delete_words_param = self.request.query_params.get('delete_words', None)
+        logger.debug(
+            f'Removing words related to this language option query parameter '
+            f'passed: {delete_words_param}'
+        )
+        if delete_words_param is not None:
+            logger.debug('Removing related words')
+            language_words = instance.user.words.filter(language=instance.language)
+            language_words_amount = language_words.count()
+            language_words.delete()
+
+            logger.debug('Performing destroy')
+            self.perform_destroy(instance)
+
             return Response(
                 {
-                    'detail': _(
-                        'You cannot remove a language from learning languages if there are words in that language in your vocabulary.'
-                    )
+                    'deleted_words': language_words_amount,
                 },
-                status=status.HTTP_409_CONFLICT,
+                status=status.HTTP_200_OK,
             )
 
         logger.debug('Performing destroy')
@@ -2369,7 +2380,6 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         detail=False,
         serializer_class=LanguageSerializer,
         permission_classes=(AllowAny,),
-        pagination_class=LimitPagination,
     )
     def all(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns all languages."""

@@ -2992,11 +2992,7 @@ class TestLanguagesEndpoints:
         response = auth_api_client(user).get(f'{self.endpoint}all/')
 
         assert response.status_code == 200
-        assert response.data['count'] == len(objs), (
-            f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются правильные данные. '
-            f'Значение параметра `count` неправильное'
-        )
-        assert len(response.data['results']) == len(objs)
+        assert len(response.data) == len(objs)
 
     def test_list_learning_available(self, auth_api_client, user, languages):
         objs = languages(
