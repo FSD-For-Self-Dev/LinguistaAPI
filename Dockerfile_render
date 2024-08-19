@@ -17,6 +17,7 @@ RUN python manage.py importlanguages
 RUN python manage.py importwordtypes
 RUN python manage.py makesuperuser
 
+RUN django-admin makemessages
 RUN django-admin compilemessages -l ru_RU
 
 EXPOSE 8000
