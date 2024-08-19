@@ -2149,22 +2149,23 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     pagination_class = None
     filter_backends = (
         filters.OrderingFilter,
+        filters.SearchFilter,
         DjangoFilterBackend,
     )
-    ordering = ('-words_count',)
+    ordering = ('-created', 'language__name')
+    ordering_fields = (
+        'created',
+        'language__name',
+        'words_count',
+    )
+    search_fields = (
+        'language__name',
+        'language__name_local',
+    )
 
     def get_queryset(self) -> QuerySet[Language]:
         user = self.request.user
         match self.action:
-            case 'native' | 'add_native_languages':
-                if user.is_authenticated:
-                    return user.native_languages_detail.annotate(
-                        words_count=Count(
-                            'user__wordtranslations',
-                            filter=Q(user__wordtranslations__language=F('language')),
-                        )
-                    )
-                return Language.objects.none()
             case 'all':
                 return Language.objects.annotate(words_count=Count('words'))
             case 'learning_available':
@@ -2173,10 +2174,21 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                     .exclude(learning_by=self.request.user)
                     .annotate(words_count=Count('words'))
                 )
+            case 'all':
+                return Language.objects.annotate(words_count=Count('words'))
             case 'interface':
                 return Language.objects.filter(interface_available=True).annotate(
                     words_count=Count('words')
                 )
+            case 'native':
+                if user.is_authenticated:
+                    return user.native_languages_detail.annotate(
+                        words_count=Count(
+                            'user__wordtranslations',
+                            filter=Q(user__wordtranslations__language=F('language')),
+                        )
+                    )
+                return Language.objects.none()
             case _:
                 if user.is_authenticated:
                     return user.learning_languages_detail.annotate(
@@ -2355,24 +2367,16 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         detail=False,
         permission_classes=(IsAuthenticated,),
         serializer_class=NativeLanguageSerailizer,
+        ordering_fields=None,
+        filter_backends=(
+            filters.OrderingFilter,
+            DjangoFilterBackend,
+        ),
+        search_fields=None,
     )
     def native(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns all user's native languages."""
         return self.list(request)
-
-    @extend_schema(operation_id='native_language_create', methods=('post',))
-    @native.mapping.post
-    def add_native_languages(
-        self, request: HttpRequest, *args, **kwargs
-    ) -> HttpResponse:
-        """Adds passed languages to user's native languages."""
-        return self.create(
-            request,
-            integrityerror_detail='Этот язык уже добавлен в родные.',
-            amount_limit=UsersAmountLimits.MAX_NATIVE_LANGUAGES_AMOUNT,
-            amount_limit_exceeded_detail=UsersAmountLimits.Details.NATIVE_LANGUAGES_AMOUNT_EXCEEDED,
-            current_amount=request.user.native_languages.count(),
-        )
 
     @extend_schema(operation_id='all_languages_list', methods=('get',))
     @action(
@@ -2380,6 +2384,9 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         detail=False,
         serializer_class=LanguageSerializer,
         permission_classes=(AllowAny,),
+        ordering=('-sorting', 'name'),
+        ordering_fields=None,
+        search_fields=('name', 'name_local'),
     )
     def all(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns all languages."""
@@ -2393,7 +2400,10 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         detail=False,
         url_path='learning-available',
         serializer_class=LanguageSerializer,
-        permission_classes=(AllowAny,),
+        permission_classes=(IsAuthenticated,),
+        ordering=('-sorting', 'name'),
+        ordering_fields=None,
+        search_fields=('name', 'name_local'),
     )
     def learning_available(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns available for learning languages."""
@@ -2405,6 +2415,9 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         detail=False,
         serializer_class=LanguageSerializer,
         permission_classes=(AllowAny,),
+        ordering=('-sorting', 'name'),
+        ordering_fields=None,
+        search_fields=('name', 'name_local'),
     )
     def interface(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns all available for interface translation languages."""
@@ -2417,6 +2430,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         url_path='cover-choices',
         serializer_class=LanguageImageSerailizer,
         permission_classes=(IsAuthenticated,),
+        filter_backends=[],
     )
     def cover_choices(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """

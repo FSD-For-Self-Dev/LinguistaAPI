@@ -17,6 +17,7 @@ from drf_spectacular.utils import (
     OpenApiResponse,
     OpenApiExample,
     inline_serializer,
+    PolymorphicProxySerializer,
 )
 
 from vocabulary.serializers import (
@@ -81,6 +82,27 @@ from languages.serializers import LanguageSerializer
 from .exceptions import ExceptionCodes, ExceptionDetails
 
 logger = logging.getLogger(__name__)
+
+
+unauthorized_response = OpenApiResponse(
+    description=(
+        'Пользователь не авторизован.\n' 'Не был передан заголовок Authorization.',
+    ),
+    response=inline_serializer(
+        name='unauthorized',
+        fields={
+            'detail': CharField(),
+        },
+    ),
+    examples=[
+        OpenApiExample(
+            name='unauthorized',
+            value={
+                'detail': 'Учетные данные не были предоставлены.',
+            },
+        ),
+    ],
+)
 
 
 class CustomSchema(AutoSchema):
@@ -1294,10 +1316,53 @@ data = {
         'tags': ['learning_languages'],
         'learning_languages_list': {
             'summary': 'Просмотр списка изучаемых языков пользователя',
+            'description': (
+                'Возвращает список всех изучаемых языков пользователя. '
+                'Требуется авторизация.'
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LearningLanguageWithLastWordsSerailizer(many=True),
+                status.HTTP_200_OK: PolymorphicProxySerializer(
+                    'many_false_list',
+                    serializers=[
+                        inline_serializer(
+                            name='learning_languages_list',
+                            fields={
+                                'count': IntegerField(),
+                                'results': LearningLanguageWithLastWordsSerailizer(
+                                    many=True
+                                ),
+                            },
+                        ),
+                    ],
+                    many=False,
+                    resource_type_field_name=None,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
+            'parameters': [
+                OpenApiParameter(
+                    'ordering',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Принимает поле, по которому необходимо сортировать результаты. '
+                        'Доступные поля: '
+                        'words_count (количество слов языка), created (дата добавления). '
+                        'Для сортировки по убыванию используется префикс `-`. '
+                        'Пример использования: `api/languages/?ordering=-words_count`.'
+                    ),
+                ),
+                OpenApiParameter(
+                    'search',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Поиск по названию, локальному названию языков. '
+                        'Пример использования: `api/languages/?search=English`.'
+                    ),
+                ),
+            ],
         },
         'learning_language_create': {
             'summary': 'Добавление изучаемых языков',
@@ -1326,7 +1391,7 @@ data = {
                         'Возвращается обновленный список всех изучаемых языков.'
                     ),
                     response=inline_serializer(
-                        name='learning_languages_list',
+                        name='learning_languages_list_after_create',
                         fields={
                             'count': IntegerField(),
                             'results': LearningLanguageWithLastWordsSerailizer(
@@ -1374,7 +1439,7 @@ data = {
                         '\tОдин или несколько языков не найдены по переданному названию.'
                     ),
                     response=inline_serializer(
-                        name='exception_details',
+                        name='language_validation_details',
                         fields={
                             'language': ListField(),
                         },
@@ -1400,33 +1465,76 @@ data = {
                         ),
                     ],
                 ),
-                status.HTTP_401_UNAUTHORIZED: OpenApiResponse(
-                    description=(
-                        'Пользователь не авторизован.\n'
-                        'Не был передан заголовок Authorization.',
-                    ),
-                    response=inline_serializer(
-                        name='unauthorized',
-                        fields={
-                            'detail': CharField(),
-                        },
-                    ),
-                    examples=[
-                        OpenApiExample(
-                            name='unauthorized',
-                            value={
-                                'detail': 'Учетные данные не были предоставлены.',
-                            },
-                        ),
-                    ],
-                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'learning_language_retrieve': {
             'summary': 'Просмотр профиля изучаемого языка',
+            'description': (
+                'Возвращает изучаемый язык и список слов этого языка '
+                'из словаря пользователя. \n'
+                'Требуется авторизация.'
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LearningLanguageSerailizer,
+                status.HTTP_200_OK: OpenApiResponse(
+                    description=(
+                        'Возвращается информация изучаемого языка и список слов '
+                        '`words` с пагинацией.'
+                    ),
+                    response=LearningLanguageSerailizer,
+                    examples=[
+                        OpenApiExample(
+                            name='one word',
+                            value={
+                                'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                                'slug': 'e6EyeJGM7ggQyxhj54SMb6J8Ni3B4IZZo8',
+                                'language': {
+                                    'id': 'string',
+                                    'name': 'string',
+                                    'name_local': 'string',
+                                    'flag_icon': 'string',
+                                },
+                                'level': 'string',
+                                'cover': 'string',
+                                'cover_height': 0,
+                                'cover_width': 0,
+                                'words_count': 0,
+                                'inactive_words_count': 0,
+                                'active_words_count': 0,
+                                'mastered_words_count': 0,
+                                'words': {
+                                    'count': 0,
+                                    'next': 'http://api.example.org/accounts/?page=4',
+                                    'previous': 'http://api.example.org/accounts/?page=2',
+                                    'results': [
+                                        {
+                                            'id': 51028152463805901552645234066848599722,
+                                            'slug': 'e6EyeJGM7ggQyxhj54SMb6J8Ni3B4IZZo9',
+                                            'language': 'English',
+                                            'text': 'string',
+                                            'author': 'string',
+                                            'created': '2024-08-17 14:04',
+                                            'modified': '2024-08-17 14:04',
+                                            'types': ['Adjective', 'Verb', 'Noun'],
+                                            'tags': [],
+                                            'forms_groups': [],
+                                            'favorite': False,
+                                            'is_problematic': False,
+                                            'activity_status': 'Неактивное',
+                                            'last_exercise_date': None,
+                                            'translations_count': 0,
+                                            'translations': [],
+                                            'images_count': 0,
+                                            'image': 'string',
+                                        },
+                                    ],
+                                },
+                            },
+                        ),
+                    ],
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'learning_language_destroy': {
@@ -1449,70 +1557,215 @@ data = {
             ],
             'request': None,
             'responses': {
-                status.HTTP_204_NO_CONTENT: None,
+                status.HTTP_204_NO_CONTENT: OpenApiResponse(
+                    description=(
+                        'Язык удален из изучаемых, слова этого языка остались в '
+                        'словаре пользователя.'
+                    ),
+                    response=None,
+                ),
                 status.HTTP_200_OK: OpenApiResponse(
                     description=(
-                        'Возвращается кол-во удаленных слов, если был передан '
-                        'параметр `delete_words`.'
+                        'Язык удален из изучаемых, возвращено кол-во удаленных слов, '
+                        'если был передан параметр `delete_words`.'
                     ),
                     response=inline_serializer(
                         name='deleted_words_info',
                         fields={'deleted_words': IntegerField()},
                     ),
                 ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'language_collections_list': {
-            'summary': 'Просмотр всех коллекций изучаемого языка',
+            'summary': 'Просмотр списка коллекций изучаемого языка',
+            'description': (
+                'Возвращает изучаемый язык и коллекции пользователя, в которых есть'
+                ' слова выбранного изучаемого языка. \n'
+                'Требуется авторизация.'
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LearningLanguageSerailizer(many=True),
+                status.HTTP_200_OK: OpenApiResponse(
+                    description=(
+                        'Возвращается информация изучаемого языка и список коллекций '
+                        '`collections` с пагинацией.'
+                    ),
+                    response=LearningLanguageSerailizer,
+                    examples=[
+                        OpenApiExample(
+                            name='one collection',
+                            value={
+                                'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                                'slug': 'e6EyeJGM7ggQyxhj54SMb6J8Ni3B4IZZo8',
+                                'language': {
+                                    'id': 'string',
+                                    'name': 'string',
+                                    'name_local': 'string',
+                                    'flag_icon': 'string',
+                                },
+                                'level': 'string',
+                                'cover': 'string',
+                                'cover_height': 0,
+                                'cover_width': 0,
+                                'words_count': 0,
+                                'inactive_words_count': 0,
+                                'active_words_count': 0,
+                                'mastered_words_count': 0,
+                                'collections': {
+                                    'count': 0,
+                                    'next': 'http://api.example.org/accounts/?page=4',
+                                    'previous': 'http://api.example.org/accounts/?page=2',
+                                    'results': [
+                                        {
+                                            'id': 51028152463805901552645234066848599722,
+                                            'slug': 'e6EyeJGM7ggQyxhj54SMb6J8Ni3B4IZZo9',
+                                            'author': 'string',
+                                            'title': 'string',
+                                            'description': 'string',
+                                            'favorite': False,
+                                            'words_count': 0,
+                                            'last_3_words': ['string'],
+                                            'created': '2024-07-07 11:06',
+                                            'modified': '2024-07-07 11:06',
+                                        },
+                                    ],
+                                },
+                            },
+                        ),
+                    ],
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'native_languages_list': {
-            'summary': 'Просмотр всех родных языков пользователя',
+            'summary': 'Просмотр списка родных языков пользователя',
+            'description': (
+                'Возвращает список родных языков пользователя, '
+                'сортированных по дате добавления, названию. '
+                'Требуется авторизация.'
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: NativeLanguageSerailizer(many=True),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
-        },
-        'native_language_create': {
-            'summary': 'Добавление родных языков',
-            'request': NativeLanguageSerailizer(many=True),
-            'responses': {
-                status.HTTP_201_CREATED: NativeLanguageSerailizer(many=True),
-            },
+            'parameters': [
+                OpenApiParameter(
+                    'ordering',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Принимает поле, по которому необходимо сортировать результаты. '
+                        'Доступные поля: - .'
+                    ),
+                ),
+            ],
         },
         'all_languages_list': {
             'summary': 'Просмотр списка всех языков',
+            'description': (
+                'Возвращает список всех языков мира с сортировкой по '
+                'популярности изучения, названию.'
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: LanguageSerializer(many=True),
             },
+            'parameters': [
+                OpenApiParameter(
+                    'ordering',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Принимает поле, по которому необходимо сортировать результаты. '
+                        'Доступные поля: - .'
+                    ),
+                ),
+                OpenApiParameter(
+                    'search',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Поиск по названию, локальному названию языков. '
+                        'Пример использования: `api/languages/?search=English`.'
+                    ),
+                ),
+            ],
         },
         'languages_available_for_learning_list': {
-            'summary': 'Просмотр всех языков доступных для изучения',
+            'summary': 'Просмотр списка языков доступных для изучения',
+            'description': (
+                'Возвращает список языков, доступных для изучения на платформе, '
+                'которые пользователь еще не добавил в изучаемые языки. '
+                'Требуется авторизация.'
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: LanguageSerializer(many=True),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
+            'parameters': [
+                OpenApiParameter(
+                    'ordering',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Принимает поле, по которому необходимо сортировать результаты. '
+                        'Доступные поля: - .'
+                    ),
+                ),
+                OpenApiParameter(
+                    'search',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Поиск по названию, локальному названию языков. '
+                        'Пример использования: `api/languages/?search=English`.'
+                    ),
+                ),
+            ],
         },
         'interface_switch_languages_list': {
-            'summary': 'Просмотр всех языков доступных для перевода интерфейса',
+            'summary': 'Просмотр списка языков доступных для перевода интерфейса',
+            'description': (
+                'Возвращает список языков, на которые доступен перевод интерфейса '
+                'платформы.'
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: LanguageSerializer(many=True),
             },
+            'parameters': [
+                OpenApiParameter(
+                    'ordering',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Принимает поле, по которому необходимо сортировать результаты. '
+                        'Доступные поля: - .'
+                    ),
+                ),
+                OpenApiParameter(
+                    'search',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Поиск по названию, локальному названию языков. '
+                        'Пример использования: `api/languages/?search=English`.'
+                    ),
+                ),
+            ],
         },
         'language_cover_choices_retrieve': {
-            'summary': 'Просмотр всех доступных картинок для изучаемого языка',
+            'summary': 'Просмотр доступных картинок для обложки изучаемого языка',
             'request': None,
             'responses': {
                 status.HTTP_200_OK: LanguageImageSerailizer(many=True),
             },
         },
         'language_cover_set': {
-            'summary': 'Обновление выбранной картинки для изучаемого языка',
+            'summary': 'Обновление обложки изучаемого языка',
             'responses': {
                 status.HTTP_201_CREATED: LearningLanguageSerailizer,
             },

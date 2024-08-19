@@ -172,12 +172,7 @@ class LearningLanguageSerailizer(
 class NativeLanguageSerailizer(serializers.ModelSerializer):
     """Serializer to list, create users's native languages."""
 
-    language = PresentableSlugRelatedField(
-        queryset=Language.objects.all(),
-        slug_field='name',
-        required=True,
-        presentation_serializer=LanguageSerializer,
-    )
+    language = LanguageSerializer(many=False, read_only=True)
     user = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
