@@ -21,7 +21,7 @@ from core.serializers_fields import (
     KwargsMethodField,
     ReadableHiddenField,
 )
-from core.exceptions import AmountLimitExceeded
+from core.exceptions import AmountLimitExceeded, AmountLimits
 from vocabulary.serializers import (
     WordShortCardSerializer,
     WordSuperShortSerializer,
@@ -39,7 +39,7 @@ from .models import (
     TranslatorUserDefaultSettings,
     Hint,
 )
-from .constants import ExercisesAmountLimits, exercises_lookups
+from .constants import exercises_lookups
 
 
 class CurrentExerciseDefault:
@@ -461,17 +461,17 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
         """
         Checks that `answer_time` value does not exceed the specified limits.
         """
-        min_limit = ExercisesAmountLimits.MIN_ANSWER_TIME_LIMIT
+        min_limit = AmountLimits.Exercises.MIN_ANSWER_TIME_LIMIT
         if answer_time_limit < min_limit:
             raise AmountLimitExceeded(
-                detail=ExercisesAmountLimits.Details.MIN_ANSWER_TIME_EXCEEDED,
+                detail=AmountLimits.Exercises.Details.MIN_ANSWER_TIME_EXCEEDED,
                 amount_limit=min_limit,
             )
 
-        max_limit = ExercisesAmountLimits.MAX_ANSWER_TIME_LIMIT
+        max_limit = AmountLimits.Exercises.MAX_ANSWER_TIME_LIMIT
         if answer_time_limit > max_limit:
             raise AmountLimitExceeded(
-                detail=ExercisesAmountLimits.Details.MAX_ANSWER_TIME_EXCEEDED,
+                detail=AmountLimits.Exercises.Details.MAX_ANSWER_TIME_EXCEEDED,
                 amount_limit=max_limit,
             )
 
@@ -481,17 +481,17 @@ class TranslatorUserDefaultSettingsSerializer(serializers.ModelSerializer):
         """
         Checks that `repetitions_amount` value does not exceed the specified limits.
         """
-        min_limit = ExercisesAmountLimits.MIN_REPETITIONS_AMOUNT_LIMIT
+        min_limit = AmountLimits.Exercises.MIN_REPETITIONS_AMOUNT_LIMIT
         if repetitions_amount < min_limit:
             raise AmountLimitExceeded(
-                detail=ExercisesAmountLimits.Details.MIN_REPETITIONS_LIMIT_EXCEEDED,
+                detail=AmountLimits.Exercises.Details.MIN_REPETITIONS_LIMIT_EXCEEDED,
                 amount_limit=min_limit,
             )
 
-        max_limit = ExercisesAmountLimits.MAX_REPETITIONS_AMOUNT_LIMIT
+        max_limit = AmountLimits.Exercises.MAX_REPETITIONS_AMOUNT_LIMIT
         if repetitions_amount > max_limit:
             raise AmountLimitExceeded(
-                detail=ExercisesAmountLimits.Details.MAX_REPETITIONS_LIMIT_EXCEEDED,
+                detail=AmountLimits.Exercises.Details.MAX_REPETITIONS_LIMIT_EXCEEDED,
                 amount_limit=max_limit,
             )
 

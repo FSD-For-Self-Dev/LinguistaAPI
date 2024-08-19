@@ -21,7 +21,7 @@ from rest_framework.serializers import Serializer
 from core.pagination import LimitPagination
 from core.mixins import FavoriteMixin
 from core.utils import get_admin_user
-from core.exceptions import AmountLimitExceeded
+from core.exceptions import AmountLimitExceeded, AmountLimits
 from vocabulary.views import ActionsWithRelatedWordsMixin, CollectionViewSet
 from vocabulary.serializers import CollectionShortSerializer
 
@@ -39,7 +39,7 @@ from .models import (
     FavoriteExercise,
     TranslatorUserDefaultSettings,
 )
-from .constants import ExercisesAmountLimits, exercises_lookups
+from .constants import exercises_lookups
 
 logger = logging.getLogger(__name__)
 
@@ -137,8 +137,8 @@ class ExerciseViewSet(
         return self.create_related_objs(
             request,
             objs_related_name='word_sets',
-            amount_limit=ExercisesAmountLimits.MAX_WORD_SETS_AMOUNT_LIMIT,
-            amount_limit_exceeded_detail=ExercisesAmountLimits.Details.WORD_SETS_AMOUNT_EXCEEDED,
+            amount_limit=AmountLimits.Exercises.MAX_WORD_SETS_AMOUNT_LIMIT,
+            amount_limit_exceeded_detail=AmountLimits.Exercises.Details.WORD_SETS_AMOUNT_EXCEEDED,
             set_objs=False,
             return_objs_list=True,
         )

@@ -76,10 +76,9 @@ from users.serializers import (
     NativeLanguageSerailizer,
     UserShortSerializer,
 )
-from users.constants import UsersAmountLimits
 from languages.serializers import LanguageSerializer
 
-from .exceptions import ExceptionCodes, ExceptionDetails
+from .exceptions import ExceptionCodes, ExceptionDetails, AmountLimits
 
 logger = logging.getLogger(__name__)
 
@@ -1426,8 +1425,8 @@ data = {
                             name=ExceptionCodes.AMOUNT_LIMIT_EXCEEDED,
                             value={
                                 'exception_code': ExceptionCodes.AMOUNT_LIMIT_EXCEEDED,
-                                'detail': UsersAmountLimits.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
-                                'amount_limit': UsersAmountLimits.MAX_LEARNING_LANGUAGES_AMOUNT,
+                                'detail': AmountLimits.Users.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
+                                'amount_limit': AmountLimits.Users.MAX_LEARNING_LANGUAGES_AMOUNT,
                             },
                         ),
                     ],

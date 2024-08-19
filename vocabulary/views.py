@@ -28,6 +28,7 @@ from core.pagination import LimitPagination
 from core.exceptions import (
     AmountLimitExceeded,
     ObjectAlreadyExist,
+    AmountLimits,
 )
 from core.mixins import (
     ActionsWithRelatedObjectsMixin,
@@ -47,9 +48,7 @@ from users.serializers import (
     LearningLanguageSerailizer,
     NativeLanguageSerailizer,
 )
-from users.constants import UsersAmountLimits
 
-from .constants import VocabularyAmountLimits
 from .filters import CollectionFilter, WordFilter
 from .models import (
     Collection,
@@ -615,8 +614,8 @@ class WordViewSet(
         return self.create_related_objs(
             request,
             objs_related_name='translations',
-            amount_limit=VocabularyAmountLimits.MAX_TRANSLATIONS_AMOUNT,
-            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.TRANSLATIONS_AMOUNT_EXCEEDED,
+            amount_limit=AmountLimits.Vocabulary.MAX_TRANSLATIONS_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.TRANSLATIONS_AMOUNT_EXCEEDED,
             set_objs=True,
             response_serializer_class=WordSerializer,
         )
@@ -664,8 +663,8 @@ class WordViewSet(
         return self.create_related_objs(
             request,
             objs_related_name='definitions',
-            amount_limit=VocabularyAmountLimits.MAX_DEFINITIONS_AMOUNT,
-            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.DEFINITIONS_AMOUNT_EXCEEDED,
+            amount_limit=AmountLimits.Vocabulary.MAX_DEFINITIONS_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.DEFINITIONS_AMOUNT_EXCEEDED,
             set_objs=True,
             response_serializer_class=WordSerializer,
         )
@@ -711,8 +710,8 @@ class WordViewSet(
         return self.create_related_objs(
             request,
             objs_related_name='examples',
-            amount_limit=VocabularyAmountLimits.MAX_EXAMPLES_AMOUNT,
-            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.EXAMPLES_AMOUNT_EXCEEDED,
+            amount_limit=AmountLimits.Vocabulary.MAX_EXAMPLES_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.EXAMPLES_AMOUNT_EXCEEDED,
             set_objs=True,
             response_serializer_class=WordSerializer,
         )
@@ -758,8 +757,8 @@ class WordViewSet(
         return self.create_related_objs(
             request,
             objs_related_name='notes',
-            amount_limit=VocabularyAmountLimits.MAX_NOTES_AMOUNT,
-            amount_limit_exceeded_detail=VocabularyAmountLimits.MAX_NOTES_AMOUNT,
+            amount_limit=AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -805,8 +804,8 @@ class WordViewSet(
             request,
             objs_related_name='synonym_to_words',
             response_objs_name='synonyms',
-            amount_limit=VocabularyAmountLimits.MAX_SYNONYMS_AMOUNT,
-            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.SYNONYMS_AMOUNT_EXCEEDED,
+            amount_limit=AmountLimits.Vocabulary.MAX_SYNONYMS_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.SYNONYMS_AMOUNT_EXCEEDED,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -853,8 +852,8 @@ class WordViewSet(
             request,
             objs_related_name='antonym_to_words',
             response_objs_name='antonyms',
-            amount_limit=VocabularyAmountLimits.MAX_ANTONYMS_AMOUNT,
-            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.ANTONYMS_AMOUNT_EXCEEDED,
+            amount_limit=AmountLimits.Vocabulary.MAX_ANTONYMS_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.ANTONYMS_AMOUNT_EXCEEDED,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -901,8 +900,8 @@ class WordViewSet(
             request,
             objs_related_name='form_to_words',
             response_objs_name='forms',
-            amount_limit=VocabularyAmountLimits.MAX_FORMS_AMOUNT,
-            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.FORMS_AMOUNT_EXCEEDED,
+            amount_limit=AmountLimits.Vocabulary.MAX_FORMS_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.FORMS_AMOUNT_EXCEEDED,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -949,8 +948,8 @@ class WordViewSet(
             request,
             objs_related_name='similar_to_words',
             response_objs_name='similars',
-            amount_limit=VocabularyAmountLimits.MAX_SIMILARS_AMOUNT,
-            amount_limit_exceeded_detail=VocabularyAmountLimits.Details.SIMILARS_AMOUNT_EXCEEDED,
+            amount_limit=AmountLimits.Vocabulary.MAX_SIMILARS_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.SIMILARS_AMOUNT_EXCEEDED,
             set_objs=False,
             response_serializer_class=WordSerializer,
         )
@@ -1043,14 +1042,14 @@ class WordViewSet(
             check_amount_limit(
                 current_amount=instance.images_associations.count(),
                 new_objects_amount=len(_images),
-                amount_limit=VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
-                detail=VocabularyAmountLimits.Details.IMAGES_AMOUNT_EXCEEDED,
+                amount_limit=AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
+                detail=AmountLimits.Vocabulary.Details.IMAGES_AMOUNT_EXCEEDED,
             )
             check_amount_limit(
                 current_amount=instance.quotes_associations.count(),
                 new_objects_amount=len(_quotes),
-                amount_limit=VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
-                detail=VocabularyAmountLimits.Details.QUOTES_AMOUNT_EXCEEDED,
+                amount_limit=AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
+                detail=AmountLimits.Vocabulary.Details.QUOTES_AMOUNT_EXCEEDED,
             )
         except AmountLimitExceeded as exception:
             return exception.get_detail_response(request)
@@ -2238,11 +2237,11 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                     ),
                     new_objects_amount=len(serializer.validated_data),
                     amount_limit=kwargs.get(
-                        'amount_limit', UsersAmountLimits.MAX_LEARNING_LANGUAGES_AMOUNT
+                        'amount_limit', AmountLimits.Users.MAX_LEARNING_LANGUAGES_AMOUNT
                     ),
                     detail=kwargs.get(
                         'amount_limit_exceeded_detail',
-                        UsersAmountLimits.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
+                        AmountLimits.Users.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
                     ),
                 )
             except AmountLimitExceeded as exception:

@@ -30,18 +30,16 @@ from core.serializers_mixins import (
     UpdateSerializerMixin,
     HybridImageSerializerMixin,
 )
-from core.exceptions import ExceptionDetails
+from core.exceptions import ExceptionDetails, AmountLimits
 from users.models import UserLearningLanguage
 from users.serializers import (
     UserShortSerializer,
     LearningLanguageShortSerailizer,
     LearningLanguageSerailizer,
 )
-from users.constants import UsersAmountLimits
 from languages.models import LanguageImage
 from languages.serializers import LanguageSerializer
 
-from .constants import VocabularyAmountLimits
 from .models import (
     Antonym,
     Collection,
@@ -836,40 +834,40 @@ class WordShortCreateSerializer(
         # Limits for related objects amount
         amount_limits_check = {
             'tags': (
-                VocabularyAmountLimits.MAX_TAGS_AMOUNT,
-                VocabularyAmountLimits.Details.TAGS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_TAGS_AMOUNT,
+                AmountLimits.Vocabulary.Details.TAGS_AMOUNT_EXCEEDED,
             ),
             'types': (
-                VocabularyAmountLimits.MAX_TYPES_AMOUNT,
-                VocabularyAmountLimits.Details.TYPES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_TYPES_AMOUNT,
+                AmountLimits.Vocabulary.Details.TYPES_AMOUNT_EXCEEDED,
             ),
             'form_groups': (
-                VocabularyAmountLimits.MAX_FORM_GROUPS_AMOUNT,
-                VocabularyAmountLimits.Details.FORM_GROUPS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_FORM_GROUPS_AMOUNT,
+                AmountLimits.Vocabulary.Details.FORM_GROUPS_AMOUNT_EXCEEDED,
             ),
             'translations': (
-                VocabularyAmountLimits.MAX_TRANSLATIONS_AMOUNT,
-                VocabularyAmountLimits.Details.TRANSLATIONS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_TRANSLATIONS_AMOUNT,
+                AmountLimits.Vocabulary.Details.TRANSLATIONS_AMOUNT_EXCEEDED,
             ),
             'examples': (
-                VocabularyAmountLimits.MAX_EXAMPLES_AMOUNT,
-                VocabularyAmountLimits.Details.EXAMPLES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_EXAMPLES_AMOUNT,
+                AmountLimits.Vocabulary.Details.EXAMPLES_AMOUNT_EXCEEDED,
             ),
             'definitions': (
-                VocabularyAmountLimits.MAX_DEFINITIONS_AMOUNT,
-                VocabularyAmountLimits.Details.DEFINITIONS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_DEFINITIONS_AMOUNT,
+                AmountLimits.Vocabulary.Details.DEFINITIONS_AMOUNT_EXCEEDED,
             ),
             'notes': (
-                VocabularyAmountLimits.MAX_NOTES_AMOUNT,
-                VocabularyAmountLimits.Details.NOTES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
+                AmountLimits.Vocabulary.Details.NOTES_AMOUNT_EXCEEDED,
             ),
             'images_associations': (
-                VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
-                VocabularyAmountLimits.Details.IMAGES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
+                AmountLimits.Vocabulary.Details.IMAGES_AMOUNT_EXCEEDED,
             ),
             'quotes_associations': (
-                VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
-                VocabularyAmountLimits.Details.QUOTES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
+                AmountLimits.Vocabulary.Details.QUOTES_AMOUNT_EXCEEDED,
             ),
         }
         # Related objects whose language must match the given word language
@@ -1260,56 +1258,56 @@ class WordSerializer(WordShortCreateSerializer):
         # Limits for related objects amount
         amount_limits_check = {
             'tags': (
-                VocabularyAmountLimits.MAX_TAGS_AMOUNT,
-                VocabularyAmountLimits.Details.TAGS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_TAGS_AMOUNT,
+                AmountLimits.Vocabulary.Details.TAGS_AMOUNT_EXCEEDED,
             ),
             'types': (
-                VocabularyAmountLimits.MAX_TYPES_AMOUNT,
-                VocabularyAmountLimits.Details.TYPES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_TYPES_AMOUNT,
+                AmountLimits.Vocabulary.Details.TYPES_AMOUNT_EXCEEDED,
             ),
             'form_groups': (
-                VocabularyAmountLimits.MAX_FORM_GROUPS_AMOUNT,
-                VocabularyAmountLimits.Details.FORM_GROUPS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_FORM_GROUPS_AMOUNT,
+                AmountLimits.Vocabulary.Details.FORM_GROUPS_AMOUNT_EXCEEDED,
             ),
             'translations': (
-                VocabularyAmountLimits.MAX_TRANSLATIONS_AMOUNT,
-                VocabularyAmountLimits.Details.TRANSLATIONS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_TRANSLATIONS_AMOUNT,
+                AmountLimits.Vocabulary.Details.TRANSLATIONS_AMOUNT_EXCEEDED,
             ),
             'examples': (
-                VocabularyAmountLimits.MAX_EXAMPLES_AMOUNT,
-                VocabularyAmountLimits.Details.EXAMPLES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_EXAMPLES_AMOUNT,
+                AmountLimits.Vocabulary.Details.EXAMPLES_AMOUNT_EXCEEDED,
             ),
             'definitions': (
-                VocabularyAmountLimits.MAX_DEFINITIONS_AMOUNT,
-                VocabularyAmountLimits.Details.DEFINITIONS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_DEFINITIONS_AMOUNT,
+                AmountLimits.Vocabulary.Details.DEFINITIONS_AMOUNT_EXCEEDED,
             ),
             'notes': (
-                VocabularyAmountLimits.MAX_NOTES_AMOUNT,
-                VocabularyAmountLimits.Details.NOTES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
+                AmountLimits.Vocabulary.Details.NOTES_AMOUNT_EXCEEDED,
             ),
             'images_associations': (
-                VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
-                VocabularyAmountLimits.Details.IMAGES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
+                AmountLimits.Vocabulary.Details.IMAGES_AMOUNT_EXCEEDED,
             ),
             'quotes_associations': (
-                VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
-                VocabularyAmountLimits.Details.QUOTES_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
+                AmountLimits.Vocabulary.Details.QUOTES_AMOUNT_EXCEEDED,
             ),
             'synonym_to_words': (
-                VocabularyAmountLimits.MAX_SYNONYMS_AMOUNT,
-                VocabularyAmountLimits.Details.SYNONYMS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_SYNONYMS_AMOUNT,
+                AmountLimits.Vocabulary.Details.SYNONYMS_AMOUNT_EXCEEDED,
             ),
             'antonym_to_words': (
-                VocabularyAmountLimits.MAX_ANTONYMS_AMOUNT,
-                VocabularyAmountLimits.Details.ANTONYMS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_ANTONYMS_AMOUNT,
+                AmountLimits.Vocabulary.Details.ANTONYMS_AMOUNT_EXCEEDED,
             ),
             'form_to_words': (
-                VocabularyAmountLimits.MAX_FORMS_AMOUNT,
-                VocabularyAmountLimits.Details.FORMS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_FORMS_AMOUNT,
+                AmountLimits.Vocabulary.Details.FORMS_AMOUNT_EXCEEDED,
             ),
             'similar_to_words': (
-                VocabularyAmountLimits.MAX_SIMILARS_AMOUNT,
-                VocabularyAmountLimits.Details.SIMILARS_AMOUNT_EXCEEDED,
+                AmountLimits.Vocabulary.MAX_SIMILARS_AMOUNT,
+                AmountLimits.Vocabulary.Details.SIMILARS_AMOUNT_EXCEEDED,
             ),
         }
 
@@ -2318,9 +2316,9 @@ class UserDetailsSerializer(
         self, languages: QuerySet[Language]
     ) -> QuerySet[Language]:
         """Raises ValidationError if amount limits for native languages exceeded."""
-        if len(languages) > UsersAmountLimits.MAX_NATIVE_LANGUAGES_AMOUNT:
+        if len(languages) > AmountLimits.Users.MAX_NATIVE_LANGUAGES_AMOUNT:
             raise serializers.ValidationError(
-                UsersAmountLimits.Details.NATIVE_LANGUAGES_AMOUNT_EXCEEDED
+                AmountLimits.Users.Details.NATIVE_LANGUAGES_AMOUNT_EXCEEDED
             )
         return languages
 

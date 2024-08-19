@@ -24,9 +24,8 @@ from vocabulary.models import (
     ImageAssociation,
     QuoteAssociation,
 )
-from vocabulary.constants import VocabularyAmountLimits
 from users.models import UserLearningLanguage
-from users.constants import UsersAmountLimits
+from core.exceptions import AmountLimits
 
 logger = logging.getLogger(__name__)
 
@@ -727,51 +726,51 @@ class TestVocabularyEndpoints:
             (
                 'translations',
                 'word_translations',
-                VocabularyAmountLimits.MAX_TRANSLATIONS_AMOUNT,
+                AmountLimits.Vocabulary.MAX_TRANSLATIONS_AMOUNT,
             ),
             (
                 'examples',
                 'word_usage_examples',
-                VocabularyAmountLimits.MAX_EXAMPLES_AMOUNT,
+                AmountLimits.Vocabulary.MAX_EXAMPLES_AMOUNT,
             ),
             (
                 'definitions',
                 'word_definitions',
-                VocabularyAmountLimits.MAX_DEFINITIONS_AMOUNT,
+                AmountLimits.Vocabulary.MAX_DEFINITIONS_AMOUNT,
             ),
-            ('types', 'word_types', VocabularyAmountLimits.MAX_TYPES_AMOUNT),
-            ('tags', 'word_tags', VocabularyAmountLimits.MAX_TAGS_AMOUNT),
+            ('types', 'word_types', AmountLimits.Vocabulary.MAX_TYPES_AMOUNT),
+            ('tags', 'word_tags', AmountLimits.Vocabulary.MAX_TAGS_AMOUNT),
             (
                 'form_groups',
                 'word_form_groups',
-                VocabularyAmountLimits.MAX_FORM_GROUPS_AMOUNT,
+                AmountLimits.Vocabulary.MAX_FORM_GROUPS_AMOUNT,
             ),
             (
                 'synonyms',
                 'related_words_data',
-                VocabularyAmountLimits.MAX_SYNONYMS_AMOUNT,
+                AmountLimits.Vocabulary.MAX_SYNONYMS_AMOUNT,
             ),
             (
                 'antonyms',
                 'related_words_data',
-                VocabularyAmountLimits.MAX_ANTONYMS_AMOUNT,
+                AmountLimits.Vocabulary.MAX_ANTONYMS_AMOUNT,
             ),
-            ('forms', 'related_words_data', VocabularyAmountLimits.MAX_FORMS_AMOUNT),
+            ('forms', 'related_words_data', AmountLimits.Vocabulary.MAX_FORMS_AMOUNT),
             (
                 'similars',
                 'related_words_data',
-                VocabularyAmountLimits.MAX_SIMILARS_AMOUNT,
+                AmountLimits.Vocabulary.MAX_SIMILARS_AMOUNT,
             ),
-            ('notes', 'word_notes', VocabularyAmountLimits.MAX_NOTES_AMOUNT),
+            ('notes', 'word_notes', AmountLimits.Vocabulary.MAX_NOTES_AMOUNT),
             (
                 'images_associations',
                 'word_images_associations',
-                VocabularyAmountLimits.MAX_IMAGES_AMOUNT,
+                AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
             ),
             (
                 'quotes_associations',
                 'word_quotes_associations',
-                VocabularyAmountLimits.MAX_QUOTES_AMOUNT,
+                AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
             ),
         ],
     )
@@ -2904,7 +2903,7 @@ class TestLanguagesEndpoints:
         language_names = languages(
             name=True,
             extra_data={'learning_available': True},
-            _quantity=UsersAmountLimits.MAX_LEARNING_LANGUAGES_AMOUNT + 1,
+            _quantity=AmountLimits.Users.MAX_LEARNING_LANGUAGES_AMOUNT + 1,
         )
         source_data = [
             {

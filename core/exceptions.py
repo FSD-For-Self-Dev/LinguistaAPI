@@ -1,6 +1,7 @@
 """Core exceptions."""
 
 from typing import Any, Type, Callable
+from datetime import time
 
 from django.utils.translation import gettext as _
 from django.http import HttpRequest, HttpResponse
@@ -35,6 +36,82 @@ class ExceptionDetails:
         """Vocabulary app exception details."""
 
         LANGUAGE_MUST_BE_LEARNING = _('Language must be in your learning languages.')
+
+
+class AmountLimits:
+    """Class to store amount limit constants, detail messages."""
+
+    class Vocabulary:
+        MAX_TYPES_AMOUNT = 3
+        MAX_TAGS_AMOUNT = 10
+        MAX_TRANSLATIONS_AMOUNT = 24
+        MAX_NOTES_AMOUNT = 10
+        MAX_EXAMPLES_AMOUNT = 10
+        MAX_DEFINITIONS_AMOUNT = 10
+        MAX_FORMS_AMOUNT = 10
+        MAX_IMAGES_AMOUNT = 10
+        MAX_QUOTES_AMOUNT = 10
+        MAX_SYNONYMS_AMOUNT = 16
+        MAX_ANTONYMS_AMOUNT = 16
+        MAX_SIMILARS_AMOUNT = 16
+        MAX_FORM_GROUPS_AMOUNT = 4
+
+        class Details:
+            TYPES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во типов')
+            TAGS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во тегов')
+            TRANSLATIONS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во переводов')
+            NOTES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во заметок')
+            EXAMPLES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во примеров')
+            DEFINITIONS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во определений')
+            FORMS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во форм')
+            IMAGES_AMOUNT_EXCEEDED = _(
+                'Превышено максимальное кол-во картинок-ассоциаций'
+            )
+            QUOTES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во цитат-ассоциаций')
+            SYNONYMS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во синонимов')
+            ANTONYMS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во антонимов')
+            SIMILARS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во похожих слов')
+            FORM_GROUPS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во групп форм')
+
+    class Users:
+        MAX_NATIVE_LANGUAGES_AMOUNT = 2
+        MAX_LEARNING_LANGUAGES_AMOUNT = 5
+
+        class Details:
+            LEARNING_LANGUAGES_AMOUNT_EXCEEDED = _(
+                'Превышено максимальное кол-во изучаемых языков'
+            )
+            NATIVE_LANGUAGES_AMOUNT_EXCEEDED = _(
+                'Превышено максимальное кол-во родных языков'
+            )
+
+    class Exercises:
+        EXERCISE_MAX_WORDS_AMOUNT_LIMIT = 100
+        MAX_WORD_SETS_AMOUNT_LIMIT = 50
+        MAX_ANSWER_TIME_LIMIT = time(0, 5, 0)
+        MIN_ANSWER_TIME_LIMIT = time(0, 0, 30)
+        MAX_REPETITIONS_AMOUNT_LIMIT = 10
+        MIN_REPETITIONS_AMOUNT_LIMIT = 1
+
+        class Details:
+            WORDS_AMOUNT_EXCEEDED = _(
+                'Превышено максимальное количество слов для тренировки'
+            )
+            WORD_SETS_AMOUNT_EXCEEDED = _(
+                'Превышено максимальное количество наборов слов'
+            )
+            MAX_ANSWER_TIME_EXCEEDED = _(
+                'Превышено максимальное ограничение времени ответа'
+            )
+            MIN_ANSWER_TIME_EXCEEDED = _(
+                'Превышено минимальное ограничение времени ответа'
+            )
+            MAX_REPETITIONS_LIMIT_EXCEEDED = _(
+                'Превышено максимальное ограничение количества повторов'
+            )
+            MIN_REPETITIONS_LIMIT_EXCEEDED = _(
+                'Превышено минимальное ограничение количества повторов'
+            )
 
 
 class AmountLimitExceeded(APIException):
