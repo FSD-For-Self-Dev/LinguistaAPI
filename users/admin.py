@@ -16,6 +16,7 @@ class CustomUserAdmin(UserAdmin):
     list_display = (
         'username',
         'email',
+        'image',
         'is_active',
         'is_staff',
         'date_joined',
@@ -38,6 +39,7 @@ class CustomUserAdmin(UserAdmin):
                 'fields': (
                     'email',
                     'gender',
+                    'image',
                 )
             },
         ),

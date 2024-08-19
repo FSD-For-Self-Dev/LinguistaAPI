@@ -571,7 +571,7 @@ class WordShortCardSerializer(
         return obj.get_activity_status_display()
 
 
-class GetImagesSerializerMixin(serializers.ModelSerializer):
+class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
     """
     Custom serializer mixin to add `images` and `image` field obtained through
     related manager to retrieve one latest image-association or full list.
@@ -603,7 +603,7 @@ class GetImagesSerializerMixin(serializers.ModelSerializer):
 
 
 class WordLongCardSerializer(
-    GetImagesSerializerMixin,
+    GetImageAssociationsSerializerMixin,
     CountObjsSerializerMixin,
     WordShortCardSerializer,
 ):
@@ -636,7 +636,7 @@ class WordLongCardSerializer(
 
 
 class WordStandartCardSerializer(
-    GetImagesSerializerMixin,
+    GetImageAssociationsSerializerMixin,
     CountObjsSerializerMixin,
     WordShortCardSerializer,
 ):
@@ -671,7 +671,7 @@ class WordShortCreateSerializer(
     AmountLimitsSerializerHandler,
     NestedSerializerMixin,
     CountObjsSerializerMixin,
-    GetImagesSerializerMixin,
+    GetImageAssociationsSerializerMixin,
     serializers.ModelSerializer,
 ):
     """
@@ -2035,7 +2035,7 @@ class SynonymSerializer(
     ValidateLanguageMixin,
     CountObjsSerializerMixin,
     AlreadyExistSerializerHandler,
-    GetImagesSerializerMixin,
+    GetImageAssociationsSerializerMixin,
     serializers.ModelSerializer,
 ):
     """Serializer to retrieve synonym with all related words."""
