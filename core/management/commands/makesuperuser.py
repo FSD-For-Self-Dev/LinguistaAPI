@@ -47,4 +47,4 @@ class Command(BaseCommand):
             else:
                 self.stdout.write('Admin user found. Skipping super user creation')
         except Exception as e:
-            self.stdout.write(f'There was an error: {e}')
+            self.stdout.write(f'Error adding superuser : {e}')

@@ -3,7 +3,7 @@
 import os
 
 from django.conf.locale import LANG_INFO
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.core.files.images import ImageFile
 
 from tqdm import tqdm
@@ -60,5 +60,5 @@ class Command(BaseCommand):
                             image = ImageFile(open(image_url, 'rb'))
                             LanguageImage.objects.create(language=lang, image=image)
                 except Exception as e:
-                    raise CommandError('Error adding language %s: %s' % (lang, e))
+                    self.stdout.write(f'Error adding language {lang}: {e}')
         self.stdout.write('Added %d languages' % cnt)

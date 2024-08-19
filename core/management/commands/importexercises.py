@@ -101,5 +101,5 @@ class Command(BaseCommand):
                     for hint_code in hints_available:
                         exercise.hints_available.add(Hint.objects.get(code=hint_code))
             except Exception as e:
-                raise CommandError('Error adding exercise %s' % (e,))
+                self.stdout.write(f'Error adding exercise {e}')
         self.stdout.write('Added %d exercises' % cnt)

@@ -1,6 +1,6 @@
 """Команда для импорта возможныз типов слов и фраз."""
 
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 
 from tqdm import tqdm
 
@@ -43,11 +43,11 @@ class Command(BaseCommand):
         cnt = 0
         for type_info in tqdm(TYPE_CHOICES, desc='Importing types'):
             try:
-                _, created = Type.objects.get_or_create(
+                type, created = Type.objects.get_or_create(
                     name=type_info[1],
                 )
                 if created:
                     cnt += 1
             except Exception as e:
-                raise CommandError('Error adding type: %s{error}'.format(error=e))
+                self.stdout.write(f'Error adding type: {e}')
         self.stdout.write('Added %d types' % cnt)
