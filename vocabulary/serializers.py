@@ -2098,7 +2098,7 @@ class CoverSetSerailizer(serializers.ModelSerializer):
     Serializer to use for setting new cover image for user's learning language.
     """
 
-    image = serializers.PrimaryKeyRelatedField(
+    image_id = serializers.PrimaryKeyRelatedField(
         queryset=LanguageImage.objects.all(),
         many=False,
         read_only=False,
@@ -2108,7 +2108,7 @@ class CoverSetSerailizer(serializers.ModelSerializer):
 
     class Meta:
         model = Language
-        fields = ('image',)
+        fields = ('image_id',)
 
 
 class SynonymSerializer(

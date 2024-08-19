@@ -59,6 +59,7 @@ class LearningLanguageShortSerailizer(
     inactive_words_count = serializers.SerializerMethodField('get_inactive_words_count')
     active_words_count = serializers.SerializerMethodField('get_active_words_count')
     mastered_words_count = serializers.SerializerMethodField('get_mastered_words_count')
+    cover = serializers.ImageField(source='cover.image', read_only=True)
     cover_height = serializers.SerializerMethodField('get_cover_height')
     cover_width = serializers.SerializerMethodField('get_cover_width')
 
@@ -90,15 +91,15 @@ class LearningLanguageShortSerailizer(
     @extend_schema_field({'type': 'integer'})
     def get_cover_height(self, obj: UserLearningLanguage) -> int | None:
         try:
-            return obj.cover.height
-        except ValueError:
+            return obj.cover.image.height
+        except AttributeError:
             return None
 
     @extend_schema_field({'type': 'integer'})
     def get_cover_width(self, obj: UserLearningLanguage) -> int | None:
         try:
-            return obj.cover.width
-        except ValueError:
+            return obj.cover.image.width
+        except AttributeError:
             return None
 
     @extend_schema_field({'type': 'integer'})
@@ -176,7 +177,7 @@ class LearningLanguageSerailizer(
             language=instance.language
         ).last()
         if default_cover_image:
-            instance.cover = default_cover_image.image
+            instance.cover = default_cover_image
             instance.save()
 
         return instance

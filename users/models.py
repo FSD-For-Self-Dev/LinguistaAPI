@@ -16,7 +16,7 @@ from core.models import (
     GetObjectBySlugModelMixin,
     slug_filler,
 )
-from languages.models import Language
+from languages.models import Language, LanguageImage
 
 
 class User(AbstractUser, CreatedModel, ModifiedModel):
@@ -139,18 +139,20 @@ class UserLearningLanguage(
         on_delete=models.CASCADE,
         related_name='learning_languages_detail',
     )
+    cover = models.ForeignKey(
+        LanguageImage,
+        verbose_name=_('Learning language cover image'),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='covers',
+    )
     level = models.CharField(
         _('Level of knowledge'),
         max_length=256,
         null=True,
         blank=True,
         default='',
-    )
-    cover = models.ImageField(
-        _('Learning language cover image'),
-        upload_to='users/languages/images/',
-        blank=True,
-        null=True,
     )
 
     slugify_fields = ('user', ('language', 'name'))

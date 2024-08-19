@@ -2300,7 +2300,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
 
     def destroy(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Removes language from user's learning languages."""
-        instance = self.get_object()
+        instance: UserLearningLanguage = self.get_object()
         logger.debug(f'Obtained instance: {instance}')
 
         # Check if `delete_words` query param passed to delete words
@@ -2312,7 +2312,9 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         )
         if delete_words_param is not None:
             logger.debug('Removing related words')
-            language_words = instance.user.words.filter(language=instance.language)
+            language_words: QuerySet = instance.user.words.filter(
+                language=instance.language
+            )
             language_words_amount = language_words.count()
             language_words.delete()
 
@@ -2463,17 +2465,14 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         logger.debug('Validating data')
         serializer.is_valid(raise_exception=True)
 
-        language_image = serializer.validated_data.get('images', None)
-        logger.debug(f'Obtained language image id: {language_image}')
+        new_cover = serializer.validated_data.get('images', None)
+        logger.debug(f'Obtained language image: {new_cover}')
 
         learning_language = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')
 
-        logger.debug('Updating learning_language cover')
-        learning_language.cover = language_image.image
-
-        logger.debug('Performing save')
-        learning_language.save()
+        logger.debug('Updating learning language cover')
+        learning_language.cover = new_cover
 
         return self.retrieve(
             request,
