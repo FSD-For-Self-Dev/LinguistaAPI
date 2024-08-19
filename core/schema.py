@@ -1431,9 +1431,35 @@ data = {
         },
         'learning_language_destroy': {
             'summary': 'Удаление языка из изучаемых',
+            'description': (
+                'Удаляет выбранный язык из изучаемых. \n' 'Требуется авторизация.'
+            ),
+            'parameters': [
+                OpenApiParameter(
+                    'delete_words',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Если передан этот параметр, слова этого языка будут также '
+                        'удалены из словаря пользователя. '
+                        'Пример использования: '
+                        '`api/languages/<learning_language_slug>/?delete_words`.'
+                    ),
+                ),
+            ],
             'request': None,
             'responses': {
                 status.HTTP_204_NO_CONTENT: None,
+                status.HTTP_200_OK: OpenApiResponse(
+                    description=(
+                        'Возвращается кол-во удаленных слов, если был передан '
+                        'параметр `delete_words`.'
+                    ),
+                    response=inline_serializer(
+                        name='deleted_words_info',
+                        fields={'deleted_words': IntegerField()},
+                    ),
+                ),
             },
         },
         'language_collections_list': {
