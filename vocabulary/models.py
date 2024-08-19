@@ -18,14 +18,16 @@ from core.models import (
     SlugModel,
     slug_filler,
 )
-from languages.models import Language
-
-from .constants import (
-    VocabularyLengthLimits,
+from core.constants import (
     REGEX_TEXT_MASK_DETAIL,
     REGEX_TEXT_MASK,
     REGEX_HEXCOLOR_MASK,
     REGEX_HEXCOLOR_MASK_DETAIL,
+)
+from languages.models import Language
+
+from .constants import (
+    VocabularyLengthLimits,
 )
 
 User = get_user_model()

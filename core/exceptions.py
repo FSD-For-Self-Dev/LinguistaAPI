@@ -31,6 +31,11 @@ class ExceptionDetails:
             'The selected language is not yet able for learning.'
         )
 
+    class Vocabulary:
+        """Vocabulary app exception details."""
+
+        LANGUAGE_MUST_BE_LEARNING = _('Language must be in your learning languages.')
+
 
 class AmountLimitExceeded(APIException):
     """Custom exception to raise when some objects amount limit is exceeded."""

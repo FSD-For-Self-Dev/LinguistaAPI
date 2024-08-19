@@ -8,13 +8,17 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Model
 from django.db.models.query import QuerySet
+from django.db.models.fields.files import ImageFieldFile
+from django.utils.translation import gettext as _
 
+from drf_extra_fields.fields import HybridImageField
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
 from .serializers_fields import ReadWriteSerializerMethodField
 from .exceptions import ObjectAlreadyExist, AmountLimitExceeded
 from .utils import get_object_by_pk
+from .constants import MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB
 
 logger = logging.getLogger(__name__)
 
@@ -514,3 +518,37 @@ class UpdateSerializerMixin:
             return super().update(obj, validated_data, *args, **kwargs)
         # perform create
         return super().create(validated_data, *args, **kwargs)
+
+
+class HybridImageSerializerMixin(serializers.ModelSerializer):
+    """..."""
+
+    image = HybridImageField()
+    image_height = serializers.SerializerMethodField(
+        'get_image_height',
+    )
+    image_width = serializers.SerializerMethodField(
+        'get_image_width',
+    )
+
+    def validate_image(self, image: ImageFieldFile) -> ImageFieldFile:
+        """Check image size."""
+        if image.size > MAX_IMAGE_SIZE:
+            raise serializers.ValidationError(
+                _(f'Image file too large ( > {MAX_IMAGE_SIZE_MB} MB )')
+            )
+        return image
+
+    @extend_schema_field({'type': 'integer'})
+    def get_image_height(self, obj) -> int | None:
+        try:
+            return obj.image.height
+        except ValueError:
+            return None
+
+    @extend_schema_field({'type': 'integer'})
+    def get_image_width(self, obj) -> int | None:
+        try:
+            return obj.image.width
+        except ValueError:
+            return None
