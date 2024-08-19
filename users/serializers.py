@@ -9,7 +9,7 @@ from drf_extra_fields.fields import HybridImageField
 from drf_extra_fields.relations import PresentableSlugRelatedField
 from drf_spectacular.utils import extend_schema_field
 
-from languages.models import Language
+from languages.models import Language, LanguageImage
 from languages.serializers import LanguageSerializer
 from core.serializers_mixins import (
     CountObjsSerializerMixin,
@@ -167,6 +167,19 @@ class LearningLanguageSerailizer(
         raise serializers.ValidationError(
             {'language': ExceptionDetails.Users.LANGUAGE_NOT_AVAILABLE}
         )
+
+    def create(self, validated_data):
+        """Set default cover image for learning language."""
+        instance: UserLearningLanguage = super().create(validated_data)
+
+        default_cover_image: LanguageImage = LanguageImage.objects.filter(
+            language=instance.language
+        ).last()
+        if default_cover_image:
+            instance.cover = default_cover_image.image
+            instance.save()
+
+        return instance
 
 
 class NativeLanguageSerailizer(serializers.ModelSerializer):

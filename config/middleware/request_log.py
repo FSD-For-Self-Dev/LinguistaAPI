@@ -32,8 +32,6 @@ class RequestLogMiddleware:
                 log_data['request_body'] = req_body
             except json.JSONDecodeError:
                 pass
-            except Exception:
-                pass
 
         # Pass request to controller
         response = self.get_response(request)
@@ -44,9 +42,13 @@ class RequestLogMiddleware:
             and 'content-type' in response
             and response['content-type'] == 'application/json'
         ):
-            response_body = json.loads(response.content.decode('utf-8'))
-            log_data['response_body'] = response_body
-            log_data['run_time'] = time.time() - start_time
+            try:
+                response_body = json.JSONDecoder().decode(response.content)
+                log_data['response_body'] = response_body
+            except Exception:
+                pass
+
+        log_data['run_time'] = time.time() - start_time
 
         request_logger.info(msg=log_data)
 

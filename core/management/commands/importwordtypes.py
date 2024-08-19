@@ -43,7 +43,7 @@ class Command(BaseCommand):
         cnt = 0
         for type_info in tqdm(TYPE_CHOICES, desc='Importing types'):
             try:
-                type, created = Type.objects.get_or_create(
+                _, created = Type.objects.get_or_create(
                     name=type_info[1],
                 )
                 if created:
