@@ -67,6 +67,6 @@ class Command(BaseCommand):
                     lang.save()
 
                 except Exception as e:
-                    self.stdout.write(f'Error adding language {lang}: {e}')
+                    self.stdout.write(f'Error adding language: {e}')
 
         self.stdout.write('Added %d languages' % cnt)
