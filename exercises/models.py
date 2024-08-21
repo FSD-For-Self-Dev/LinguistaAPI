@@ -109,7 +109,7 @@ class Hint(CreatedModel):
         get_latest_by = ('created',)
 
     def __str__(self) -> str:
-        return 'Hint `%s` - %s' % (self.name, self.description)
+        return f'Hint `{self.name}` - {self.description}'
 
 
 class UsersExercisesHistory(CreatedModel):
@@ -235,7 +235,7 @@ class WordsUpdateHistory(CreatedModel):
 
     def __str__(self) -> str:
         return (
-            f"`{self.word}`'s activity status was upgraded from "
+            f'`{self.word}` word activity status was upgraded from '
             f'{self.activity_status} to {self.new_activity_status}'
         )
 
@@ -371,7 +371,7 @@ class TranslatorUserDefaultSettings(models.Model):
         )
 
     def __str__(self) -> str:
-        return "%s's `Translator` exercise default settings" % (self.user,)
+        return f"{self.user}'s `Translator` exercise default settings"
 
 
 class FavoriteExercise(CreatedModel):

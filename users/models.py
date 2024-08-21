@@ -208,7 +208,7 @@ class UserNativeLanguage(SlugModel, CreatedModel):
         ]
 
     def __str__(self) -> str:
-        return f"{self.user}'s native language is {self.language}"
+        return f'{self.language} is native language for {self.user}'
 
 
 @receiver(pre_save, sender=UserLearningLanguage)

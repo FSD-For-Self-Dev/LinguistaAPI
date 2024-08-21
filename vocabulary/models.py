@@ -968,9 +968,7 @@ class WordSelfRelatedModel(GetObjectModelMixin, CreatedModel):
 
     def __str__(self) -> str:
         classname = self.get_classname().lower()
-        return '`{from_word}` is {classname} for `{to_word}`'.format(
-            from_word=self.from_word, classname=classname, to_word=self.to_word
-        )
+        return f'`{self.from_word}` is {classname} for `{self.to_word}`'
 
 
 class WordSelfRelatedWithNoteModel(WordSelfRelatedModel):
@@ -995,12 +993,8 @@ class WordSelfRelatedWithNoteModel(WordSelfRelatedModel):
         if self.note:
             classname = self.get_classname().lower()
             return (
-                '`{from_word}` is {classname} for `{to_word}`' '(note: {note})'
-            ).format(
-                from_word=self.from_word,
-                to_word=self.to_word,
-                note=self.note,
-                classname=classname,
+                f'`{self.from_word}` is {classname} for `{self.to_word}` '
+                '(note: {self.note})'
             )
         return super().__str__()
 

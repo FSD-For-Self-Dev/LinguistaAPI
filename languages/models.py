@@ -97,7 +97,7 @@ class Language(models.Model):
         ordering = ('-sorting', 'name', 'isocode')
 
     def __str__(self) -> str:
-        return '%s (%s)' % (self.name, self.name_local)
+        return f'{self.name} ({self.name_local})'
 
 
 class LanguageImage(CreatedModel, ModifiedModel):
@@ -128,3 +128,6 @@ class LanguageImage(CreatedModel, ModifiedModel):
             'Images available to be set as cover for the learning language'
         )
         ordering = ('-created', '-modified')
+
+    def __str__(self) -> str:
+        return f'Image for {self.language.name} language: {self.image.url}'
