@@ -1,6 +1,7 @@
 """Custom command to import languages."""
 
 import os
+from tqdm import tqdm
 
 from django.conf.locale import LANG_INFO
 from django.core.management.base import BaseCommand
@@ -24,7 +25,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         cnt = 0
-        for isocode in LANG_INFO:
+        for isocode in tqdm(LANG_INFO, desc='Importing languages'):
             # we only care about the 2 letter iso codes
             if len(isocode) == 2:
                 try:
