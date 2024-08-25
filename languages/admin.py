@@ -14,6 +14,7 @@ class LanguageAdmin(TabbedTranslationAdmin):
         'name_local',
         'isocode',
         'sorting',
+        'learning_available',
         'words_count',
     )
     search_fields = (
