@@ -2416,7 +2416,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         detail=False,
         serializer_class=LanguageSerializer,
         permission_classes=(AllowAny,),
-        ordering=('-sorting', 'name'),
+        ordering=('native_for', 'learning_by', '-sorting', 'name'),
         ordering_fields=None,
         search_fields=('name', 'name_local'),
     )
