@@ -5,10 +5,10 @@ import uuid
 from django.db import models
 from django.utils.translation import gettext as _
 
-from core.models import CreatedModel, ModifiedModel
+from core.models import CreatedModel, ModifiedModel, WordsCountMixin
 
 
-class Language(models.Model):
+class Language(WordsCountMixin, models.Model):
     """
     List of languages by iso code (2 letter only because country code
     is not needed)

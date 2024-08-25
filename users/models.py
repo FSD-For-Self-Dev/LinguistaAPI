@@ -211,6 +211,34 @@ class UserNativeLanguage(SlugModel, CreatedModel):
         return f'{self.language} is native language for {self.user}'
 
 
+class UserRelatedModel(CreatedModel):
+    """Abstract model to add `user` field for related user."""
+
+    user = models.ForeignKey(
+        User,
+        verbose_name=_('User'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s',
+    )
+
+    class Meta:
+        abstract = True
+
+
+class AuthorModel(models.Model):
+    """Abstract model to add `author` field for related user."""
+
+    author = models.ForeignKey(
+        User,
+        verbose_name=_('Author'),
+        on_delete=models.CASCADE,
+        related_name='%(class)ss',
+    )
+
+    class Meta:
+        abstract = True
+
+
 @receiver(pre_save, sender=UserLearningLanguage)
 @receiver(pre_save, sender=UserNativeLanguage)
 def fill_slug(sender, instance, *args, **kwargs) -> None:

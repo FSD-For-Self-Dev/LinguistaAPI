@@ -101,6 +101,17 @@ class GetObjectModelMixin:
             return None
 
 
+class WordsCountMixin:
+    """Custom model mixin to add `words_count` method"""
+
+    def words_count(self) -> int:
+        """
+        Returns object related words amount.
+        Related name of word objects must be `words`.
+        """
+        return self.words.count()
+
+
 class CreatedModel(models.Model):
     """Abstract base class to add date created field."""
 

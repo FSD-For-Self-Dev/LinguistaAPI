@@ -13,6 +13,7 @@ from django.utils.translation import gettext as _
 from core.models import (
     GetObjectBySlugModelMixin,
     GetObjectModelMixin,
+    WordsCountMixin,
     CreatedModel,
     ModifiedModel,
     SlugModel,
@@ -25,51 +26,13 @@ from core.constants import (
     REGEX_HEXCOLOR_MASK_DETAIL,
 )
 from languages.models import Language
+from users.models import UserRelatedModel, AuthorModel
 
 from .constants import (
     VocabularyLengthLimits,
 )
 
 User = get_user_model()
-
-
-class WordsCountMixin:
-    """Custom model mixin to add `words_count` method"""
-
-    def words_count(self) -> int:
-        """
-        Returns object related words amount.
-        Related name of word objects must be `words`.
-        """
-        return self.words.count()
-
-
-class UserRelatedModel(CreatedModel):
-    """Abstract model to add `user` field for related user."""
-
-    user = models.ForeignKey(
-        User,
-        verbose_name=_('User'),
-        on_delete=models.CASCADE,
-        related_name='%(class)s',
-    )
-
-    class Meta:
-        abstract = True
-
-
-class AuthorModel(models.Model):
-    """Abstract model to add `author` field for related user."""
-
-    author = models.ForeignKey(
-        User,
-        verbose_name=_('Author'),
-        on_delete=models.CASCADE,
-        related_name='%(class)ss',
-    )
-
-    class Meta:
-        abstract = True
 
 
 class Word(
