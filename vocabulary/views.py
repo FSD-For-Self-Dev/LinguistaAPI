@@ -6,7 +6,7 @@ from itertools import chain
 
 from django.contrib.auth import get_user_model
 from django.db import transaction
-from django.db.models import Count, Q, F, Model
+from django.db.models import Count, Q, F, Model, Value, Case, When
 from django.db.models.query import QuerySet
 from django.shortcuts import get_object_or_404
 from django.http import HttpRequest, HttpResponse
@@ -2438,11 +2438,18 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         """
         Returns all available images to be set as cover for given learning language.
         """
-        learning_language = self.get_object()
+        learning_language: UserLearningLanguage = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')
 
         serializer = self.get_serializer(
-            learning_language.language.images.all(),
+            (
+                learning_language.language.images.annotate(
+                    is_current_cover=Case(
+                        When(id=learning_language.cover.id, then=Value(True)),
+                        default=Value(False),
+                    )
+                ).order_by('-is_current_cover')
+            ),
             many=True,
         )
         logger.debug(f'Serializer used for images: {type(serializer)}')
@@ -2468,11 +2475,12 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         new_cover = serializer.validated_data.get('images', None)
         logger.debug(f'Obtained language image: {new_cover}')
 
-        learning_language = self.get_object()
+        learning_language: UserLearningLanguage = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')
 
         logger.debug('Updating learning language cover')
         learning_language.cover = new_cover
+        learning_language.save()
 
         return self.retrieve(
             request,
