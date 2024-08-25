@@ -100,6 +100,7 @@ from .serializers import (
     TypeSerializer,
     FormsGroupListSerializer,
     CollectionShortSerializer,
+    CollectionListSerializer,
     CollectionSerializer,
     NoteInLineSerializer,
     NoteForWordSerializer,
@@ -1922,7 +1923,7 @@ class CollectionViewSet(
     def get_serializer_class(self) -> Serializer:
         match self.action:
             case 'list' | 'favorites' | 'destroy':
-                return CollectionShortSerializer
+                return CollectionListSerializer
             case _:
                 return super().get_serializer_class()
 

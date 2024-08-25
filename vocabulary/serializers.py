@@ -600,6 +600,19 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
         return obj.images_associations.values_list('image', flat=True)
 
 
+class WordTextImageSerializer(GetImageAssociationsSerializerMixin):
+    """Serializer to list words within collection card."""
+
+    class Meta:
+        model = Word
+        fields = (
+            'slug',
+            'text',
+            'image',
+        )
+        read_only_fields = fields
+
+
 class WordLongCardSerializer(
     GetImageAssociationsSerializerMixin,
     CountObjsSerializerMixin,
@@ -2436,6 +2449,8 @@ class MainPageSerailizer(UserDetailsSerializer):
 
 
 class AllUserAssociationsSerializer(serializers.ModelSerializer):
+    """Serializer to retrieve user associations of all types."""
+
     associations_list = serializers.SerializerMethodField('get_user_associations')
 
     class Meta:
@@ -2464,3 +2479,16 @@ class AllUserAssociationsSerializer(serializers.ModelSerializer):
         )
 
         return result_list
+
+
+class CollectionListSerializer(CollectionShortSerializer):
+    """Serializer to retrieve collections list."""
+
+    @extend_schema_field(WordTextImageSerializer(many=True))
+    def get_last_3_words(self, obj: Collection) -> QuerySet[Word]:
+        """Returns list of 3 last added words in the given collection."""
+        return WordTextImageSerializer(
+            obj.words.order_by('-wordsincollections__created')[:3],
+            many=True,
+            context={'request': self.context.get('request')},
+        ).data

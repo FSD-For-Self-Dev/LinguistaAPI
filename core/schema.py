@@ -31,6 +31,7 @@ from vocabulary.serializers import (
     FormsGroupListSerializer,
     CollectionSerializer,
     CollectionShortSerializer,
+    CollectionListSerializer,
     MultipleWordsSerializer,
     TagListSerializer,
     LearningLanguageWithLastWordsSerailizer,
@@ -1221,7 +1222,7 @@ data = {
             'summary': 'Просмотр списка всех коллекций пользователя',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: CollectionSerializer,
+                status.HTTP_200_OK: CollectionListSerializer(many=True),
             },
         },
         'collection_create': {
