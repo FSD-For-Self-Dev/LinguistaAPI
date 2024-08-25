@@ -384,6 +384,12 @@ data = {
                     description=('Фильтр по первой букве слова.'),
                 ),
                 OpenApiParameter(
+                    'last_letter',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=('Фильтр по последней букве слова.'),
+                ),
+                OpenApiParameter(
                     'translations_count',
                     OpenApiTypes.NUMBER,
                     OpenApiParameter.QUERY,

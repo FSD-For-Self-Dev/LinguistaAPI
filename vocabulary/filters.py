@@ -49,6 +49,7 @@ class WordFilter(df.FilterSet):
     activity_status = df.ChoiceFilter(choices=Word.ACTIVITY)
     types = CustomFilterList(field_name='types__slug', lookup_expr='in')
     first_letter = df.CharFilter(field_name='text', lookup_expr='istartswith')
+    last_letter = df.CharFilter(field_name='text', lookup_expr='endswith')
     have_associations = df.BooleanFilter(method='filter_have_associations')
     translations_count = df.NumberFilter(
         field_name='translations_count',
