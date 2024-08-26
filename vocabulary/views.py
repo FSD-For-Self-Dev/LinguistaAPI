@@ -2177,8 +2177,21 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             case 'all':
                 return Language.objects.annotate(words_count=Count('words'))
             case 'interface':
-                return Language.objects.filter(interface_available=True).annotate(
-                    words_count=Count('words')
+                learning_list = user.learning_languages.values_list('name', flat=True)
+                native_list = user.native_languages.values_list('name', flat=True)
+                return (
+                    Language.objects.filter(interface_available=True)
+                    .annotate(
+                        is_learning_or_native=Case(
+                            When(
+                                name__in=[*learning_list, *native_list],
+                                then=Value(True),
+                            ),
+                            default=Value(False),
+                        ),
+                        words_count=Count('words'),
+                    )
+                    .order_by('-is_learning_or_native', '-sorting', 'name')
                 )
             case 'native':
                 if user.is_authenticated:
@@ -2417,7 +2430,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         detail=False,
         serializer_class=LanguageSerializer,
         permission_classes=(AllowAny,),
-        ordering=('native_for', 'learning_by', '-sorting', 'name'),
+        ordering=None,
         ordering_fields=None,
         search_fields=('name', 'name_local'),
     )
