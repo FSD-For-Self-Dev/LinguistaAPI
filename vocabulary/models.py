@@ -512,6 +512,10 @@ class UsageExample(
         return self.text
 
 
+def image_associations_path(instance, filename) -> str:
+    return f'vocabulary/associations/{instance.author.username}/{filename}'
+
+
 class ImageAssociation(
     GetObjectModelMixin,
     WordsCountMixin,
@@ -528,7 +532,7 @@ class ImageAssociation(
     )
     image = models.ImageField(
         _('Image'),
-        upload_to='vocabulary/associations/images',
+        upload_to=image_associations_path,
         null=False,
         blank=False,
     )

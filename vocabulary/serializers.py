@@ -2276,7 +2276,6 @@ class LearningLanguageWithLastWordsSerailizer(LearningLanguageSerailizer):
 
 class UserDetailsSerializer(
     CountObjsSerializerMixin,
-    HybridImageSerializerMixin,
     UserShortSerializer,
 ):
     """Serializer to retrieve, update user's profile data."""

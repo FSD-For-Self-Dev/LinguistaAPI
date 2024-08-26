@@ -5,7 +5,6 @@ from collections import OrderedDict
 from django.contrib.auth import get_user_model
 
 from rest_framework import serializers
-from drf_extra_fields.fields import HybridImageField
 from drf_extra_fields.relations import PresentableSlugRelatedField
 from drf_spectacular.utils import extend_schema_field
 
@@ -14,6 +13,7 @@ from languages.serializers import LanguageSerializer
 from core.serializers_mixins import (
     CountObjsSerializerMixin,
     AlreadyExistSerializerHandler,
+    HybridImageSerializerMixin,
 )
 from core.serializers_fields import KwargsMethodField
 from core.exceptions import ExceptionDetails
@@ -23,10 +23,8 @@ from .models import UserLearningLanguage, UserNativeLanguage
 User = get_user_model()
 
 
-class UserShortSerializer(serializers.ModelSerializer):
+class UserShortSerializer(HybridImageSerializerMixin, serializers.ModelSerializer):
     """Serializer to list users."""
-
-    image = HybridImageField()
 
     class Meta:
         model = User
@@ -35,8 +33,14 @@ class UserShortSerializer(serializers.ModelSerializer):
             'username',
             'first_name',
             'image',
+            'image_height',
+            'image_width',
         )
-        read_only_fields = ('id',)
+        read_only_fields = (
+            'id',
+            'image_height',
+            'image_width',
+        )
 
 
 class LearningLanguageShortSerailizer(

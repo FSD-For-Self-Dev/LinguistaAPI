@@ -9,16 +9,14 @@ from django.db import transaction
 from django.db.models import Model
 from django.db.models.query import QuerySet
 from django.db.models.fields.files import ImageFieldFile
-from django.utils.translation import gettext as _
 
-from drf_extra_fields.fields import HybridImageField
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
-from .serializers_fields import ReadWriteSerializerMethodField
-from .exceptions import ObjectAlreadyExist, AmountLimitExceeded
+from .serializers_fields import ReadWriteSerializerMethodField, CustomHybridImageField
+from .exceptions import ObjectAlreadyExist, AmountLimitExceeded, ExceptionDetails
 from .utils import get_object_by_pk
-from .constants import MAX_IMAGE_SIZE, MAX_IMAGE_SIZE_MB
+from .constants import MAX_IMAGE_SIZE
 
 logger = logging.getLogger(__name__)
 
@@ -521,9 +519,9 @@ class UpdateSerializerMixin:
 
 
 class HybridImageSerializerMixin(serializers.ModelSerializer):
-    """..."""
+    """Custom mixin to add image, image_height, image_width fields."""
 
-    image = HybridImageField()
+    image = CustomHybridImageField()
     image_height = serializers.SerializerMethodField(
         'get_image_height',
     )
@@ -535,7 +533,7 @@ class HybridImageSerializerMixin(serializers.ModelSerializer):
         """Check image size."""
         if image.size > MAX_IMAGE_SIZE:
             raise serializers.ValidationError(
-                _(f'Image file too large ( > {MAX_IMAGE_SIZE_MB} MB )')
+                ExceptionDetails.Images.INVALID_IMAGE_SIZE
             )
         return image
 

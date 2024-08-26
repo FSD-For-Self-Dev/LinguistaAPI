@@ -100,6 +100,10 @@ class Language(WordsCountMixin, models.Model):
         return f'{self.name} ({self.name_local})'
 
 
+def language_images_path(instance, filename) -> str:
+    return f'languages/images/{instance.language.name}/{filename}'
+
+
 class LanguageImage(CreatedModel, ModifiedModel):
     """Images available to be set as cover for the learning language."""
 
@@ -116,7 +120,7 @@ class LanguageImage(CreatedModel, ModifiedModel):
     )
     image = models.ImageField(
         _('Language image'),
-        upload_to='languages/images/',
+        upload_to=language_images_path,
         blank=False,
         null=False,
     )

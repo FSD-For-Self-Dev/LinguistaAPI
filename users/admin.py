@@ -80,6 +80,7 @@ class UserDefaultWordsViewAdmin(admin.ModelAdmin):
 
 @admin.register(UserLearningLanguage)
 class UserLearningLanguageAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('user', 'language')}
     pass
 
 

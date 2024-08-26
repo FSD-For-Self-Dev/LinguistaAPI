@@ -4,6 +4,9 @@ from typing import Any
 
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
+from drf_extra_fields.fields import HybridImageField
+
+from .exceptions import ExceptionDetails
 
 
 @extend_schema_field({'type': 'string'})
@@ -85,3 +88,13 @@ class CapitalizedCharField(serializers.CharField):
 
     def to_representation(self, value: str) -> str:
         return value.capitalize()
+
+
+class CustomHybridImageField(HybridImageField):
+    """
+    Custom field to add invalid file validation error message to HybridImageField.
+    """
+
+    @property
+    def INVALID_FILE_MESSAGE(self):
+        raise serializers.ValidationError(ExceptionDetails.Images.INVALID_IMAGE_FILE)

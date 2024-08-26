@@ -19,6 +19,10 @@ from core.models import (
 from languages.models import Language, LanguageImage
 
 
+def user_profile_images_path(user, filename) -> str:
+    return f'users/profile-images/{user.username}/{filename}'
+
+
 class User(AbstractUser, CreatedModel, ModifiedModel):
     """User custom model."""
 
@@ -42,7 +46,7 @@ class User(AbstractUser, CreatedModel, ModifiedModel):
     )
     image = models.ImageField(
         _('Profile image'),
-        upload_to='users/profile-images/',
+        upload_to=user_profile_images_path,
         blank=True,
         null=True,
     )

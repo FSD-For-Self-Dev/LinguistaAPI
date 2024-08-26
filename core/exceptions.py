@@ -12,6 +12,8 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 
+from .constants import MAX_IMAGE_SIZE_MB
+
 
 class ExceptionCodes:
     """Class to store common exceptions codes constants."""
@@ -23,6 +25,10 @@ class ExceptionCodes:
 
 class ExceptionDetails:
     """Class to store exceptions detail messages."""
+
+    class Images:
+        INVALID_IMAGE_FILE = _('Invalid image file passed.')
+        INVALID_IMAGE_SIZE = _(f'Image file too large ( > {MAX_IMAGE_SIZE_MB} MB )')
 
     class Users:
         """Users app exception details."""
