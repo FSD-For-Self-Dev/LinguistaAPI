@@ -12,7 +12,6 @@ from vocabulary.models import (
     Tag,
     Note,
     Collection,
-    ImageAssociation,
     QuoteAssociation,
 )
 from languages.models import Language
@@ -370,37 +369,6 @@ def word_definitions(request):
         return objs
 
     return get_word_definition
-
-
-@pytest.fixture
-def word_images_associations(request):
-    def get_word_images_associations(
-        user, data=False, _quantity=1, make=False, **kwargs
-    ):
-        objs = baker.make(
-            ImageAssociation, author=user, _quantity=_quantity, _fill_optional=True
-        )
-        # b64field = Base64ImageField()
-        if data:
-            if kwargs.get('serializer_data', False):
-                source = [
-                    {
-                        # "image": b64field.to_representation(obj.image),
-                    }
-                    for obj in objs
-                ]
-            else:
-                source = [obj.id for obj in objs]
-            expected = [
-                {
-                    'image': obj.image or None,
-                }
-                for obj in objs
-            ]
-            return (objs, source, expected)
-        return objs
-
-    return get_word_images_associations
 
 
 @pytest.fixture

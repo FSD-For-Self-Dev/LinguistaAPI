@@ -596,7 +596,13 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
 
     @extend_schema_field({'type': 'object'})
     def get_images(self, obj: Word) -> list[str]:
-        """Returns list of image associations."""
+        """Returns list of image associations urls."""
+        request = self.context.get('request', None)
+        if request is not None:
+            return map(
+                lambda instance: request.build_absolute_uri(instance.image.url),
+                obj.images_associations.all(),
+            )
         return obj.images_associations.values_list('image', flat=True)
 
 
@@ -754,15 +760,14 @@ class WordShortCreateSerializer(
         'get_objs_count',
         objs_related_name='images_associations',
     )
-    images_associations = serializers.PrimaryKeyRelatedField(
-        queryset=ImageAssociation.objects.all(),
+    images_associations = ImageInLineSerializer(
         required=False,
         many=True,
         write_only=True,
     )
     quotes_associations = QuoteInLineSerializer(
-        many=True,
         required=False,
+        many=True,
         write_only=True,
     )
     activity_status = serializers.SerializerMethodField('get_activity_status_display')

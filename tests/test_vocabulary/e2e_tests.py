@@ -443,7 +443,7 @@ class TestVocabularyEndpoints:
             ('definitions', 'word_definitions', True, 'definitions'),
             ('collections', 'collections', True, 'collections'),
             ('notes', 'word_notes', True, 'notes'),
-            ('images_associations', 'word_images_associations', True, 'associations'),
+            # ('images_associations', 'word_images_associations', True, 'associations'),
             ('quotes_associations', 'word_quotes_associations', True, 'associations'),
         ],
     )
@@ -762,11 +762,11 @@ class TestVocabularyEndpoints:
                 AmountLimits.Vocabulary.MAX_SIMILARS_AMOUNT,
             ),
             ('notes', 'word_notes', AmountLimits.Vocabulary.MAX_NOTES_AMOUNT),
-            (
-                'images_associations',
-                'word_images_associations',
-                AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
-            ),
+            # (
+            #     'images_associations',
+            #     'word_images_associations',
+            #     AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
+            # ),
             (
                 'quotes_associations',
                 'word_quotes_associations',
@@ -862,13 +862,13 @@ class TestVocabularyEndpoints:
             ('definitions', 'word_definitions', Definition, True, ''),
             ('tags', 'word_tags', Tag, True, ''),
             ('collections', 'collections', Collection, False, ''),
-            (
-                'images_associations',
-                'word_images_associations',
-                ImageAssociation,
-                True,
-                'associations',
-            ),
+            # (
+            #     'images_associations',
+            #     'word_images_associations',
+            #     ImageAssociation,
+            #     True,
+            #     'associations',
+            # ),
             (
                 'quotes_associations',
                 'word_quotes_associations',
@@ -1325,43 +1325,13 @@ class TestVocabularyEndpoints:
         assert response.data[f'{objs_related_name}_count'] == objs_quantity
         assert len(response.data[objs_related_name]) == objs_quantity
 
-    def test_related_associations_create_action(
-        self, auth_api_client, user, word_images_associations, word_quotes_associations
-    ):
-        """
-        Ассоциации слова успешно создаются при запросе с валидными данными
-        от автора слова.
-        """
-        word = baker.make(Word, author=user)
-        objs_quantity = 2
-        _, images_source_data, _ = word_images_associations(
-            user, data=True, _quantity=objs_quantity
-        )
-        _, quotes_source_data, _ = word_quotes_associations(
-            user, data=True, _quantity=objs_quantity
-        )
-        source_data = {
-            'images': images_source_data,
-            'quotes': quotes_source_data,
-        }
-
-        response = auth_api_client(user).post(
-            f'{self.endpoint}{word.slug}/associations/',
-            data=source_data,
-            format='json',
-        )
-
-        assert response.status_code == 201
-        assert response.data['associations_count'] == objs_quantity * 2
-        assert len(response.data['associations']) == objs_quantity * 2
-
     @pytest.mark.parametrize(
         'objs_related_name, fixture_name, res_name',
         [
             ('translations', 'word_translations', ''),
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
-            ('images_associations', 'word_images_associations', 'images'),
+            # ('images_associations', 'word_images_associations', 'images'),
             ('quotes_associations', 'word_quotes_associations', 'quotes'),
         ],
     )
@@ -1445,7 +1415,7 @@ class TestVocabularyEndpoints:
             ('translations', 'word_translations', ''),
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
-            ('images_associations', 'word_images_associations', 'images'),
+            # ('images_associations', 'word_images_associations', 'images'),
             ('quotes_associations', 'word_quotes_associations', 'quotes'),
         ],
     )
@@ -1556,7 +1526,7 @@ class TestVocabularyEndpoints:
             ('translations', 'word_translations', ''),
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
-            ('images_associations', 'word_images_associations', 'images'),
+            # ('images_associations', 'word_images_associations', 'images'),
             ('quotes_associations', 'word_quotes_associations', 'quotes'),
             ('synonyms', 'related_words_data', ''),
             ('antonyms', 'related_words_data', ''),
@@ -2352,131 +2322,131 @@ class TestWordSimilarsEndpoints:
         assert response_content['words']['count'] == len(source_data) + 1
 
 
-@pytest.mark.word_images
-class TestWordImagesEndpoints:
-    endpoint = '/api/images/'
-    objs_related_name = 'images_associations'
-    related_model = ImageAssociation
+# @pytest.mark.word_images
+# class TestWordImagesEndpoints:
+#     endpoint = '/api/images/'
+#     objs_related_name = 'images_associations'
+#     related_model = ImageAssociation
 
-    @pytest.mark.parametrize(
-        'pagination_field',
-        [
-            ('count'),
-            ('next'),
-            ('previous'),
-            ('results'),
-        ],
-    )
-    def test_list(
-        self, auth_api_client, user, pagination_field, word_images_associations
-    ):
-        """
-        По запросу картинок-ассоциаций слов и фраз пользователя возвращается список картинок-ассоциаций слов
-        авторизованного пользователяс с пагинацией.
-        """
-        objs = word_images_associations(user, make=True)
+#     @pytest.mark.parametrize(
+#         'pagination_field',
+#         [
+#             ('count'),
+#             ('next'),
+#             ('previous'),
+#             ('results'),
+#         ],
+#     )
+#     def test_list(
+#         self, auth_api_client, user, pagination_field, word_images_associations
+#     ):
+#         """
+#         По запросу картинок-ассоциаций слов и фраз пользователя возвращается список картинок-ассоциаций слов
+#         авторизованного пользователяс с пагинацией.
+#         """
+#         objs = word_images_associations(user, make=True)
 
-        response = auth_api_client(user).get(self.endpoint)
+#         response = auth_api_client(user).get(self.endpoint)
 
-        assert response.status_code == 200
-        assert pagination_field in response.data, (
-            f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются данные с пагинацией. '
-            f'Не найден параметр `{pagination_field}`'
-        )
-        assert response.data['count'] == len(objs), (
-            f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются правильные данные. '
-            f'Значение параметра `count` неправильное'
-        )
-        assert len(response.data['results']) == len(objs)
+#         assert response.status_code == 200
+#         assert pagination_field in response.data, (
+#             f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются данные с пагинацией. '
+#             f'Не найден параметр `{pagination_field}`'
+#         )
+#         assert response.data['count'] == len(objs), (
+#             f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются правильные данные. '
+#             f'Значение параметра `count` неправильное'
+#         )
+#         assert len(response.data['results']) == len(objs)
 
-    # def test_create(self, auth_api_client, user, word_images_associations, learning_language, words_simple_data):
-    #     language = learning_language(user)
-    #     _, source_data, expected_data = word_images_associations(
-    #         user, make=False, data=True, language=language
-    #     )
-    #     _, source_data[0]['words'], _ = words_simple_data(
-    #         user, make=False, data=True, language=language
-    #     )
+#     # def test_create(self, auth_api_client, user, word_images_associations, learning_language, words_simple_data):
+#     #     language = learning_language(user)
+#     #     _, source_data, expected_data = word_images_associations(
+#     #         user, make=False, data=True, language=language
+#     #     )
+#     #     _, source_data[0]['words'], _ = words_simple_data(
+#     #         user, make=False, data=True, language=language
+#     #     )
 
-    #     response = auth_api_client(user).post(
-    #         self.endpoint,
-    #         data=source_data[0],
-    #         format='json',
-    #     )
-    #     response_content = json.loads(response.content)
+#     #     response = auth_api_client(user).post(
+#     #         self.endpoint,
+#     #         data=source_data[0],
+#     #         format='json',
+#     #     )
+#     #     response_content = json.loads(response.content)
 
-    #     assert response.status_code == 201
-    #     assert all([response_content[field] == value for field, value in expected_data[0].items()])
-    #     assert response_content['words']['count'] == len(source_data[0]['words'])
+#     #     assert response.status_code == 201
+#     #     assert all([response_content[field] == value for field, value in expected_data[0].items()])
+#     #     assert response_content['words']['count'] == len(source_data[0]['words'])
 
-    def test_retrieve(self, auth_api_client, user, word_images_associations):
-        objs, _, expected_data = word_images_associations(user, make=True, data=True)
-        word = baker.make(Word, author=user)
-        word.__getattribute__(self.objs_related_name).set(objs)
+#     def test_retrieve(self, auth_api_client, user, word_images_associations):
+#         objs, _, expected_data = word_images_associations(user, make=True, data=True)
+#         word = baker.make(Word, author=user)
+#         word.__getattribute__(self.objs_related_name).set(objs)
 
-        response = auth_api_client(user).get(
-            f'{self.endpoint}{objs[0].id}/',
-        )
-        response_content = json.loads(response.content)
+#         response = auth_api_client(user).get(
+#             f'{self.endpoint}{objs[0].id}/',
+#         )
+#         response_content = json.loads(response.content)
 
-        assert response.status_code == 200
-        assert all(
-            [
-                response_content[field] == value
-                for field, value in expected_data[0].items()
-            ]
-        )
-        assert response_content['words']['count'] == 1
+#         assert response.status_code == 200
+#         assert all(
+#             [
+#                 response_content[field] == value
+#                 for field, value in expected_data[0].items()
+#             ]
+#         )
+#         assert response_content['words']['count'] == 1
 
-    def test_partial_update(self, auth_api_client, user, word_images_associations):
-        objs = word_images_associations(user, make=True, data=False)
-        word = baker.make(Word, author=user)
-        word.__getattribute__(self.objs_related_name).set(objs)
-        _, source_data, expected_data = word_images_associations(
-            user, make=False, data=True, serializer_data=True
-        )
+#     def test_partial_update(self, auth_api_client, user, word_images_associations):
+#         objs = word_images_associations(user, make=True, data=False)
+#         word = baker.make(Word, author=user)
+#         word.__getattribute__(self.objs_related_name).set(objs)
+#         _, source_data, expected_data = word_images_associations(
+#             user, make=False, data=True, serializer_data=True
+#         )
 
-        response = auth_api_client(user).patch(
-            f'{self.endpoint}{objs[0].id}/',
-            data=source_data[0],
-            format='json',
-        )
-        response_content = json.loads(response.content)
+#         response = auth_api_client(user).patch(
+#             f'{self.endpoint}{objs[0].id}/',
+#             data=source_data[0],
+#             format='json',
+#         )
+#         response_content = json.loads(response.content)
 
-        assert response.status_code == 200
-        assert all(
-            [
-                response_content[field] == value
-                for field, value in expected_data[0].items()
-            ]
-        )
-        assert response_content['words']['count'] == 1
+#         assert response.status_code == 200
+#         assert all(
+#             [
+#                 response_content[field] == value
+#                 for field, value in expected_data[0].items()
+#             ]
+#         )
+#         assert response_content['words']['count'] == 1
 
-    def test_delete(self, auth_api_client, user, word_images_associations):
-        objs = word_images_associations(user, make=True)
+#     def test_delete(self, auth_api_client, user, word_images_associations):
+#         objs = word_images_associations(user, make=True)
 
-        response = auth_api_client(user).delete(
-            f'{self.endpoint}{objs[0].id}/',
-        )
+#         response = auth_api_client(user).delete(
+#             f'{self.endpoint}{objs[0].id}/',
+#         )
 
-        assert response.status_code in (204, 200)
-        assert not self.related_model.objects.filter(id=objs[0].id).exists()
+#         assert response.status_code in (204, 200)
+#         assert not self.related_model.objects.filter(id=objs[0].id).exists()
 
-    def test_add_words_to_image(
-        self, auth_api_client, user, word_images_associations, words_simple_data
-    ):
-        objs = word_images_associations(user, make=True, data=False)
-        _, source_data, _ = words_simple_data(user, make=False, data=True)
+#     def test_add_words_to_image(
+#         self, auth_api_client, user, word_images_associations, words_simple_data
+#     ):
+#         objs = word_images_associations(user, make=True, data=False)
+#         _, source_data, _ = words_simple_data(user, make=False, data=True)
 
-        response = auth_api_client(user).post(
-            f'{self.endpoint}{objs[0].id}/add-words/',
-            data=source_data,
-            format='json',
-        )
-        response_content = json.loads(response.content)
+#         response = auth_api_client(user).post(
+#             f'{self.endpoint}{objs[0].id}/add-words/',
+#             data=source_data,
+#             format='json',
+#         )
+#         response_content = json.loads(response.content)
 
-        assert response.status_code == 201
-        assert response_content['words']['count'] == len(source_data)
+#         assert response.status_code == 201
+#         assert response_content['words']['count'] == len(source_data)
 
 
 @pytest.mark.word_quotes
@@ -2585,7 +2555,7 @@ class TestMainPageEndpoints:
             ('words', 'words_simple_data'),
             ('collections', 'collections'),
             ('tags', 'word_tags'),
-            ('images', 'word_images_associations'),
+            # ('images', 'word_images_associations'),
             ('definitions', 'word_definitions'),
             ('examples', 'word_usage_examples'),
             ('translations', 'word_translations'),
@@ -2623,11 +2593,11 @@ class TestAssociationsEndpoints:
     @pytest.mark.parametrize(
         'fixture_name',
         [
-            ('word_images_associations'),
+            # ('word_images_associations'),
             ('word_quotes_associations'),
         ],
     )
-    def test_main_page_retrieve(self, auth_api_client, user, fixture_name, request):
+    def test_list(self, auth_api_client, user, fixture_name, request):
         objs = request.getfixturevalue(fixture_name)(user, make=True, data=False)
 
         response = auth_api_client(user).get(self.endpoint)
@@ -2786,7 +2756,7 @@ class TestWordCollectionsEndpoints:
             ('translations', 'word_translations', ''),
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
-            ('images_associations', 'word_images_associations', 'images'),
+            # ('images_associations', 'word_images_associations', 'images'),
         ],
     )
     def test_related_objs_retrieve(

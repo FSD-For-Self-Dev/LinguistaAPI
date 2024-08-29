@@ -1017,57 +1017,12 @@ class WordViewSet(
             }
         )
 
-    @extend_schema(operation_id='word_associations_create', methods=('post',))
-    @associations.mapping.post
-    @transaction.atomic
-    def associations_create(
-        self, request: HttpRequest, *args, **kwargs
-    ) -> HttpResponse:
-        """Adds passed associations to given word."""
-        instance = self.get_object()
-        logger.debug(f'Word instance: {instance}')
-
-        serializer = self.get_serializer(data=request.data)
-        logger.debug(f'Serializer used: {type(serializer)}')
-
-        logger.debug(f'Validating data: {request.data}')
-        serializer.is_valid(raise_exception=True)
-
-        logger.debug('Performing save')
-        _data = serializer.save()
-
-        _quotes, _images = _data.get('quotes', []), _data.get('images', [])
-
-        logger.debug('Checking amount limits')
-        try:
-            check_amount_limit(
-                current_amount=instance.images_associations.count(),
-                new_objects_amount=len(_images),
-                amount_limit=AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
-                detail=AmountLimits.Vocabulary.Details.IMAGES_AMOUNT_EXCEEDED,
-            )
-            check_amount_limit(
-                current_amount=instance.quotes_associations.count(),
-                new_objects_amount=len(_quotes),
-                amount_limit=AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
-                detail=AmountLimits.Vocabulary.Details.QUOTES_AMOUNT_EXCEEDED,
-            )
-        except AmountLimitExceeded as exception:
-            return exception.get_detail_response(request)
-
-        logger.debug('Associate objects with instance')
-        instance.quotes_associations.add(*_quotes)
-        instance.images_associations.add(*_images)
-
-        return Response(
-            WordSerializer(instance, context={'request': request}).data,
-            status=status.HTTP_201_CREATED,
-        )
-
     @extend_schema(operation_id='word_images_list', methods=('get',))
     @action(
         methods=('get',),
         detail=True,
+        permission_classes=(IsAuthenticated,),
+        parser_classes=(MultiPartParser, FormParser, JSONParser),
         serializer_class=ImageInLineSerializer,
     )
     def images(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -1076,6 +1031,23 @@ class WordViewSet(
             request,
             objs_related_name='images_associations',
             response_objs_name='images',
+        )
+
+    @extend_schema(operation_id='word_images_upload', methods=('post',))
+    @images.mapping.post
+    @transaction.atomic
+    def images_upload(
+        self, request: HttpRequest, format: str | None = None, *args, **kwargs
+    ) -> HttpResponse:
+        """Uploads passed images through MultiPartParser or base64 field."""
+        return self.create_related_objs(
+            request,
+            objs_related_name='images_associations',
+            response_objs_name='images',
+            amount_limit=AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.IMAGES_AMOUNT_EXCEEDED,
+            set_objs=True,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_image_retrieve', methods=('get',))
@@ -1112,6 +1084,21 @@ class WordViewSet(
             request,
             objs_related_name='quotes_associations',
             response_objs_name='quotes',
+        )
+
+    @extend_schema(operation_id='word_quotes_create', methods=('post',))
+    @quotes.mapping.post
+    @transaction.atomic
+    def quotes_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Adds new quote associations to given word."""
+        return self.create_related_objs(
+            request,
+            objs_related_name='quotes_associations',
+            response_objs_name='quotes',
+            amount_limit=AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
+            amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.QUOTES_AMOUNT_EXCEEDED,
+            set_objs=True,
+            response_serializer_class=WordSerializer,
         )
 
     @extend_schema(operation_id='word_quote_retrieve', methods=('get',))
@@ -1165,30 +1152,6 @@ class WordViewSet(
             related_model_obj_field='word',
             not_found_msg='Этого слова нет в вашем избранном.',
         )
-
-    @extend_schema(operation_id='images_upload', methods=('post',))
-    @action(
-        methods=('post',),
-        detail=False,
-        permission_classes=(IsAuthenticated,),
-        url_path='images-upload',
-        parser_classes=(MultiPartParser, FormParser, JSONParser),
-        serializer_class=ImageInLineSerializer,
-    )
-    def images_upload(
-        self, request: HttpRequest, format: str | None = None, *args, **kwargs
-    ) -> HttpResponse:
-        """Uploads passed images through MultiPartParser or base64 field."""
-        serializer = self.get_serializer(data=request.data)
-        logger.debug(f'Serializer used: {type(serializer)}')
-
-        logger.debug('Validating data')
-        serializer.is_valid(raise_exception=True)
-
-        logger.debug('Performing save')
-        serializer.save()
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @extend_schema(tags=['words_translations'])
