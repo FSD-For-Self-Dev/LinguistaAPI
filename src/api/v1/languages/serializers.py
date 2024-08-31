@@ -129,7 +129,7 @@ class LearningLanguageSerailizer(
 ):
     """Serializer to retrieve users's learning language details."""
 
-    already_exist_detail = ExceptionDetails.Users.LEARNING_LANGUAGE_ALREADY_EXIST
+    already_exist_detail = ExceptionDetails.Languages.LEARNING_LANGUAGE_ALREADY_EXIST
 
     class Meta:
         model = UserLearningLanguage
@@ -166,7 +166,7 @@ class LearningLanguageSerailizer(
         ):
             return super().validate(attrs)
         raise serializers.ValidationError(
-            {'language': ExceptionDetails.Users.LANGUAGE_NOT_AVAILABLE}
+            {'language': ExceptionDetails.Languages.LANGUAGE_NOT_AVAILABLE}
         )
 
     def create(self, validated_data):

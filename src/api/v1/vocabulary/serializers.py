@@ -4,7 +4,6 @@ from itertools import chain
 from collections import OrderedDict
 
 from django.contrib.auth import get_user_model
-from django.utils.translation import gettext as _
 from django.db.models import Count, Model
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import QuerySet
@@ -118,7 +117,7 @@ class ValidateLanguageMixin:
             or language in user.learning_languages.all()
         ):
             raise serializers.ValidationError(
-                _('Language must be in your learning or native languages.'),
+                ExceptionDetails.Vocabulary.LANGUAGE_MUST_BE_LEARNING_OR_NATIVE,
                 code='invalid_language',
             )
         return language
@@ -139,7 +138,7 @@ class ValidateLanguageMixin:
                     return language
                 else:
                     raise serializers.ValidationError(
-                        ExceptionDetails.Users.LANGUAGE_NOT_AVAILABLE
+                        ExceptionDetails.Languages.LANGUAGE_NOT_AVAILABLE
                     )
             raise serializers.ValidationError(
                 ExceptionDetails.Vocabulary.LANGUAGE_MUST_BE_LEARNING,
@@ -154,7 +153,7 @@ class ValidateLanguageMixin:
         user = self.context.get('request').user
         if language not in user.native_languages.all():
             raise serializers.ValidationError(
-                _('Language must be in your native languages.'),
+                ExceptionDetails.Vocabulary.LANGUAGE_MUST_BE_NATIVE,
                 code='invalid_language',
             )
         return language
@@ -170,7 +169,7 @@ class NoteInLineSerializer(AlreadyExistSerializerHandler, serializers.ModelSeria
     )
     word = serializers.HiddenField(default=None)
 
-    already_exist_detail = _('Such a note already exists for the word.')
+    already_exist_detail = ExceptionDetails.Vocabulary.NOTE_ALREADY_EXIST
 
     class Meta:
         model = Note
@@ -209,9 +208,7 @@ class WordTranslationInLineSerializer(
         default=NativeLanguageDefault(),
     )
 
-    already_exist_detail = _(
-        'This translation already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.TRANSLATION_ALREADY_EXIST
 
     class Meta:
         model = WordTranslation
@@ -252,9 +249,7 @@ class UsageExampleInLineSerializer(
         required=True,
     )
 
-    already_exist_detail = _(
-        'This example already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.EXAMPLE_ALREADY_EXIST
 
     class Meta:
         model = UsageExample
@@ -293,9 +288,7 @@ class DefinitionInLineSerializer(
         required=True,
     )
 
-    already_exist_detail = _(
-        'This definition already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.DEFINITION_ALREADY_EXIST
 
     class Meta:
         model = Definition
@@ -340,9 +333,7 @@ class CollectionShortSerializer(
     )
     last_3_words = serializers.SerializerMethodField('get_last_3_words')
 
-    already_exist_detail = _(
-        'This collection already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.COLLECTION_ALREADY_EXIST
 
     class Meta:
         model = Collection
@@ -393,9 +384,7 @@ class FormsGroupInLineSerializer(
         required=True,
     )
 
-    already_exist_detail = _(
-        'This form group already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.FORM_GROUP_ALREADY_EXIST
 
     class Meta:
         model = FormsGroup
@@ -418,7 +407,8 @@ class FormsGroupInLineSerializer(
         """Check if name does not match with `Infinitive` before create."""
         if name.capitalize() == 'Infinitive':
             raise serializers.ValidationError(
-                _('The forms group `Infinitive` already exists.')
+                ExceptionDetails.Vocabulary.FORM_GROUP_ALREADY_EXIST,
+                code='already_exist',
             )
         return name
 
@@ -504,7 +494,7 @@ class TagSerializer(AlreadyExistSerializerHandler, serializers.ModelSerializer):
     )
     name = serializers.CharField()
 
-    already_exist_detail = _('This tag already exists in your vocabulary. Update it?')
+    already_exist_detail = ExceptionDetails.Vocabulary.TAG_ALREADY_EXIST
 
     class Meta:
         model = Tag
@@ -758,22 +748,16 @@ class WordShortCreateSerializer(
     activity_status = serializers.SerializerMethodField('get_activity_status_display')
     activity_progress = serializers.SerializerMethodField('get_activity_progress')
 
-    already_exist_detail = _('This word already exists in your vocabulary. Update it?')
+    already_exist_detail = ExceptionDetails.Vocabulary.WORD_ALREADY_EXIST
     default_error_messages = {
         'examples_same_language_detail': {
-            'examples': _(
-                'The usage examples should be in the same language as the word itself.'
-            )
+            'examples': ExceptionDetails.Vocabulary.EXAMPLE_MUST_BE_SAME_LANGUAGE,
         },
         'definitions_same_language_detail': {
-            'definitions': _(
-                'The definitions should be in the same language as the word itself.'
-            )
+            'definitions': ExceptionDetails.Vocabulary.DEFINITION_MUST_BE_SAME_LANGUAGE,
         },
         'form_groups_same_language_detail': {
-            'form_groups': _(
-                'The form groups should be in the same language as the word itself.'
-            )
+            'form_groups': ExceptionDetails.Vocabulary.FORM_GROUP_MUST_BE_SAME_LANGUAGE,
         },
     }
 
@@ -963,8 +947,8 @@ class WordSelfRelatedSerializer(NestedSerializerMixin, serializers.ModelSerializ
 
     validate_same_language = True
     default_error_messages = {
-        'same_language_detail': _('Words must be in the same language.'),
-        'same_words_detail': _('Object can not be the same word.'),
+        'same_language_detail': ExceptionDetails.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE,
+        'same_words_detail': ExceptionDetails.Vocabulary.WORDS_MUST_DIFFER,
     }
 
     class Meta:
@@ -1009,12 +993,10 @@ class SynonymInLineSerializer(WordSelfRelatedSerializer):
 
     default_error_messages = {
         'same_language_detail': {
-            'synonyms': _(
-                'The synonyms should be in the same language as the word itself.'
-            )
+            'synonyms': ExceptionDetails.Vocabulary.SYNONYM_MUST_BE_SAME_LANGUAGE,
         },
         'same_words_detail': {
-            'synonyms': _('The word itself cannot be its own synonym.')
+            'synonyms': ExceptionDetails.Vocabulary.SYNONYMS_MUST_DIFFER,
         },
     }
 
@@ -1039,12 +1021,10 @@ class AntonymInLineSerializer(WordSelfRelatedSerializer):
 
     default_error_messages = {
         'same_language_detail': {
-            'antonyms': _(
-                'The antonyms should be in the same language as the word itself.'
-            )
+            'antonyms': ExceptionDetails.Vocabulary.ANTONYM_MUST_BE_SAME_LANGUAGE,
         },
         'same_words_detail': {
-            'antonyms': _('The word itself cannot be its own antonym.')
+            'antonyms': ExceptionDetails.Vocabulary.ANTONYMS_MUST_DIFFER,
         },
     }
 
@@ -1069,9 +1049,11 @@ class FormInLineSerializer(WordSelfRelatedSerializer):
 
     default_error_messages = {
         'same_language_detail': {
-            'forms': _('The forms should be in the same language as the word itself.')
+            'forms': ExceptionDetails.Vocabulary.FROM_MUST_BE_SAME_LANGUAGE,
         },
-        'same_words_detail': {'forms': _('The word itself cannot be its own form.')},
+        'same_words_detail': {
+            'forms': ExceptionDetails.Vocabulary.FORMS_MUST_DIFFER,
+        },
     }
 
     class Meta:
@@ -1094,12 +1076,10 @@ class SimilarInLineSerializer(WordSelfRelatedSerializer):
 
     default_error_messages = {
         'same_language_detail': {
-            'similars': _(
-                'The similar words should be in the same language as the word itself.'
-            )
+            'similars': ExceptionDetails.Vocabulary.SIMILAR_MUST_BE_SAME_LANGUAGE,
         },
         'same_words_detail': {
-            'similars': _('The word itself cannot be its own similar.')
+            'similars': ExceptionDetails.Vocabulary.SIMILARS_MUST_DIFFER,
         },
     }
 
@@ -1186,7 +1166,7 @@ class WordSerializer(WordShortCreateSerializer):
     notes_count = KwargsMethodField('get_objs_count', objs_related_name='notes')
     notes = NoteInLineSerializer(many=True, required=False)
 
-    already_exist_detail = _('This word already exists in your vocabulary. Update it?')
+    already_exist_detail = ExceptionDetails.Vocabulary.WORD_ALREADY_EXIST
 
     class Meta(WordShortCreateSerializer.Meta):
         list_serializer_class = serializers.ListSerializer
@@ -1582,9 +1562,7 @@ class WordTranslationSerializer(
         read_only=True,
     )
 
-    already_exist_detail = _(
-        'This translation already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.TRANSLATION_ALREADY_EXIST
 
     class Meta:
         model = WordTranslation
@@ -1624,9 +1602,7 @@ class WordTranslationCreateSerializer(
         write_only=True,
     )
 
-    already_exist_detail = _(
-        'This translation already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.TRANSLATION_ALREADY_EXIST
 
     class Meta(WordTranslationSerializer.Meta):
         fields = WordTranslationSerializer.Meta.fields + ('words',)
@@ -1697,9 +1673,7 @@ class DefinitionSerializer(
         read_only=True,
     )
 
-    already_exist_detail = _(
-        'This definition already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.DEFINITION_ALREADY_EXIST
 
     class Meta:
         model = Definition
@@ -1734,14 +1708,10 @@ class DefinitionCreateSerializer(
     )
     words = WordShortCreateSerializer(many=True, required=True, write_only=True)
 
-    already_exist_detail = _(
-        'This definition already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.DEFINITION_ALREADY_EXIST
     default_error_messages = {
         'words_same_language_detail': {
-            'words': _(
-                'The words should be in the same language as the definition itself.'
-            )
+            'words': ExceptionDetails.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE_AS_DEFINITION,
         },
     }
 
@@ -1837,9 +1807,7 @@ class UsageExampleSerializer(
         read_only=True,
     )
 
-    already_exist_detail = _(
-        'This usage example already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.EXAMPLE_ALREADY_EXIST
 
     class Meta:
         model = UsageExample
@@ -1878,14 +1846,10 @@ class UsageExampleCreateSerializer(
         write_only=True,
     )
 
-    already_exist_detail = _(
-        'This usage example already exists in your vocabulary. Update it?'
-    )
+    already_exist_detail = ExceptionDetails.Vocabulary.EXAMPLE_ALREADY_EXIST
     default_error_messages = {
         'words_same_language_detail': {
-            'words': _(
-                'The words should be in the same language as the usage example itself.'
-            )
+            'words': ExceptionDetails.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE_AS_EXAMPLE,
         },
     }
 
@@ -2014,7 +1978,7 @@ class SynonymSerializer(
         read_only=True,
     )
 
-    already_exist_detail = _('This word already exists in your vocabulary. Update it?')
+    already_exist_detail = ExceptionDetails.Vocabulary.WORD_ALREADY_EXIST
 
     class Meta:
         model = Word

@@ -2,7 +2,6 @@
 
 from datetime import timedelta
 
-from django.utils.translation import gettext as _
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import QuerySet
 
@@ -12,7 +11,7 @@ from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.relations import PresentablePrimaryKeyRelatedField
 from rest_framework.utils.serializer_helpers import ReturnDict
 
-from apps.core.exceptions import AmountLimitExceeded, AmountLimits
+from apps.core.exceptions import AmountLimitExceeded, AmountLimits, ExceptionDetails
 from apps.vocabulary.models import Word, Collection
 from apps.exercises.models import (
     Exercise,
@@ -119,7 +118,7 @@ class SetSerializer(
         default=CurrentExerciseDefault(), representation_field='name'
     )
 
-    already_exist_detail = _('Same word set already exists.')
+    already_exist_detail = ExceptionDetails.Exercises.WORD_SET_ALREADY_EXIST
 
     class Meta:
         model = WordSet

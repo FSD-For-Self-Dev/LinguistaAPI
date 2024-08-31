@@ -30,18 +30,88 @@ class ExceptionDetails:
         INVALID_IMAGE_FILE = _('Invalid image file passed.')
         INVALID_IMAGE_SIZE = _(f'Image file too large ( > {MAX_IMAGE_SIZE_MB} MB )')
 
-    class Users:
-        """Users app exception details."""
+    class Languages:
+        """Languages app exception details."""
 
-        LEARNING_LANGUAGE_ALREADY_EXIST = _('Язык уже добавлен в изучаемые.')
+        LEARNING_LANGUAGE_ALREADY_EXIST = _(
+            'This language has been already added to your learning languages.'
+        )
         LANGUAGE_NOT_AVAILABLE = _(
             'The selected language is not yet able for learning.'
         )
+
+    class Exercises:
+        """Exercises app exception details."""
+
+        WORD_SET_ALREADY_EXIST = _('This word set already exists.')
 
     class Vocabulary:
         """Vocabulary app exception details."""
 
         LANGUAGE_MUST_BE_LEARNING = _('Language must be in your learning languages.')
+        LANGUAGE_MUST_BE_LEARNING_OR_NATIVE = _(
+            'Language must be in your learning or native languages.'
+        )
+        LANGUAGE_MUST_BE_NATIVE = _('Language must be in your native languages.')
+
+        FORM_GROUP_ALREADY_EXIST = _('Form group with this name already exists.')
+
+        WORDS_MUST_BE_SAME_LANGUAGE = _('Words must be in the same language.')
+        EXAMPLE_MUST_BE_SAME_LANGUAGE = _(
+            'The usage examples should be in the same language as the word itself.'
+        )
+        DEFINITION_MUST_BE_SAME_LANGUAGE = _(
+            'The definitions should be in the same language as the word itself.'
+        )
+        FORM_GROUP_MUST_BE_SAME_LANGUAGE = _(
+            'The form groups should be in the same language as the word itself.'
+        )
+        SYNONYM_MUST_BE_SAME_LANGUAGE = _(
+            'The synonyms should be in the same language as the word itself.'
+        )
+        ANTONYM_MUST_BE_SAME_LANGUAGE = _(
+            'The antonyms should be in the same language as the word itself.'
+        )
+        FROM_MUST_BE_SAME_LANGUAGE = _(
+            'The forms should be in the same language as the word itself.'
+        )
+        SIMILAR_MUST_BE_SAME_LANGUAGE = _(
+            'The similar words should be in the same language as the word itself.'
+        )
+
+        WORDS_MUST_BE_SAME_LANGUAGE_AS_DEFINITION = _(
+            'The words should be in the same language as the definition itself.'
+        )
+        WORDS_MUST_BE_SAME_LANGUAGE_AS_EXAMPLE = _(
+            'The words should be in the same language as the usage example itself.'
+        )
+
+        WORDS_MUST_DIFFER = _('Words must be different.')
+        SYNONYMS_MUST_DIFFER = _('The word itself cannot be its own synonym.')
+        ANTONYMS_MUST_DIFFER = _('The word itself cannot be its own antonym.')
+        FORMS_MUST_DIFFER = _('The word itself cannot be its own form.')
+        SIMILARS_MUST_DIFFER = _('The word itself cannot be its own similar.')
+
+        WORD_ALREADY_EXIST = _(
+            'This word already exists in your vocabulary. Update it?'
+        )
+        EXAMPLE_ALREADY_EXIST = _(
+            'This usage example already exists in your vocabulary. Update it?'
+        )
+        DEFINITION_ALREADY_EXIST = _(
+            'This definition already exists in your vocabulary. Update it?'
+        )
+        TRANSLATION_ALREADY_EXIST = _(
+            'This translation already exists in your vocabulary. Update it?'
+        )
+        TAG_ALREADY_EXIST = _('This tag already exists in your vocabulary. Update it?')
+        FORM_GROUP_ALREADY_EXIST = _(
+            'This form group already exists in your vocabulary. Update it?'
+        )
+        COLLECTION_ALREADY_EXIST = _(
+            'This collection already exists in your vocabulary. Update it?'
+        )
+        NOTE_ALREADY_EXIST = _('This note already exists for this word.')
 
 
 class AmountLimits:
@@ -63,21 +133,19 @@ class AmountLimits:
         MAX_FORM_GROUPS_AMOUNT = 4
 
         class Details:
-            TYPES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во типов')
-            TAGS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во тегов')
-            TRANSLATIONS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во переводов')
-            NOTES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во заметок')
-            EXAMPLES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во примеров')
-            DEFINITIONS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во определений')
-            FORMS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во форм')
-            IMAGES_AMOUNT_EXCEEDED = _(
-                'Превышено максимальное кол-во картинок-ассоциаций'
-            )
-            QUOTES_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во цитат-ассоциаций')
-            SYNONYMS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во синонимов')
-            ANTONYMS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во антонимов')
-            SIMILARS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во похожих слов')
-            FORM_GROUPS_AMOUNT_EXCEEDED = _('Превышено максимальное кол-во групп форм')
+            TYPES_AMOUNT_EXCEEDED = _('Word types amount limit exceeded.')
+            TAGS_AMOUNT_EXCEEDED = _('Word tags amount limit exceeded.')
+            TRANSLATIONS_AMOUNT_EXCEEDED = _('Word translations amount limit exceeded.')
+            NOTES_AMOUNT_EXCEEDED = _('Word notes amount limit exceeded.')
+            EXAMPLES_AMOUNT_EXCEEDED = _('Word examples amount limit exceeded.')
+            DEFINITIONS_AMOUNT_EXCEEDED = _('Word definitions amount limit exceeded.')
+            FORMS_AMOUNT_EXCEEDED = _('Word forms amount limit exceeded.')
+            IMAGES_AMOUNT_EXCEEDED = _('Word image-associations amount limit exceeded.')
+            QUOTES_AMOUNT_EXCEEDED = _('Word quote-associations amount limit exceeded.')
+            SYNONYMS_AMOUNT_EXCEEDED = _('Word synonyms amount limit exceeded.')
+            ANTONYMS_AMOUNT_EXCEEDED = _('Word antonyms amount limit exceeded.')
+            SIMILARS_AMOUNT_EXCEEDED = _('Similar words amount limit exceeded.')
+            FORM_GROUPS_AMOUNT_EXCEEDED = _('Word form groups amount limit exceeded.')
 
     class Users:
         MAX_NATIVE_LANGUAGES_AMOUNT = 2
@@ -85,10 +153,10 @@ class AmountLimits:
 
         class Details:
             LEARNING_LANGUAGES_AMOUNT_EXCEEDED = _(
-                'Превышено максимальное кол-во изучаемых языков'
+                'Learning languages amount limit exceeded.'
             )
             NATIVE_LANGUAGES_AMOUNT_EXCEEDED = _(
-                'Превышено максимальное кол-во родных языков'
+                'Native languages amount limit exceeded.'
             )
 
     class Exercises:
@@ -100,23 +168,17 @@ class AmountLimits:
         MIN_REPETITIONS_AMOUNT_LIMIT = 1
 
         class Details:
-            WORDS_AMOUNT_EXCEEDED = _(
-                'Превышено максимальное количество слов для тренировки'
-            )
+            WORDS_AMOUNT_EXCEEDED = _('Words amount limit exceeded for this exercise.')
             WORD_SETS_AMOUNT_EXCEEDED = _(
-                'Превышено максимальное количество наборов слов'
+                'Word sets amount limit exceeded for this exercise.'
             )
-            MAX_ANSWER_TIME_EXCEEDED = _(
-                'Превышено максимальное ограничение времени ответа'
-            )
-            MIN_ANSWER_TIME_EXCEEDED = _(
-                'Превышено минимальное ограничение времени ответа'
-            )
+            MAX_ANSWER_TIME_EXCEEDED = _('Maximum time limit exceeded.')
+            MIN_ANSWER_TIME_EXCEEDED = _('Minimum time limit exceeded.')
             MAX_REPETITIONS_LIMIT_EXCEEDED = _(
-                'Превышено максимальное ограничение количества повторов'
+                'Maximum repetitions amount limit exceeded.'
             )
             MIN_REPETITIONS_LIMIT_EXCEEDED = _(
-                'Превышено минимальное ограничение количества повторов'
+                'Minimum repetitions amount limit exceeded.'
             )
 
 

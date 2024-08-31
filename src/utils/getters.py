@@ -22,7 +22,7 @@ def get_object_by_pk(
     except ObjectDoesNotExist:
         obj_name = model._meta.verbose_name
         raise NotFound(
-            detail=f'{obj_name} с id={pk} не найден.',
+            f'{obj_name} с id={pk} не найден.',
             code=f'{model}_object_not_exist',
         )
 

@@ -1426,7 +1426,7 @@ data = {
                             name=ExceptionCodes.ALREADY_EXIST,
                             value={
                                 'exception_code': ExceptionCodes.ALREADY_EXIST,
-                                'detail': ExceptionDetails.Users.LEARNING_LANGUAGE_ALREADY_EXIST,
+                                'detail': ExceptionDetails.Languages.LEARNING_LANGUAGE_ALREADY_EXIST,
                                 'existing_object': 'English',
                             },
                         ),
@@ -1459,7 +1459,7 @@ data = {
                                 {},
                                 {
                                     'language': [
-                                        ExceptionDetails.Users.LANGUAGE_NOT_AVAILABLE
+                                        ExceptionDetails.Languages.LANGUAGE_NOT_AVAILABLE
                                     ]
                                 },
                             ],
