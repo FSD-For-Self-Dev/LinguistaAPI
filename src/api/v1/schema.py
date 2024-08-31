@@ -262,15 +262,15 @@ data = {
             'responses': {
                 status.HTTP_200_OK: OpenApiResponse(
                     response=WordStandartCardSerializer,
-                    description='Success response via ?view=standart query param',
+                    description='Success response via ?cards_type=standart query param',
                 ),
                 # status.HTTP_200_OK: OpenApiResponse(
                 #     response=WordShortCardSerializer,
-                #     description='Success response via ?view=short query param'
+                #     description='Success response via ?cards_type=short query param'
                 # ),
                 # status.HTTP_200_OK: OpenApiResponse(
                 #     response=WordLongCardSerializer,
-                #     description='Success response via ?view=long query param'
+                #     description='Success response via ?cards_type=long query param'
                 # ),
             },
             'parameters': [
@@ -409,7 +409,7 @@ data = {
                     ),
                 ),
                 OpenApiParameter(
-                    'view',
+                    'cards_type',
                     OpenApiTypes.STR,
                     OpenApiParameter.QUERY,
                     description=(

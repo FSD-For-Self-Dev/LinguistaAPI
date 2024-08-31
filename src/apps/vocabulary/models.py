@@ -1180,8 +1180,8 @@ class DefaultWordCards(UserRelatedModel, CreatedModel):
         (LONG, _('Long')),
     ]
 
-    words_view = models.CharField(
-        _('Word cards view'),
+    cards_type = models.CharField(
+        _('Word cards type'),
         max_length=8,
         choices=VIEW_OPTIONS,
         blank=False,
@@ -1189,9 +1189,9 @@ class DefaultWordCards(UserRelatedModel, CreatedModel):
     )
 
     class Meta:
-        verbose_name = _('User default word cards view setting')
-        verbose_name_plural = _('User default word cards view settings')
-        db_table_comment = _('Default word cards view for the user')
+        verbose_name = _('User default word cards type setting')
+        verbose_name_plural = _('User default word cards type settings')
+        db_table_comment = _('Default word cards type set by user')
         ordering = ('-created',)
         get_latest_by = ('created',)
         constraints = [
@@ -1199,7 +1199,7 @@ class DefaultWordCards(UserRelatedModel, CreatedModel):
         ]
 
     def __str__(self) -> str:
-        return f'Default words view for user {self.user} is {self.words_view}'
+        return f'Default word cards type set by {self.user}: {self.cards_type}'
 
 
 @receiver(pre_save, sender=Word)

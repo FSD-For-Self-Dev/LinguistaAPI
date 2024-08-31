@@ -32,7 +32,6 @@ from apps.core.exceptions import (
     AmountLimits,
 )
 from apps.users.models import (
-    UserDefaultWordsView,
     UserLearningLanguage,
     UserNativeLanguage,
 )
@@ -67,9 +66,8 @@ from ..users.serializers import (
     NativeLanguageSerailizer,
 )
 from ..languages.serializers import LanguageSerializer
+from .utils import get_word_cards_type, annotate_words_with_counters
 from .serializers import (
-    WordShortCardSerializer,
-    WordLongCardSerializer,
     WordStandartCardSerializer,
     WordShortCreateSerializer,
     WordSerializer,
@@ -121,72 +119,6 @@ logger = logging.getLogger(__name__)
 User = get_user_model()
 
 
-def get_words_view(request: HttpRequest) -> Serializer:
-    """Returns serializer class for words list."""
-    words_view = {
-        'standart': WordStandartCardSerializer,
-        'short': WordShortCardSerializer,
-        'long': WordLongCardSerializer,
-    }
-    default_words_view = 'standart'
-
-    # Return serializer class based on `words_view_param` query parameter if passed
-    # or try to get user setting for default word cards view from database
-    # or return serializer class defined in `default_words_view`
-    words_view_param = request.query_params.get('view', None)
-    logger.debug(f'Word cards view query parameter passed: {words_view_param}')
-
-    if not words_view_param:
-        try:
-            words_view_param = UserDefaultWordsView.objects.get(
-                user=request.user
-            ).words_view
-            logger.debug(
-                f'Word cards view parameter obtained from users default settings: '
-                f'{words_view_param}'
-            )
-        except Exception:
-            words_view_param = default_words_view
-            logger.debug(
-                f'Word cards view parameter is set to default: {words_view_param}'
-            )
-
-    return words_view.get(words_view_param, words_view.get(default_words_view))
-
-
-def annotate_words_with_counters(
-    words: QuerySet[Word] | None = None,
-    instance: Model | None = None,
-    words_related_name: str = '',
-    ordering: list[str] = [],
-) -> QuerySet[Word]:
-    """
-    Annotates words with some related objects amount to use in filters, sorting.
-
-    Args:
-        words (QuerySet): words queryset to be annotated.
-        instance (Model subclass): instance to obtain words from if words not passed.
-        words_related_name (str): related name to obtain words by if words not passed.
-        ordering (list[str]): list of fields to be sorted words by.
-    """
-    if words is None:
-        return (
-            instance.__getattribute__(words_related_name)
-            .annotate(
-                translations_count=Count('translations', distinct=True),
-                examples_count=Count('examples', distinct=True),
-                collections_count=Count('collections', distinct=True),
-            )
-            .order_by(*ordering)
-        )
-
-    return words.annotate(
-        translations_count=Count('translations', distinct=True),
-        examples_count=Count('examples', distinct=True),
-        collections_count=Count('collections', distinct=True),
-    ).order_by(*ordering)
-
-
 class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
     """Custom mixin to add related words data to response."""
 
@@ -229,7 +161,7 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
         )
         logger.debug(f'Obtained words: {_words}')
 
-        words_serializer_class = get_words_view(request)
+        words_serializer_class = get_word_cards_type(request)
         logger.debug(f'Serializer used for words: {words_serializer_class}')
 
         words_data = self.get_filtered_paginated_objs(
@@ -276,7 +208,7 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
         )
         logger.debug(f'Obtained words: {_words}')
 
-        words_serializer_class = get_words_view(request)
+        words_serializer_class = get_word_cards_type(request)
         logger.debug(f'Serializer used for words: {words_serializer_class}')
 
         words_data = self.paginate_related_objs(request, _words, words_serializer_class)
@@ -324,7 +256,7 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
         )
         logger.debug(f'Obtained words: {_words}')
 
-        words_serializer_class = get_words_view(request)
+        words_serializer_class = get_word_cards_type(request)
         logger.debug(f'Serializer used for words: {words_serializer_class}')
 
         words_data = self.paginate_related_objs(request, _words, words_serializer_class)
@@ -370,7 +302,7 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
         )
         logger.debug(f'Obtained words: {_words}')
 
-        words_serializer_class = get_words_view(request)
+        words_serializer_class = get_word_cards_type(request)
         logger.debug(f'Serializer used for words: {words_serializer_class}')
 
         words_data = self.paginate_related_objs(request, _words, words_serializer_class)
@@ -451,7 +383,7 @@ class WordViewSet(
     def get_serializer_class(self) -> Serializer:
         match self.action:
             case 'list' | 'destroy' | 'multiple_create' | 'favorites':
-                return get_words_view(self.request)
+                return get_word_cards_type(self.request)
             case 'notes_create':
                 return NoteForWordSerializer
             case _:
@@ -2261,7 +2193,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         )
         logger.debug(f'Obtained words: {_words}')
 
-        words_serializer = get_words_view(request)
+        words_serializer = get_word_cards_type(request)
         logger.debug(f'Serializer used for words: {type(words_serializer)}')
 
         words_data = self.get_filtered_paginated_objs(
