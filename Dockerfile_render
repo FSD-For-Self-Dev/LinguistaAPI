@@ -2,13 +2,13 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY ../requirements.txt .
+COPY ./requirements.txt .
 
 RUN pip3 install -r requirements.txt --no-cache-dir
 
-COPY . .
+COPY src/ .
 
-ENV DATABASE_URL postgresql://linguista_db_user:3aGAAABmwnBEmEXi8Ilc7Y7xiV14dprU@dpg-cql3vpt6l47c73f3b6d0-a/linguista_db_0jl8
+ENV DATABASE_URL postgresql://linguista_db_user:ZH27CwVgwSKvUrkQBLp3uvkacZ2Po957@dpg-cr9cd9jv2p9s73b5c35g-a/linguista_db_rp51
 
 RUN python manage.py collectstatic --no-input
 RUN python manage.py migrate
