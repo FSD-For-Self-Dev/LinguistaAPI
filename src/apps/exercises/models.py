@@ -13,10 +13,11 @@ from apps.core.models import (
     CreatedModel,
     ModifiedModel,
     SlugModel,
-    slug_filler,
+    AuthorModel,
 )
 from apps.core.signals import admin_created
-from apps.vocabulary.models import AuthorModel, Word
+from apps.vocabulary.models import Word
+from utils.fillers import slug_filler
 
 from .constants import ExercisesLengthLimits, MAX_TEXT_ANSWER_LENGTH
 

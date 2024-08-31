@@ -14,9 +14,9 @@ from apps.core.models import (
     ModifiedModel,
     SlugModel,
     GetObjectBySlugModelMixin,
-    slug_filler,
 )
 from apps.languages.models import Language, LanguageImage
+from utils.fillers import slug_filler
 
 
 def user_profile_images_path(user, filename) -> str:
@@ -213,34 +213,6 @@ class UserNativeLanguage(SlugModel, CreatedModel):
 
     def __str__(self) -> str:
         return f'{self.language} is native language for {self.user}'
-
-
-class UserRelatedModel(CreatedModel):
-    """Abstract model to add `user` field for related user."""
-
-    user = models.ForeignKey(
-        User,
-        verbose_name=_('User'),
-        on_delete=models.CASCADE,
-        related_name='%(class)s',
-    )
-
-    class Meta:
-        abstract = True
-
-
-class AuthorModel(models.Model):
-    """Abstract model to add `author` field for related user."""
-
-    author = models.ForeignKey(
-        User,
-        verbose_name=_('Author'),
-        on_delete=models.CASCADE,
-        related_name='%(class)ss',
-    )
-
-    class Meta:
-        abstract = True
 
 
 @receiver(pre_save, sender=UserLearningLanguage)

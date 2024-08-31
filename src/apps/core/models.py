@@ -9,6 +9,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ObjectDoesNotExist
 
 from utils.generators import slugify_text_fields
+from config.settings import AUTH_USER_MODEL
 
 
 class GetObjectBySlugModelMixin:
@@ -161,18 +162,29 @@ class SlugModel(models.Model):
         abstract = True
 
 
-def slug_filler(sender, instance, *args, **kwargs) -> None:
-    """
-    Fills instance slug field generated from `slugify_func`.
-    `slugify_func` and `slugify_fields` class attributes must be set for Model.
-    """
-    slugify_data = [
-        (
-            instance.__getattribute__(field[0]).__getattribute__(field[1])
-            if type(field) is tuple
-            else instance.__getattribute__(field)
-        )
-        for field in sender.slugify_fields
-    ]
+class UserRelatedModel(CreatedModel):
+    """Abstract model to add `user` field for related user."""
 
-    instance.slug = sender.slugify_func(*slugify_data, allow_unicode=True)
+    user = models.ForeignKey(
+        AUTH_USER_MODEL,
+        verbose_name=_('User'),
+        on_delete=models.CASCADE,
+        related_name='%(class)s',
+    )
+
+    class Meta:
+        abstract = True
+
+
+class AuthorModel(models.Model):
+    """Abstract model to add `author` field for related user."""
+
+    author = models.ForeignKey(
+        AUTH_USER_MODEL,
+        verbose_name=_('Author'),
+        on_delete=models.CASCADE,
+        related_name='%(class)ss',
+    )
+
+    class Meta:
+        abstract = True

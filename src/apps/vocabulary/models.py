@@ -17,7 +17,8 @@ from apps.core.models import (
     CreatedModel,
     ModifiedModel,
     SlugModel,
-    slug_filler,
+    UserRelatedModel,
+    AuthorModel,
 )
 from apps.core.constants import (
     REGEX_TEXT_MASK_DETAIL,
@@ -26,7 +27,7 @@ from apps.core.constants import (
     REGEX_HEXCOLOR_MASK_DETAIL,
 )
 from apps.languages.models import Language
-from apps.users.models import UserRelatedModel, AuthorModel
+from utils.fillers import slug_filler
 
 from .constants import (
     VocabularyLengthLimits,
