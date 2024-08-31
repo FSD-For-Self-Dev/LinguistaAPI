@@ -5,7 +5,6 @@ from django.contrib.auth.admin import UserAdmin
 
 from .models import (
     User,
-    UserDefaultWordsView,
     UserLearningLanguage,
     UserNativeLanguage,
 )
@@ -71,11 +70,6 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
-
-
-@admin.register(UserDefaultWordsView)
-class UserDefaultWordsViewAdmin(admin.ModelAdmin):
-    pass
 
 
 @admin.register(UserLearningLanguage)

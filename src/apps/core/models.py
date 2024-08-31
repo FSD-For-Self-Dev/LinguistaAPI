@@ -162,7 +162,7 @@ class SlugModel(models.Model):
         abstract = True
 
 
-class UserRelatedModel(CreatedModel):
+class UserRelatedModel(models.Model):
     """Abstract model to add `user` field for related user."""
 
     user = models.ForeignKey(

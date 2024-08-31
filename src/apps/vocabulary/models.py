@@ -2,7 +2,6 @@
 
 import uuid
 
-from django.contrib.auth import get_user_model
 from django.core.validators import MinLengthValidator, RegexValidator
 from django.db import models
 from django.db.models.functions import Lower
@@ -32,8 +31,6 @@ from utils.fillers import slug_filler
 from .constants import (
     VocabularyLengthLimits,
 )
-
-User = get_user_model()
 
 
 class Word(
@@ -1099,7 +1096,7 @@ class Note(
         return _(f'Note to the word `{self.word}`: {self.text} ')
 
 
-class FavoriteWord(GetObjectModelMixin, UserRelatedModel):
+class FavoriteWord(GetObjectModelMixin, UserRelatedModel, CreatedModel):
     """Users favorite words."""
 
     id = models.UUIDField(
@@ -1135,7 +1132,7 @@ class FavoriteWord(GetObjectModelMixin, UserRelatedModel):
         )
 
 
-class FavoriteCollection(GetObjectModelMixin, UserRelatedModel):
+class FavoriteCollection(GetObjectModelMixin, UserRelatedModel, CreatedModel):
     """Users favorite collections."""
 
     id = models.UUIDField(
@@ -1169,6 +1166,40 @@ class FavoriteCollection(GetObjectModelMixin, UserRelatedModel):
             f'The collection `{self.collection}` was added to favorites by '
             f'{self.user} at {self.created:%Y-%m-%d}'
         )
+
+
+class DefaultWordCards(UserRelatedModel, CreatedModel):
+    """Default word cards type set by user."""
+
+    STANDART = 'standart'
+    SHORT = 'short'
+    LONG = 'long'
+    VIEW_OPTIONS = [
+        (STANDART, _('Standart')),
+        (SHORT, _('Short')),
+        (LONG, _('Long')),
+    ]
+
+    words_view = models.CharField(
+        _('Word cards view'),
+        max_length=8,
+        choices=VIEW_OPTIONS,
+        blank=False,
+        default=STANDART,
+    )
+
+    class Meta:
+        verbose_name = _('User default word cards view setting')
+        verbose_name_plural = _('User default word cards view settings')
+        db_table_comment = _('Default word cards view for the user')
+        ordering = ('-created',)
+        get_latest_by = ('created',)
+        constraints = [
+            models.UniqueConstraint('user', name='unique_default_word_cards_setting')
+        ]
+
+    def __str__(self) -> str:
+        return f'Default words view for user {self.user} is {self.words_view}'
 
 
 @receiver(pre_save, sender=Word)

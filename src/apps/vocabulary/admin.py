@@ -29,6 +29,7 @@ from .models import (
     QuoteAssociation,
     WordImageAssociations,
     WordQuoteAssociations,
+    DefaultWordCards,
 )
 
 
@@ -238,4 +239,9 @@ class WordQuoteAssociationsAdmin(admin.ModelAdmin):
 
 @admin.register(WordsFormGroups)
 class WordsFormGroupsAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(DefaultWordCards)
+class DefaultWordCardsAdmin(admin.ModelAdmin):
     pass
