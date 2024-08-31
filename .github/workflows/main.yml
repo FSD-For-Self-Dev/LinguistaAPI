@@ -22,7 +22,7 @@ jobs:
       uses: docker/build-push-action@v3
       with:
         context: .
-        file: ./Dockerfile
+        file: src/Dockerfile
         push: true
         tags: fsdforselfdev/linguista:latest
 
