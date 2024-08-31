@@ -3,6 +3,11 @@
 from django.urls import include, path
 
 from rest_framework import routers
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularSwaggerView,
+    SpectacularRedocView,
+)
 
 from .vocabulary.views import (
     CollectionViewSet,
@@ -22,7 +27,7 @@ from .vocabulary.views import (
     LanguageViewSet,
     MainPageViewSet,
 )
-from .users.views import UserDetailsWithDestroyView, UserViewSet
+from .users.views import UserViewSet
 from .exercises.views import ExerciseViewSet
 
 router = routers.DefaultRouter()
@@ -53,7 +58,17 @@ router.register('users', UserViewSet, basename='users')
 router.register('exercises', ExerciseViewSet, basename='exercises')
 
 urlpatterns = [
-    path('users/me/', UserDetailsWithDestroyView.as_view(), name='user_details'),
+    path('schema/', SpectacularAPIView.as_view(), name='schema'),
+    path(
+        'schema/swagger-ui/',
+        SpectacularSwaggerView.as_view(url_name='schema'),
+        name='swagger-ui',
+    ),
+    path(
+        'schema/redoc/',
+        SpectacularRedocView.as_view(url_name='schema'),
+        name='redoc',
+    ),
     path('auth/', include('api.v1.auth.urls')),
     path('', include(router.urls)),
 ]
