@@ -34,8 +34,6 @@ from .vocabulary.serializers import (
     CollectionListSerializer,
     MultipleWordsSerializer,
     TagListSerializer,
-    LearningLanguageWithLastWordsSerailizer,
-    LanguageImageSerailizer,
     ImageListSerializer,
     ImageInLineSerializer,
     QuoteInLineSerializer,
@@ -62,6 +60,7 @@ from .vocabulary.serializers import (
     SimilarForWordListSerializer,
     SimilarInLineSerializer,
     AssociationsCreateSerializer,
+    LearningLanguageWithLastWordsSerailizer,
 )
 from .exercises.serializers import (
     ExerciseListSerializer,
@@ -73,11 +72,14 @@ from .exercises.serializers import (
     TranslatorUserDefaultSettingsSerializer,
 )
 from .users.serializers import (
+    UserListSerializer,
+)
+from .languages.serializers import (
+    LanguageSerializer,
     LearningLanguageSerailizer,
     NativeLanguageSerailizer,
-    UserShortSerializer,
+    LanguageCoverImageSerailizer,
 )
-from .languages.serializers import LanguageSerializer
 
 from apps.core.exceptions import ExceptionCodes, ExceptionDetails, AmountLimits
 
@@ -1772,7 +1774,7 @@ data = {
             ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LanguageImageSerailizer(many=True),
+                status.HTTP_200_OK: LanguageCoverImageSerailizer(many=True),
                 status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
@@ -1938,7 +1940,7 @@ data = {
             'summary': 'Просмотр списка пользователей',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: UserShortSerializer,
+                status.HTTP_200_OK: UserListSerializer,
             },
         },
         # other methods

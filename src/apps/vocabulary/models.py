@@ -18,6 +18,7 @@ from apps.core.models import (
     SlugModel,
     UserRelatedModel,
     AuthorModel,
+    ActivityStatusModel,
 )
 from apps.core.constants import (
     REGEX_TEXT_MASK_DETAIL,
@@ -25,7 +26,6 @@ from apps.core.constants import (
     REGEX_HEXCOLOR_MASK,
     REGEX_HEXCOLOR_MASK_DETAIL,
 )
-from apps.languages.models import Language
 from utils.fillers import slug_filler
 
 from .constants import (
@@ -39,17 +39,9 @@ class Word(
     AuthorModel,
     CreatedModel,
     ModifiedModel,
+    ActivityStatusModel,
 ):
     """Users words and phrases."""
-
-    INACTIVE = 'I'
-    ACTIVE = 'A'
-    MASTERED = 'M'
-    ACTIVITY = [
-        (INACTIVE, _('Inactive')),
-        (ACTIVE, _('Active')),
-        (MASTERED, _('Mastered')),
-    ]
 
     id = models.UUIDField(
         primary_key=True,
@@ -57,7 +49,7 @@ class Word(
         editable=False,
     )
     language = models.ForeignKey(
-        Language,
+        'languages.Language',
         verbose_name=_('Language'),
         on_delete=models.SET_NULL,
         related_name='words',
@@ -75,9 +67,9 @@ class Word(
     activity_status = models.CharField(
         _('Activity status'),
         max_length=8,
-        choices=ACTIVITY,
+        choices=ActivityStatusModel.ACTIVITY,
         blank=False,
-        default=INACTIVE,
+        default=ActivityStatusModel.INACTIVE,
     )
     is_problematic = models.BooleanField(
         _('Is the word problematic for you'),
@@ -290,7 +282,7 @@ class FormsGroup(
         ),
     )
     language = models.ForeignKey(
-        Language,
+        'languages.Language',
         verbose_name=_('Language'),
         on_delete=models.SET_NULL,
         related_name='form_groups',
@@ -363,7 +355,7 @@ class WordTranslation(
         ),
     )
     language = models.ForeignKey(
-        Language,
+        'languages.Language',
         verbose_name=_('Language'),
         on_delete=models.SET_NULL,
         related_name='word_translations',
@@ -413,7 +405,7 @@ class Definition(
         ),
     )
     language = models.ForeignKey(
-        Language,
+        'languages.Language',
         verbose_name=_('Language'),
         on_delete=models.SET_NULL,
         related_name='definitions',
@@ -474,7 +466,7 @@ class UsageExample(
         ),
     )
     language = models.ForeignKey(
-        Language,
+        'languages.Language',
         verbose_name=_('Language'),
         on_delete=models.SET_NULL,
         related_name='examples',

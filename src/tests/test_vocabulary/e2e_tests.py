@@ -11,7 +11,6 @@ from apps.vocabulary.models import (
     Word,
     Tag,
     Type,
-    Language,
     WordTranslation,
     UsageExample,
     Definition,
@@ -24,7 +23,7 @@ from apps.vocabulary.models import (
     ImageAssociation,
     QuoteAssociation,
 )
-from apps.users.models import UserLearningLanguage
+from apps.languages.models import Language, UserLearningLanguage
 from apps.core.exceptions import AmountLimits
 
 logger = logging.getLogger(__name__)

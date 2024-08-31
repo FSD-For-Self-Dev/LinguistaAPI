@@ -8,7 +8,7 @@ from django.core.management.base import BaseCommand
 from django.core.files.images import ImageFile
 
 
-from apps.languages.models import Language, LanguageImage
+from apps.languages.models import Language, LanguageCoverImage
 
 
 class Command(BaseCommand):
@@ -63,7 +63,9 @@ class Command(BaseCommand):
                             for image_url in images_urls:
                                 image = ImageFile(open(image_url, 'rb'))
                                 image.name = isocode + '.' + image.name.split('.')[-1]
-                                LanguageImage.objects.create(language=lang, image=image)
+                                LanguageCoverImage.objects.create(
+                                    language=lang, image=image
+                                )
 
                     lang.save()
 

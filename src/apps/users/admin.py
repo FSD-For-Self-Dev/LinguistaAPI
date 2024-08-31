@@ -3,11 +3,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from .models import (
-    User,
-    UserLearningLanguage,
-    UserNativeLanguage,
-)
+from .models import User
 
 
 @admin.register(User)
@@ -70,14 +66,3 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
-
-
-@admin.register(UserLearningLanguage)
-class UserLearningLanguageAdmin(admin.ModelAdmin):
-    prepopulated_fields = {'slug': ('user', 'language')}
-    pass
-
-
-@admin.register(UserNativeLanguage)
-class UserNativeLanguageAdmin(admin.ModelAdmin):
-    pass

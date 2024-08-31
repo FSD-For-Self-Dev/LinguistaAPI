@@ -4,7 +4,12 @@ from django.contrib import admin
 
 from modeltranslation.admin import TabbedTranslationAdmin
 
-from .models import Language, LanguageImage
+from .models import (
+    Language,
+    LanguageCoverImage,
+    UserNativeLanguage,
+    UserLearningLanguage,
+)
 
 
 @admin.register(Language)
@@ -25,6 +30,17 @@ class LanguageAdmin(TabbedTranslationAdmin):
     ordering = ('-sorting', 'name')
 
 
-@admin.register(LanguageImage)
-class LanguageImageAdmin(admin.ModelAdmin):
+@admin.register(LanguageCoverImage)
+class LanguageCoverImageAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(UserLearningLanguage)
+class UserLearningLanguageAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('user', 'language')}
+    pass
+
+
+@admin.register(UserNativeLanguage)
+class UserNativeLanguageAdmin(admin.ModelAdmin):
     pass

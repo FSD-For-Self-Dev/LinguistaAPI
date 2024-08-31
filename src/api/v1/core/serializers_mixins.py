@@ -18,8 +18,8 @@ from apps.core.exceptions import (
     AmountLimitExceeded,
     ExceptionDetails,
 )
-from utils.getters import get_object_by_pk
 from apps.core.constants import MAX_IMAGE_SIZE
+from utils.getters import get_object_by_pk
 
 from .serializers_fields import ReadWriteSerializerMethodField, CustomHybridImageField
 

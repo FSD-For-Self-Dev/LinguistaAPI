@@ -24,11 +24,11 @@ from .vocabulary.views import (
     ImageViewSet,
     QuoteViewSet,
     AssociationViewSet,
-    LanguageViewSet,
     MainPageViewSet,
 )
 from .users.views import UserViewSet
 from .exercises.views import ExerciseViewSet
+from .languages.views import LanguageViewSet
 
 router = routers.DefaultRouter()
 

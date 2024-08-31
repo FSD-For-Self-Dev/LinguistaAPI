@@ -11,7 +11,7 @@ from rest_framework import mixins, viewsets
 from rest_framework.permissions import IsAuthenticated
 
 from ..core.pagination import LimitPagination
-from .serializers import UserShortSerializer
+from .serializers import UserListSerializer
 
 User = get_user_model()
 
@@ -25,7 +25,7 @@ class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     http_method_names = ('get',)
     queryset = User.objects.none()
-    serializer_class = UserShortSerializer
+    serializer_class = UserListSerializer
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
 

@@ -188,3 +188,17 @@ class AuthorModel(models.Model):
 
     class Meta:
         abstract = True
+
+
+class ActivityStatusModel(models.Model):
+    INACTIVE = 'I'
+    ACTIVE = 'A'
+    MASTERED = 'M'
+    ACTIVITY = [
+        (INACTIVE, _('Inactive')),
+        (ACTIVE, _('Active')),
+        (MASTERED, _('Mastered')),
+    ]
+
+    class Meta:
+        abstract = True

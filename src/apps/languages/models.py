@@ -4,8 +4,18 @@ import uuid
 
 from django.db import models
 from django.utils.translation import gettext as _
+from django.db.models.signals import pre_save
+from django.dispatch import receiver
 
-from apps.core.models import CreatedModel, ModifiedModel, WordsCountMixin
+from apps.core.models import (
+    CreatedModel,
+    ModifiedModel,
+    SlugModel,
+    GetObjectBySlugModelMixin,
+    WordsCountMixin,
+)
+from config.settings import AUTH_USER_MODEL
+from utils.fillers import slug_filler
 
 
 class Language(WordsCountMixin, models.Model):
@@ -104,7 +114,7 @@ def language_images_path(instance, filename) -> str:
     return f'languages/images/{instance.language.name}/{filename}'
 
 
-class LanguageImage(CreatedModel, ModifiedModel):
+class LanguageCoverImage(CreatedModel, ModifiedModel):
     """Images available to be set as cover for the learning language."""
 
     id = models.UUIDField(
@@ -135,3 +145,107 @@ class LanguageImage(CreatedModel, ModifiedModel):
 
     def __str__(self) -> str:
         return f'Image for {self.language.name} language: {self.image.url}'
+
+
+class UserLearningLanguage(
+    GetObjectBySlugModelMixin,
+    SlugModel,
+    CreatedModel,
+    ModifiedModel,
+):
+    """Users learning languages."""
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    language = models.ForeignKey(
+        Language,
+        verbose_name=_('Language'),
+        on_delete=models.CASCADE,
+        related_name='learning_by_detail',
+    )
+    user = models.ForeignKey(
+        AUTH_USER_MODEL,
+        verbose_name=_('User'),
+        on_delete=models.CASCADE,
+        related_name='learning_languages_detail',
+    )
+    cover = models.ForeignKey(
+        LanguageCoverImage,
+        verbose_name=_('Learning language cover image'),
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='covers',
+    )
+    level = models.CharField(
+        _('Level of knowledge'),
+        max_length=256,
+        null=True,
+        blank=True,
+        default='',
+    )
+
+    slugify_fields = ('user', ('language', 'name'))
+
+    class Meta:
+        verbose_name = _('User learning language')
+        verbose_name_plural = _('User learning languages')
+        db_table_comment = _('Users learning languages')
+        ordering = ('-created', '-modified')
+        constraints = [
+            models.UniqueConstraint(
+                'language', 'user', name='unique_user_learning_language'
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.user} studies {self.language}'
+
+
+class UserNativeLanguage(SlugModel, CreatedModel):
+    """Users native languages."""
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+    language = models.ForeignKey(
+        Language,
+        verbose_name=_('Language'),
+        on_delete=models.CASCADE,
+        related_name='native_for_detail',
+    )
+    user = models.ForeignKey(
+        AUTH_USER_MODEL,
+        verbose_name=_('User'),
+        on_delete=models.CASCADE,
+        related_name='native_languages_detail',
+    )
+
+    slugify_fields = ('user', ('language', 'name'))
+
+    class Meta:
+        verbose_name = _('User native language')
+        verbose_name_plural = _('User native languages')
+        db_table_comment = _('Users native languages')
+        ordering = ('-created',)
+        get_latest_by = ('created',)
+        constraints = [
+            models.UniqueConstraint(
+                'language', 'user', name='unique_user_native_language'
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f'{self.language} is native language for {self.user}'
+
+
+@receiver(pre_save, sender=UserLearningLanguage)
+@receiver(pre_save, sender=UserNativeLanguage)
+def fill_slug(sender, instance, *args, **kwargs) -> None:
+    """Fill slug field before save instance."""
+    return slug_filler(sender, instance, *args, **kwargs)

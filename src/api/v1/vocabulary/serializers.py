@@ -17,8 +17,7 @@ from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework.serializers import Serializer
 
 from apps.core.exceptions import ExceptionDetails, AmountLimits
-from apps.users.models import UserLearningLanguage
-from apps.languages.models import LanguageImage
+from apps.languages.models import Language, UserLearningLanguage
 from apps.vocabulary.models import (
     Antonym,
     Collection,
@@ -27,7 +26,6 @@ from apps.vocabulary.models import (
     FavoriteWord,
     Form,
     FormsGroup,
-    Language,
     Note,
     Similar,
     Synonym,
@@ -56,12 +54,12 @@ from ..core.serializers_mixins import (
     UpdateSerializerMixin,
     HybridImageSerializerMixin,
 )
-from ..users.serializers import (
-    UserShortSerializer,
+from ..users.serializers import UserListSerializer
+from ..languages.serializers import (
+    LanguageSerializer,
     LearningLanguageShortSerailizer,
     LearningLanguageSerailizer,
 )
-from ..languages.serializers import LanguageSerializer
 
 User = get_user_model()
 
@@ -606,19 +604,6 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
         return obj.images_associations.values_list('image', flat=True)
 
 
-class WordTextImageSerializer(GetImageAssociationsSerializerMixin):
-    """Serializer to list words within collection card."""
-
-    class Meta:
-        model = Word
-        fields = (
-            'slug',
-            'text',
-            'image',
-        )
-        read_only_fields = fields
-
-
 class WordLongCardSerializer(
     GetImageAssociationsSerializerMixin,
     CountObjsSerializerMixin,
@@ -743,7 +728,7 @@ class WordShortCreateSerializer(
     )
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
-        serializer_class=UserShortSerializer,
+        serializer_class=UserListSerializer,
         many=False,
     )
     notes_count = KwargsMethodField(
@@ -1147,7 +1132,7 @@ class WordSerializer(WordShortCreateSerializer):
     )
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
-        serializer_class=UserShortSerializer,
+        serializer_class=UserListSerializer,
         many=False,
     )
     types = serializers.SlugRelatedField(
@@ -2011,44 +1996,6 @@ class AssociationsCreateSerializer(serializers.Serializer):
         }
 
 
-class LanguageImageSerailizer(HybridImageSerializerMixin):
-    """Serializer to list available images for given language."""
-
-    language = serializers.SlugRelatedField(
-        slug_field='name',
-        read_only=True,
-    )
-
-    class Meta:
-        model = LanguageImage
-        fields = (
-            'id',
-            'language',
-            'image',
-            'image_height',
-            'image_width',
-        )
-        read_only_fields = fields
-
-
-class CoverSetSerailizer(serializers.ModelSerializer):
-    """
-    Serializer to use for setting new cover image for user's learning language.
-    """
-
-    image_id = serializers.PrimaryKeyRelatedField(
-        queryset=LanguageImage.objects.all(),
-        many=False,
-        read_only=False,
-        source='images',
-        required=True,
-    )
-
-    class Meta:
-        model = Language
-        fields = ('image_id',)
-
-
 class SynonymSerializer(
     ValidateLanguageMixin,
     CountObjsSerializerMixin,
@@ -2173,7 +2120,7 @@ class CollectionSerializer(CollectionShortSerializer):
 
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
-        serializer_class=UserShortSerializer,
+        serializer_class=UserListSerializer,
         many=False,
     )
     words_languages = serializers.SerializerMethodField('get_words_languages')
@@ -2235,53 +2182,9 @@ class CollectionSerializer(CollectionShortSerializer):
         )
 
 
-class LearningLanguageWithLastWordsSerailizer(LearningLanguageSerailizer):
-    """Serializer to list all user's learning languages."""
-
-    last_10_words = serializers.SerializerMethodField('get_last_10_words')
-
-    class Meta:
-        model = UserLearningLanguage
-        fields = (
-            'id',
-            'slug',
-            'user',
-            'language',
-            'level',
-            'cover',
-            'cover_height',
-            'cover_width',
-            'words_count',
-            'inactive_words_count',
-            'active_words_count',
-            'mastered_words_count',
-            'last_10_words',
-        )
-        read_only_fields = (
-            'id',
-            'slug',
-            'cover',
-            'cover_height',
-            'cover_width',
-            'words_count',
-            'inactive_words_count',
-            'active_words_count',
-            'mastered_words_count',
-            'last_10_words',
-        )
-
-    @extend_schema_field(WordStandartCardSerializer(many=True))
-    def get_last_10_words(self, obj: UserLearningLanguage) -> ReturnDict:
-        """Return list of 10 last added words for each learning language."""
-        words = obj.user.words.filter(language=obj.language)[:10]
-        return WordStandartCardSerializer(
-            words, many=True, context={'request': self.context['request']}
-        ).data
-
-
 class UserDetailsSerializer(
     CountObjsSerializerMixin,
-    UserShortSerializer,
+    UserListSerializer,
 ):
     """Serializer to retrieve, update user's profile data."""
 
@@ -2452,7 +2355,7 @@ class MainPageSerailizer(UserDetailsSerializer):
         )
 
 
-class AllUserAssociationsSerializer(serializers.ModelSerializer):
+class AllAssociationsSerializer(serializers.ModelSerializer):
     """Serializer to retrieve user associations of all types."""
 
     associations_list = serializers.SerializerMethodField('get_user_associations')
@@ -2485,6 +2388,19 @@ class AllUserAssociationsSerializer(serializers.ModelSerializer):
         return result_list
 
 
+class WordTextImageSerializer(GetImageAssociationsSerializerMixin):
+    """Serializer to list words within collection card."""
+
+    class Meta:
+        model = Word
+        fields = (
+            'slug',
+            'text',
+            'image',
+        )
+        read_only_fields = fields
+
+
 class CollectionListSerializer(CollectionShortSerializer):
     """Serializer to retrieve collections list."""
 
@@ -2495,4 +2411,48 @@ class CollectionListSerializer(CollectionShortSerializer):
             obj.words.order_by('-wordsincollections__created')[:3],
             many=True,
             context={'request': self.context.get('request')},
+        ).data
+
+
+class LearningLanguageWithLastWordsSerailizer(LearningLanguageSerailizer):
+    """Serializer to list all user's learning languages with last 10 words."""
+
+    last_10_words = serializers.SerializerMethodField('get_last_10_words')
+
+    class Meta:
+        model = UserLearningLanguage
+        fields = (
+            'id',
+            'slug',
+            'user',
+            'language',
+            'level',
+            'cover',
+            'cover_height',
+            'cover_width',
+            'words_count',
+            'inactive_words_count',
+            'active_words_count',
+            'mastered_words_count',
+            'last_10_words',
+        )
+        read_only_fields = (
+            'id',
+            'slug',
+            'cover',
+            'cover_height',
+            'cover_width',
+            'words_count',
+            'inactive_words_count',
+            'active_words_count',
+            'mastered_words_count',
+            'last_10_words',
+        )
+
+    @extend_schema_field(WordStandartCardSerializer(many=True))
+    def get_last_10_words(self, obj: UserLearningLanguage) -> ReturnDict:
+        """Return list of 10 last added words for each learning language."""
+        words = obj.user.words.filter(language=obj.language)[:10]
+        return WordStandartCardSerializer(
+            words, many=True, context={'request': self.context['request']}
         ).data

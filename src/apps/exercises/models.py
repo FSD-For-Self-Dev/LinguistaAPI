@@ -3,7 +3,6 @@
 import uuid
 
 from django.db import models
-from django.contrib.auth import get_user_model
 from django.utils.translation import gettext as _
 from django.db.models.signals import pre_save
 from django.dispatch import receiver
@@ -14,14 +13,13 @@ from apps.core.models import (
     ModifiedModel,
     SlugModel,
     AuthorModel,
+    ActivityStatusModel,
 )
 from apps.core.signals import admin_created
-from apps.vocabulary.models import Word
 from utils.fillers import slug_filler
+from config.settings import AUTH_USER_MODEL
 
 from .constants import ExercisesLengthLimits, MAX_TEXT_ANSWER_LENGTH
-
-User = get_user_model()
 
 
 class Exercise(
@@ -131,7 +129,7 @@ class UsersExercisesHistory(CreatedModel):
         editable=False,
     )
     user = models.ForeignKey(
-        User,
+        AUTH_USER_MODEL,
         verbose_name=_('User'),
         on_delete=models.CASCADE,
         related_name='exercises_history',
@@ -188,20 +186,11 @@ class UsersExercisesHistory(CreatedModel):
         )
 
 
-class WordsUpdateHistory(CreatedModel):
+class WordsUpdateHistory(CreatedModel, ActivityStatusModel):
     """Words activity status changes history."""
 
-    INACTIVE = 'I'
-    ACTIVE = 'A'
-    MASTERED = 'M'
-    ACTIVITY = [
-        (INACTIVE, _('Inactive')),
-        (ACTIVE, _('Active')),
-        (MASTERED, _('Mastered')),
-    ]
-
     word = models.ForeignKey(
-        Word,
+        'vocabulary.Word',
         verbose_name=_('Word'),
         on_delete=models.CASCADE,
         related_name='update_history',
@@ -209,16 +198,16 @@ class WordsUpdateHistory(CreatedModel):
     activity_status = models.CharField(
         _('Activity status'),
         max_length=8,
-        choices=Word.ACTIVITY,
+        choices=ActivityStatusModel.ACTIVITY,
         blank=False,
-        default=Word.INACTIVE,
+        default=ActivityStatusModel.INACTIVE,
     )
     new_activity_status = models.CharField(
         _('Activity status'),
         max_length=8,
-        choices=Word.ACTIVITY,
+        choices=ActivityStatusModel.ACTIVITY,
         blank=False,
-        default=Word.ACTIVE,
+        default=ActivityStatusModel.ACTIVE,
     )
     approach = models.ForeignKey(
         UsersExercisesHistory,
@@ -265,7 +254,7 @@ class ExerciseHistoryDetails(CreatedModel):
         related_name='details',
     )
     task_word = models.ForeignKey(
-        Word,
+        'vocabulary.Word',
         verbose_name=_('Word'),
         on_delete=models.CASCADE,
         related_name='exercises_history',
@@ -337,7 +326,7 @@ class TranslatorUserDefaultSettings(models.Model):
         editable=False,
     )
     user = models.OneToOneField(
-        User,
+        AUTH_USER_MODEL,
         verbose_name=_('User'),
         on_delete=models.CASCADE,
         related_name='translator_settings',
@@ -390,7 +379,7 @@ class FavoriteExercise(CreatedModel):
         related_name='favorite_for',
     )
     user = models.ForeignKey(
-        User,
+        AUTH_USER_MODEL,
         verbose_name=_('User'),
         on_delete=models.CASCADE,
         related_name='favorite_exercises',
@@ -442,7 +431,7 @@ class WordSet(
         null=True,
     )
     words = models.ManyToManyField(
-        Word,
+        'vocabulary.Word',
         related_name='sets',
         verbose_name=_('Set words'),
         blank=False,
@@ -473,7 +462,7 @@ def fill_slug(sender, instance, *args, **kwargs) -> None:
     return slug_filler(sender, instance, *args, **kwargs)
 
 
-@receiver(admin_created, sender=User)
+@receiver(admin_created, sender=AUTH_USER_MODEL)
 def set_exercises_default_settings(sender, instance, *args, **kwargs) -> None:
     """Create default settings for exercises when admin user is created."""
     TranslatorUserDefaultSettings.objects.get_or_create(user=instance)

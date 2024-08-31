@@ -18,7 +18,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 
-from utils.getters import get_admin_user
 from apps.core.exceptions import AmountLimitExceeded, AmountLimits
 from apps.exercises.models import (
     Exercise,
@@ -26,6 +25,7 @@ from apps.exercises.models import (
     TranslatorUserDefaultSettings,
 )
 from apps.exercises.constants import exercises_lookups
+from utils.getters import get_admin_user
 
 from ..core.pagination import LimitPagination
 from ..core.mixins import FavoriteMixin

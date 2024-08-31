@@ -14,8 +14,7 @@ from apps.vocabulary.models import (
     Collection,
     QuoteAssociation,
 )
-from apps.languages.models import Language
-from apps.users.models import UserNativeLanguage, UserLearningLanguage
+from apps.languages.models import Language, UserLearningLanguage, UserNativeLanguage
 
 
 @pytest.fixture
