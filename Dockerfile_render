@@ -8,7 +8,7 @@ RUN pip3 install -r requirements.txt --no-cache-dir
 
 COPY src/ .
 
-ENV DATABASE_URL postgresql://linguista_db_user:ZH27CwVgwSKvUrkQBLp3uvkacZ2Po957@dpg-cr9cd9jv2p9s73b5c35g-a/linguista_db_rp51
+ENV DATABASE_URL postgresql://linguista_db_user:gW8u9rifM0xUh4ut1KuOuvX9kq4dEK6k@dpg-cra3oka3esus739qe2p0-a/linguista_db_uamm
 
 RUN python manage.py collectstatic --no-input
 RUN python manage.py migrate
