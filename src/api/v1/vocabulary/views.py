@@ -32,7 +32,7 @@ from apps.core.exceptions import (
 from apps.vocabulary.filters import CollectionFilter, WordFilter
 from apps.vocabulary.models import (
     Collection,
-    FormsGroup,
+    FormGroup,
     Type,
     Definition,
     WordTranslation,
@@ -85,7 +85,7 @@ from .serializers import (
     MultipleWordsSerializer,
     TagListSerializer,
     TypeSerializer,
-    FormsGroupListSerializer,
+    FormGroupListSerializer,
     CollectionShortSerializer,
     CollectionListSerializer,
     CollectionSerializer,
@@ -331,7 +331,7 @@ class WordViewSet(
         DjangoFilterBackend,
     )
     filterset_class = WordFilter
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = (
         'text',
         'translations_count',
@@ -432,7 +432,7 @@ class WordViewSet(
             logger.debug('Performing create')
             self.perform_create(serializer)
             words_created_count = len(serializer.validated_data['words'])
-            collections_count = len(serializer.validated_data['collections'])
+            collections_count = len(serializer.validated_data.get('collections', []))
 
             headers = self.get_success_headers(serializer.data)
             response_data = self.list(request).data
@@ -908,14 +908,14 @@ class WordViewSet(
         logger.debug(f'Word instance: {instance}')
 
         images = ImageInLineSerializer(
-            instance.images_associations.all(),
+            instance.image_associations.all(),
             many=True,
             context={'request': request},
         )
         logger.debug(f'Word image-associations: {images.data}')
 
         quotes = QuoteInLineSerializer(
-            instance.quotes_associations.all(),
+            instance.quote_associations.all(),
             many=True,
             context={'request': request},
         )
@@ -947,7 +947,7 @@ class WordViewSet(
         """Returns list of all image associations for given word."""
         return self.list_related_objs(
             request,
-            objs_related_name='images_associations',
+            objs_related_name='image_associations',
             response_objs_name='images',
         )
 
@@ -960,7 +960,7 @@ class WordViewSet(
         """Uploads passed images through MultiPartParser or base64 field."""
         return self.create_related_objs(
             request,
-            objs_related_name='images_associations',
+            objs_related_name='image_associations',
             response_objs_name='images',
             amount_limit=AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
             amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.IMAGES_AMOUNT_EXCEEDED,
@@ -981,7 +981,7 @@ class WordViewSet(
         """Retrieve, update, disassociate image-association for given word."""
         return self.detail_action(
             request,
-            objs_related_name='images_associations',
+            objs_related_name='image_associations',
             lookup_field='id',
             lookup_query_param='image_id',
             delete_through_manager=True,
@@ -1000,7 +1000,7 @@ class WordViewSet(
         """Returns list of all quote associations for given word."""
         return self.list_related_objs(
             request,
-            objs_related_name='quotes_associations',
+            objs_related_name='quote_associations',
             response_objs_name='quotes',
         )
 
@@ -1011,7 +1011,7 @@ class WordViewSet(
         """Adds new quote associations to given word."""
         return self.create_related_objs(
             request,
-            objs_related_name='quotes_associations',
+            objs_related_name='quote_associations',
             response_objs_name='quotes',
             amount_limit=AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
             amount_limit_exceeded_detail=AmountLimits.Vocabulary.Details.QUOTES_AMOUNT_EXCEEDED,
@@ -1032,7 +1032,7 @@ class WordViewSet(
         """Retrieve, update, disassociate quote-association for given word."""
         return self.detail_action(
             request,
-            objs_related_name='quotes_associations',
+            objs_related_name='quote_associations',
             lookup_field='id',
             lookup_query_param='quote_id',
             delete_through_manager=True,
@@ -1095,7 +1095,7 @@ class WordTranslationViewSet(
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = ('created', 'text', 'words_count')
     search_fields = ('text', 'words__text')
 
@@ -1170,7 +1170,7 @@ class UsageExampleViewSet(
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = ('created', 'text', 'words_count')
     search_fields = ('text', 'translation', 'words__text')
 
@@ -1245,7 +1245,7 @@ class DefinitionViewSet(
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = ('created', 'text', 'words_count')
     search_fields = ('text', 'translation', 'words__text')
 
@@ -1317,7 +1317,7 @@ class AssociationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
         return Response(serializer.data)
 
 
-@extend_schema(tags=['images_associations'])
+@extend_schema(tags=['image_associations'])
 @extend_schema_view(
     list=extend_schema(operation_id='images_list'),
     retrieve=extend_schema(operation_id='image_retrieve'),
@@ -1342,7 +1342,7 @@ class ImageViewSet(
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = ('created', 'words_count')
     search_fields = ('words__text', 'words__translations__text')
 
@@ -1386,7 +1386,7 @@ class ImageViewSet(
         )
 
 
-@extend_schema(tags=['quotes_associations'])
+@extend_schema(tags=['quote_associations'])
 @extend_schema_view(
     retrieve=extend_schema(operation_id='quote_retrieve'),
     partial_update=extend_schema(operation_id='quote_partial_update'),
@@ -1408,7 +1408,7 @@ class QuoteViewSet(
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = ('created', 'text', 'words_count')
     search_fields = ('text', 'quote_author', 'words__text')
 
@@ -1467,7 +1467,7 @@ class SynonymViewSet(
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = ('created', 'text', 'words_count')
     search_fields = ('text', 'words__text')
 
@@ -1545,7 +1545,7 @@ class AntonymViewSet(
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = ('created', 'text', 'words_count')
     search_fields = ('text', 'words__text')
 
@@ -1623,7 +1623,7 @@ class SimilarViewSet(
     permission_classes = (IsAuthenticated,)
     pagination_class = LimitPagination
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = ('created', 'text', 'words_count')
     search_fields = ('text', 'words__text')
 
@@ -1691,7 +1691,8 @@ class TagViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     permission_classes = (IsAuthenticated,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
     search_fields = ('name',)
-    ordering = ('-words_count', '-created')
+    ordering = ('-words_count', '-modified', '-created')
+    ordering_fields = ('created', 'words_count')
 
     def get_queryset(self) -> QuerySet[Tag]:
         # Annotate tags with words amount to use in sorting
@@ -1725,11 +1726,11 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 @extend_schema_view(
     list=extend_schema(operation_id='formsgroups_list'),
 )
-class FormsGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+class FormGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """List all user's form groups."""
 
-    queryset = FormsGroup.objects.none()
-    serializer_class = FormsGroupListSerializer
+    queryset = FormGroup.objects.none()
+    serializer_class = FormGroupListSerializer
     lookup_field = 'slug'
     http_method_names = ('get',)
     permission_classes = (IsAuthenticated,)
@@ -1737,19 +1738,19 @@ class FormsGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     filter_backends = (filters.SearchFilter,)
     search_fields = ('name',)
 
-    def get_queryset(self) -> QuerySet[FormsGroup]:
+    def get_queryset(self) -> QuerySet[FormGroup]:
         """Returns all user's and admin user form groups."""
         user = self.request.user
         admin_user = get_admin_user(User)
         if admin_user and user.is_authenticated:
-            return FormsGroup.objects.filter(
+            return FormGroup.objects.filter(
                 Q(author=user) | Q(author=admin_user)
             ).annotate(words_count=Count('words', distinct=True))
         elif user.is_authenticated:
-            return FormsGroup.objects.filter(author=user).annotate(
+            return FormGroup.objects.filter(author=user).annotate(
                 words_count=Count('words', distinct=True)
             )
-        return FormsGroup.objects.none()
+        return FormGroup.objects.none()
 
 
 @extend_schema(tags=['collections'])
@@ -1781,7 +1782,7 @@ class CollectionViewSet(
         DjangoFilterBackend,
     )
     filterset_class = CollectionFilter
-    ordering = ('-created',)
+    ordering = ('-modified', '-created')
     ordering_fields = ('created', 'title')
     search_fields = ('title',)
 
@@ -1888,7 +1889,7 @@ class CollectionViewSet(
         """Return list of all images of words in given collections."""
         return self.retrieve_words_objs(
             request,
-            'images_associations',
+            'image_associations',
             ImageAssociation,
             ImageViewSet,
             ImageListSerializer,

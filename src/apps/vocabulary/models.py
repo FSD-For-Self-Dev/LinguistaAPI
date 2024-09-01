@@ -88,7 +88,7 @@ class Word(
         blank=True,
     )
     form_groups = models.ManyToManyField(
-        'FormsGroup',
+        'FormGroup',
         through='WordsFormGroups',
         related_name='words',
         verbose_name=_('Word form groups'),
@@ -115,14 +115,14 @@ class Word(
         verbose_name=_('Usage example'),
         blank=True,
     )
-    images_associations = models.ManyToManyField(
+    image_associations = models.ManyToManyField(
         'ImageAssociation',
         through='WordImageAssociations',
         related_name='words',
         verbose_name=_('Image association'),
         blank=True,
     )
-    quotes_associations = models.ManyToManyField(
+    quote_associations = models.ManyToManyField(
         'QuoteAssociation',
         through='WordQuoteAssociations',
         related_name='words',
@@ -257,7 +257,7 @@ class Tag(
         return f'{self.name} (by {self.author})'
 
 
-class FormsGroup(
+class FormGroup(
     GetObjectBySlugModelMixin,
     WordsCountMixin,
     SlugModel,
@@ -327,7 +327,7 @@ class FormsGroup(
     def save(self, *args, **kwargs) -> None:
         """Capitalizes name text before instance save."""
         self.name = self.name.capitalize()
-        super(FormsGroup, self).save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 
 class WordTranslation(
@@ -671,7 +671,7 @@ class WordsFormGroups(WordRelatedModel):
         editable=False,
     )
     forms_group = models.ForeignKey(
-        FormsGroup,
+        'FormGroup',
         verbose_name=_('Forms group'),
         null=True,
         on_delete=models.SET_NULL,
@@ -1203,7 +1203,7 @@ class DefaultWordCards(UserRelatedModel, CreatedModel):
 @receiver(pre_save, sender=Word)
 @receiver(pre_save, sender=Collection)
 @receiver(pre_save, sender=Type)
-@receiver(pre_save, sender=FormsGroup)
+@receiver(pre_save, sender=FormGroup)
 @receiver(pre_save, sender=WordTranslation)
 @receiver(pre_save, sender=Definition)
 @receiver(pre_save, sender=UsageExample)
@@ -1220,6 +1220,6 @@ def clear_extra_objects(sender, *args, **kwargs) -> None:
     UsageExample.objects.filter(words__isnull=True).delete()
     Definition.objects.filter(words__isnull=True).delete()
     Tag.objects.filter(words__isnull=True).delete()
-    FormsGroup.objects.filter(words__isnull=True).delete()
+    FormGroup.objects.filter(words__isnull=True).delete()
     ImageAssociation.objects.filter(words__isnull=True).delete()
     QuoteAssociation.objects.filter(words__isnull=True).delete()

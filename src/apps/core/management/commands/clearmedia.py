@@ -29,7 +29,6 @@ class Command(BaseCommand):
             for relative_root, dirs, files in os.walk(main_root):
                 for file_ in files:
                     # Delete file
-                    # print(relative_root, dirs)
                     os.remove(os.path.join(relative_root, file_))
 
             # Bottom-up - delete all empty folders

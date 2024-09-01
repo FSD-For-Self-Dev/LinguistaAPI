@@ -11,7 +11,7 @@ from drf_spectacular.views import (
 
 from .vocabulary.views import (
     CollectionViewSet,
-    FormsGroupsViewSet,
+    FormGroupsViewSet,
     TypeViewSet,
     WordViewSet,
     DefinitionViewSet,
@@ -42,7 +42,7 @@ router.register('antonyms', AntonymViewSet, basename='antonyms')
 router.register('similars', SimilarViewSet, basename='similars')
 router.register('tags', TagViewSet, basename='tags')
 router.register('types', TypeViewSet, basename='types')
-router.register('forms-groups', FormsGroupsViewSet, basename='forms-groups')
+router.register('forms-groups', FormGroupsViewSet, basename='forms-groups')
 router.register('images', ImageViewSet, basename='images')
 router.register('quotes', QuoteViewSet, basename='quotes')
 router.register('associations', AssociationViewSet, basename='associations')

@@ -18,7 +18,7 @@ from apps.vocabulary.models import (
     FavoriteWord,
     Collection,
     FavoriteCollection,
-    FormsGroup,
+    FormGroup,
     WordsInCollections,
     ImageAssociation,
     QuoteAssociation,
@@ -373,8 +373,8 @@ class TestVocabularyEndpoints:
     @pytest.mark.parametrize(
         'related_model, related_manager',
         [
-            (ImageAssociation, 'images_associations'),
-            (QuoteAssociation, 'quotes_associations'),
+            (ImageAssociation, 'image_associations'),
+            (QuoteAssociation, 'quote_associations'),
         ],
     )
     def test_filter_by_have_associations(
@@ -442,8 +442,8 @@ class TestVocabularyEndpoints:
             ('definitions', 'word_definitions', True, 'definitions'),
             ('collections', 'collections', True, 'collections'),
             ('notes', 'word_notes', True, 'notes'),
-            # ('images_associations', 'word_images_associations', True, 'associations'),
-            ('quotes_associations', 'word_quotes_associations', True, 'associations'),
+            # ('image_associations', 'word_image_associations', True, 'associations'),
+            ('quote_associations', 'word_quote_associations', True, 'associations'),
         ],
     )
     def test_word_create_with_related_objs(
@@ -577,7 +577,7 @@ class TestVocabularyEndpoints:
             ('examples', 'word_usage_examples', UsageExample, 'text'),
             ('definitions', 'word_definitions', Definition, 'text'),
             ('tags', 'word_tags', Tag, 'name'),
-            ('form_groups', 'word_form_groups', FormsGroup, 'name'),
+            ('form_groups', 'word_form_groups', FormGroup, 'name'),
             ('synonyms', 'related_words_data', Word, 'text'),
             ('antonyms', 'related_words_data', Word, 'text'),
             ('forms', 'related_words_data', Word, 'text'),
@@ -762,13 +762,13 @@ class TestVocabularyEndpoints:
             ),
             ('notes', 'word_notes', AmountLimits.Vocabulary.MAX_NOTES_AMOUNT),
             # (
-            #     'images_associations',
-            #     'word_images_associations',
+            #     'image_associations',
+            #     'word_image_associations',
             #     AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
             # ),
             (
-                'quotes_associations',
-                'word_quotes_associations',
+                'quote_associations',
+                'word_quote_associations',
                 AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
             ),
         ],
@@ -862,15 +862,15 @@ class TestVocabularyEndpoints:
             ('tags', 'word_tags', Tag, True, ''),
             ('collections', 'collections', Collection, False, ''),
             # (
-            #     'images_associations',
-            #     'word_images_associations',
+            #     'image_associations',
+            #     'word_image_associations',
             #     ImageAssociation,
             #     True,
             #     'associations',
             # ),
             (
-                'quotes_associations',
-                'word_quotes_associations',
+                'quote_associations',
+                'word_quote_associations',
                 QuoteAssociation,
                 True,
                 'associations',
@@ -1048,9 +1048,9 @@ class TestVocabularyEndpoints:
             ('examples', UsageExample),
             ('definitions', Definition),
             ('tags', Tag),
-            ('form_groups', FormsGroup),
-            ('images_associations', ImageAssociation),
-            ('quotes_associations', QuoteAssociation),
+            ('form_groups', FormGroup),
+            ('image_associations', ImageAssociation),
+            ('quote_associations', QuoteAssociation),
         ],
     )
     def test_word_destroy(
@@ -1236,8 +1236,8 @@ class TestVocabularyEndpoints:
             ('forms', Word, ''),
             ('collections', Collection, ''),
             ('notes', Note, ''),
-            ('images_associations', ImageAssociation, 'associations'),
-            ('quotes_associations', QuoteAssociation, 'associations'),
+            ('image_associations', ImageAssociation, 'associations'),
+            ('quote_associations', QuoteAssociation, 'associations'),
         ],
     )
     def test_related_objs_list_action(
@@ -1330,8 +1330,8 @@ class TestVocabularyEndpoints:
             ('translations', 'word_translations', ''),
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
-            # ('images_associations', 'word_images_associations', 'images'),
-            ('quotes_associations', 'word_quotes_associations', 'quotes'),
+            # ('image_associations', 'word_image_associations', 'images'),
+            ('quote_associations', 'word_quote_associations', 'quotes'),
         ],
     )
     def test_related_objs_retrieve_action(
@@ -1414,8 +1414,8 @@ class TestVocabularyEndpoints:
             ('translations', 'word_translations', ''),
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
-            # ('images_associations', 'word_images_associations', 'images'),
-            ('quotes_associations', 'word_quotes_associations', 'quotes'),
+            # ('image_associations', 'word_image_associations', 'images'),
+            ('quote_associations', 'word_quote_associations', 'quotes'),
         ],
     )
     def test_related_objs_partial_update_action(
@@ -1525,8 +1525,8 @@ class TestVocabularyEndpoints:
             ('translations', 'word_translations', ''),
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
-            # ('images_associations', 'word_images_associations', 'images'),
-            ('quotes_associations', 'word_quotes_associations', 'quotes'),
+            # ('image_associations', 'word_image_associations', 'images'),
+            ('quote_associations', 'word_quote_associations', 'quotes'),
             ('synonyms', 'related_words_data', ''),
             ('antonyms', 'related_words_data', ''),
             ('forms', 'related_words_data', ''),
@@ -2324,7 +2324,7 @@ class TestWordSimilarsEndpoints:
 # @pytest.mark.word_images
 # class TestWordImagesEndpoints:
 #     endpoint = '/api/images/'
-#     objs_related_name = 'images_associations'
+#     objs_related_name = 'image_associations'
 #     related_model = ImageAssociation
 
 #     @pytest.mark.parametrize(
@@ -2337,13 +2337,13 @@ class TestWordSimilarsEndpoints:
 #         ],
 #     )
 #     def test_list(
-#         self, auth_api_client, user, pagination_field, word_images_associations
+#         self, auth_api_client, user, pagination_field, word_image_associations
 #     ):
 #         """
 #         По запросу картинок-ассоциаций слов и фраз пользователя возвращается список картинок-ассоциаций слов
 #         авторизованного пользователяс с пагинацией.
 #         """
-#         objs = word_images_associations(user, make=True)
+#         objs = word_image_associations(user, make=True)
 
 #         response = auth_api_client(user).get(self.endpoint)
 
@@ -2358,9 +2358,9 @@ class TestWordSimilarsEndpoints:
 #         )
 #         assert len(response.data['results']) == len(objs)
 
-#     # def test_create(self, auth_api_client, user, word_images_associations, learning_language, words_simple_data):
+#     # def test_create(self, auth_api_client, user, word_image_associations, learning_language, words_simple_data):
 #     #     language = learning_language(user)
-#     #     _, source_data, expected_data = word_images_associations(
+#     #     _, source_data, expected_data = word_image_associations(
 #     #         user, make=False, data=True, language=language
 #     #     )
 #     #     _, source_data[0]['words'], _ = words_simple_data(
@@ -2378,8 +2378,8 @@ class TestWordSimilarsEndpoints:
 #     #     assert all([response_content[field] == value for field, value in expected_data[0].items()])
 #     #     assert response_content['words']['count'] == len(source_data[0]['words'])
 
-#     def test_retrieve(self, auth_api_client, user, word_images_associations):
-#         objs, _, expected_data = word_images_associations(user, make=True, data=True)
+#     def test_retrieve(self, auth_api_client, user, word_image_associations):
+#         objs, _, expected_data = word_image_associations(user, make=True, data=True)
 #         word = baker.make(Word, author=user)
 #         word.__getattribute__(self.objs_related_name).set(objs)
 
@@ -2397,11 +2397,11 @@ class TestWordSimilarsEndpoints:
 #         )
 #         assert response_content['words']['count'] == 1
 
-#     def test_partial_update(self, auth_api_client, user, word_images_associations):
-#         objs = word_images_associations(user, make=True, data=False)
+#     def test_partial_update(self, auth_api_client, user, word_image_associations):
+#         objs = word_image_associations(user, make=True, data=False)
 #         word = baker.make(Word, author=user)
 #         word.__getattribute__(self.objs_related_name).set(objs)
-#         _, source_data, expected_data = word_images_associations(
+#         _, source_data, expected_data = word_image_associations(
 #             user, make=False, data=True, serializer_data=True
 #         )
 
@@ -2421,8 +2421,8 @@ class TestWordSimilarsEndpoints:
 #         )
 #         assert response_content['words']['count'] == 1
 
-#     def test_delete(self, auth_api_client, user, word_images_associations):
-#         objs = word_images_associations(user, make=True)
+#     def test_delete(self, auth_api_client, user, word_image_associations):
+#         objs = word_image_associations(user, make=True)
 
 #         response = auth_api_client(user).delete(
 #             f'{self.endpoint}{objs[0].id}/',
@@ -2432,9 +2432,9 @@ class TestWordSimilarsEndpoints:
 #         assert not self.related_model.objects.filter(id=objs[0].id).exists()
 
 #     def test_add_words_to_image(
-#         self, auth_api_client, user, word_images_associations, words_simple_data
+#         self, auth_api_client, user, word_image_associations, words_simple_data
 #     ):
-#         objs = word_images_associations(user, make=True, data=False)
+#         objs = word_image_associations(user, make=True, data=False)
 #         _, source_data, _ = words_simple_data(user, make=False, data=True)
 
 #         response = auth_api_client(user).post(
@@ -2451,12 +2451,12 @@ class TestWordSimilarsEndpoints:
 @pytest.mark.word_quotes
 class TestWordQuoteEndpoints:
     endpoint = '/api/quotes/'
-    objs_related_name = 'quotes_associations'
+    objs_related_name = 'quote_associations'
     related_model = QuoteAssociation
 
-    # def test_create(self, auth_api_client, user, word_images_associations, learning_language, words_simple_data):
+    # def test_create(self, auth_api_client, user, word_image_associations, learning_language, words_simple_data):
     #     language = learning_language(user)
-    #     _, source_data, expected_data = word_images_associations(
+    #     _, source_data, expected_data = word_image_associations(
     #         user, make=False, data=True, language=language
     #     )
     #     _, source_data[0]['words'], _ = words_simple_data(
@@ -2474,8 +2474,8 @@ class TestWordQuoteEndpoints:
     #     assert all([response_content[field] == value for field, value in expected_data[0].items()])
     #     assert response_content['words']['count'] == len(source_data[0]['words'])
 
-    def test_retrieve(self, auth_api_client, user, word_quotes_associations):
-        objs, _, expected_data = word_quotes_associations(user, make=True, data=True)
+    def test_retrieve(self, auth_api_client, user, word_quote_associations):
+        objs, _, expected_data = word_quote_associations(user, make=True, data=True)
         word = baker.make(Word, author=user)
         word.__getattribute__(self.objs_related_name).set(objs)
 
@@ -2493,11 +2493,11 @@ class TestWordQuoteEndpoints:
         )
         assert response_content['words']['count'] == 1
 
-    def test_partial_update(self, auth_api_client, user, word_quotes_associations):
-        objs = word_quotes_associations(user, make=True, data=False)
+    def test_partial_update(self, auth_api_client, user, word_quote_associations):
+        objs = word_quote_associations(user, make=True, data=False)
         word = baker.make(Word, author=user)
         word.__getattribute__(self.objs_related_name).set(objs)
-        _, source_data, expected_data = word_quotes_associations(
+        _, source_data, expected_data = word_quote_associations(
             user, make=False, data=True
         )
 
@@ -2517,8 +2517,8 @@ class TestWordQuoteEndpoints:
         )
         assert response_content['words']['count'] == 1
 
-    def test_delete(self, auth_api_client, user, word_quotes_associations):
-        objs = word_quotes_associations(user, make=True)
+    def test_delete(self, auth_api_client, user, word_quote_associations):
+        objs = word_quote_associations(user, make=True)
 
         response = auth_api_client(user).delete(
             f'{self.endpoint}{objs[0].id}/',
@@ -2528,9 +2528,9 @@ class TestWordQuoteEndpoints:
         assert not self.related_model.objects.filter(id=objs[0].id).exists()
 
     def test_add_words_to_quote(
-        self, auth_api_client, user, word_quotes_associations, words_simple_data
+        self, auth_api_client, user, word_quote_associations, words_simple_data
     ):
-        objs = word_quotes_associations(user, make=True, data=False)
+        objs = word_quote_associations(user, make=True, data=False)
         _, source_data, _ = words_simple_data(user, make=False, data=True)
 
         response = auth_api_client(user).post(
@@ -2554,7 +2554,7 @@ class TestMainPageEndpoints:
             ('words', 'words_simple_data'),
             ('collections', 'collections'),
             ('tags', 'word_tags'),
-            # ('images', 'word_images_associations'),
+            # ('images', 'word_image_associations'),
             ('definitions', 'word_definitions'),
             ('examples', 'word_usage_examples'),
             ('translations', 'word_translations'),
@@ -2592,8 +2592,8 @@ class TestAssociationsEndpoints:
     @pytest.mark.parametrize(
         'fixture_name',
         [
-            # ('word_images_associations'),
-            ('word_quotes_associations'),
+            # ('word_image_associations'),
+            ('word_quote_associations'),
         ],
     )
     def test_list(self, auth_api_client, user, fixture_name, request):
@@ -2755,7 +2755,7 @@ class TestWordCollectionsEndpoints:
             ('translations', 'word_translations', ''),
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
-            # ('images_associations', 'word_images_associations', 'images'),
+            # ('image_associations', 'word_image_associations', 'images'),
         ],
     )
     def test_related_objs_retrieve(

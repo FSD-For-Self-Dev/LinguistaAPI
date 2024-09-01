@@ -11,7 +11,7 @@ from .models import (
     FavoriteCollection,
     FavoriteWord,
     Form,
-    FormsGroup,
+    FormGroup,
     ImageAssociation,
     Note,
     Similar,
@@ -129,8 +129,8 @@ class TagAdmin(admin.ModelAdmin):
     list_display_links = ('name',)
 
 
-@admin.register(FormsGroup)
-class FormsGroupAdmin(admin.ModelAdmin):
+@admin.register(FormGroup)
+class FormGroupAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name', 'author')}
     list_display = ('slug', 'name', 'author', 'words_count')
     list_display_links = ('slug',)

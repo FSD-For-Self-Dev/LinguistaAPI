@@ -24,7 +24,7 @@ from apps.vocabulary.models import (
     FavoriteCollection,
     FavoriteWord,
     Form,
-    FormsGroup,
+    FormGroup,
     Note,
     Similar,
     Synonym,
@@ -369,7 +369,7 @@ class CollectionShortSerializer(
         )[:3]
 
 
-class FormsGroupInLineSerializer(
+class FormGroupInLineSerializer(
     AlreadyExistSerializerHandler, serializers.ModelSerializer
 ):
     """Serializer to list, create word form groups inside word serializer."""
@@ -388,7 +388,7 @@ class FormsGroupInLineSerializer(
     already_exist_detail = ExceptionDetails.Vocabulary.FORM_GROUP_ALREADY_EXIST
 
     class Meta:
-        model = FormsGroup
+        model = FormGroup
         list_serializer_class = ListUpdateSerializer
         fields = (
             'id',
@@ -584,7 +584,7 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
     """
     Custom serializer mixin to add `images` and `image` field obtained through
     related manager to retrieve one latest image-association or full list.
-    Related name for images must be `images_associations`.
+    Related name for images must be `image_associations`.
     """
 
     image = serializers.SerializerMethodField('get_last_image')
@@ -595,14 +595,22 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
     def get_last_image(self, obj: Word) -> str | None:
         """Returns last added image association."""
         try:
-            url = obj.images_associations.latest().image.url
+            latest_image_association = obj.image_associations.latest()
+
+            try:
+                url = latest_image_association.image.url
+            except ValueError:
+                url = latest_image_association.image_url
+
             request = self.context.get('request', None)
             if request is not None:
                 return request.build_absolute_uri(url)
             return url
+
         except ObjectDoesNotExist:
             return None
-        except ValueError:
+
+        except AttributeError:
             return None
 
     @extend_schema_field({'type': 'object'})
@@ -614,9 +622,9 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
                 lambda instance: request.build_absolute_uri(instance.image.url)
                 if instance.image
                 else instance.image_url,
-                obj.images_associations.order_by('-wordimageassociations__created'),
+                obj.image_associations.order_by('-wordimageassociations__created'),
             )
-        return obj.images_associations.order_by(
+        return obj.image_associations.order_by(
             '-wordimageassociations__created'
         ).values_list('image', flat=True)
 
@@ -715,7 +723,7 @@ class WordShortCreateSerializer(
         many=True,
         required=False,
     )
-    form_groups = FormsGroupInLineSerializer(
+    form_groups = FormGroupInLineSerializer(
         many=True,
         required=False,
     )
@@ -760,14 +768,14 @@ class WordShortCreateSerializer(
     associations = serializers.SerializerMethodField('get_associations')
     images_count = KwargsMethodField(
         'get_objs_count',
-        objs_related_name='images_associations',
+        objs_related_name='image_associations',
     )
-    images_associations = ImageInLineSerializer(
+    image_associations = ImageInLineSerializer(
         required=False,
         many=True,
         write_only=True,
     )
-    quotes_associations = QuoteInLineSerializer(
+    quote_associations = QuoteInLineSerializer(
         required=False,
         many=True,
         write_only=True,
@@ -813,8 +821,8 @@ class WordShortCreateSerializer(
             'definitions',
             'images_count',
             'images',
-            'images_associations',
-            'quotes_associations',
+            'image_associations',
+            'quote_associations',
             'associations_count',
             'associations',
             'notes_count',
@@ -845,7 +853,8 @@ class WordShortCreateSerializer(
             'definitions': 'definitions',
             'tags': 'tags',
             'form_groups': 'form_groups',
-            'quotes_associations': 'quotes_associations',
+            'image_associations': 'image_associations',
+            'quote_associations': 'quote_associations',
         }
         # Limits for related objects amount
         amount_limits_check = {
@@ -877,11 +886,11 @@ class WordShortCreateSerializer(
                 AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
                 AmountLimits.Vocabulary.Details.NOTES_AMOUNT_EXCEEDED,
             ),
-            'images_associations': (
+            'image_associations': (
                 AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
                 AmountLimits.Vocabulary.Details.IMAGES_AMOUNT_EXCEEDED,
             ),
-            'quotes_associations': (
+            'quote_associations': (
                 AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
                 AmountLimits.Vocabulary.Details.QUOTES_AMOUNT_EXCEEDED,
             ),
@@ -938,18 +947,18 @@ class WordShortCreateSerializer(
     @extend_schema_field({'type': 'integer'})
     def get_associations_count(self, obj: Word) -> int:
         """Returns common amount of all associations of any type."""
-        return obj.images_associations.count() + obj.quotes_associations.count()
+        return obj.image_associations.count() + obj.quote_associations.count()
 
     @extend_schema_field({'type': 'object'})
     def get_associations(self, obj: Word) -> list:
         """Returns common list of all associations of any type."""
         images = ImageInLineSerializer(
-            obj.images_associations.order_by('-wordimageassociations__created'),
+            obj.image_associations.order_by('-wordimageassociations__created'),
             many=True,
             context={'request': self.context.get('request')},
         )
         quotes = QuoteInLineSerializer(
-            obj.quotes_associations.order_by('-wordquoteassociations__created'),
+            obj.quote_associations.order_by('-wordquoteassociations__created'),
             many=True,
             context={'request': self.context.get('request')},
         )
@@ -1144,7 +1153,7 @@ class WordSerializer(WordShortCreateSerializer):
         required=False,
     )
     tags = TagSerializer(many=True, required=False)
-    form_groups = FormsGroupInLineSerializer(many=True, required=False)
+    form_groups = FormGroupInLineSerializer(many=True, required=False)
     translations_count = KwargsMethodField(
         'get_objs_count',
         objs_related_name='translations',
@@ -1212,8 +1221,8 @@ class WordSerializer(WordShortCreateSerializer):
             'definitions',
             'images_count',
             'images',
-            'images_associations',
-            'quotes_associations',
+            'image_associations',
+            'quote_associations',
             'associations_count',
             'associations',
             'synonyms_count',
@@ -1260,7 +1269,8 @@ class WordSerializer(WordShortCreateSerializer):
             'tags': 'tags',
             'form_groups': 'form_groups',
             'collections': 'collections',
-            'quotes_associations': 'quotes_associations',
+            'image_associations': 'image_associations',
+            'quote_associations': 'quote_associations',
         }
         # Limits for related objects amount
         amount_limits_check = {
@@ -1292,11 +1302,11 @@ class WordSerializer(WordShortCreateSerializer):
                 AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
                 AmountLimits.Vocabulary.Details.NOTES_AMOUNT_EXCEEDED,
             ),
-            'images_associations': (
+            'image_associations': (
                 AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
                 AmountLimits.Vocabulary.Details.IMAGES_AMOUNT_EXCEEDED,
             ),
-            'quotes_associations': (
+            'quote_associations': (
                 AmountLimits.Vocabulary.MAX_QUOTES_AMOUNT,
                 AmountLimits.Vocabulary.Details.QUOTES_AMOUNT_EXCEEDED,
             ),
@@ -1324,7 +1334,7 @@ class MultipleWordsSerializer(serializers.Serializer):
     Serializer to create multiple words at time or add multiple words to collections.
     """
 
-    words = WordShortCreateSerializer(many=True, required=True)
+    words = WordSerializer(many=True, required=True)
     collections = CollectionShortSerializer(many=True, required=False)
 
     def create(self, validated_data: OrderedDict) -> dict:
@@ -1339,7 +1349,7 @@ class MultipleWordsSerializer(serializers.Serializer):
         )
         _collections = CollectionShortSerializer(
             many=True, context=self.context
-        ).create(validated_data['collections'])
+        ).create(validated_data.get('collections', []))
 
         for collection in _collections:
             collection.words.add(*_new_words)
@@ -2062,7 +2072,7 @@ class TypeSerializer(CountObjsSerializerMixin, serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class FormsGroupListSerializer(
+class FormGroupListSerializer(
     ValidateLanguageMixin, CountObjsSerializerMixin, serializers.ModelSerializer
 ):
     """Serializer to list all user's form groups."""
@@ -2079,7 +2089,7 @@ class FormsGroupListSerializer(
     words_count = KwargsMethodField('get_objs_count', objs_related_name='form_groups')
 
     class Meta:
-        model = FormsGroup
+        model = FormGroup
         fields = (
             'id',
             'slug',
@@ -2156,15 +2166,15 @@ class CollectionSerializer(CollectionShortSerializer):
         """
         Returns amount of image-associations for all words in given collection.
         """
-        return obj.words.filter(images_associations__isnull=False).count()
+        return obj.words.filter(image_associations__isnull=False).count()
 
     @extend_schema_field({'type': 'object'})
     def get_words_images(self, obj: Collection) -> QuerySet[Word]:
         """
         Returns list of image-associations for all words in given collection.
         """
-        return obj.words.filter(images_associations__isnull=False).values_list(
-            'images_associations__image', flat=True
+        return obj.words.filter(image_associations__isnull=False).values_list(
+            'image_associations__image', flat=True
         )
 
 

@@ -28,7 +28,7 @@ from .vocabulary.serializers import (
     DefinitionInLineSerializer,
     UsageExampleInLineSerializer,
     TypeSerializer,
-    FormsGroupListSerializer,
+    FormGroupListSerializer,
     CollectionSerializer,
     CollectionShortSerializer,
     CollectionListSerializer,
@@ -893,13 +893,13 @@ data = {
         },
         # other methods
     },
-    'FormsGroupsViewSet': {
+    'FormGroupsViewSet': {
         'tags': ['forms-groups'],
         'formsgroups_list': {
             'summary': 'Просмотр списка всех групп форм пользователя',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: FormsGroupListSerializer,
+                status.HTTP_200_OK: FormGroupListSerializer,
             },
         },
         # other methods
@@ -1052,7 +1052,7 @@ data = {
         # other methods
     },
     'ImageViewSet': {
-        'tags': ['images_associations'],
+        'tags': ['image_associations'],
         'images_list': {
             'summary': 'Просмотр списка всех картинок-ассоциаций (галерея)',
             'request': None,
@@ -1091,7 +1091,7 @@ data = {
         # other methods
     },
     'QuoteViewSet': {
-        'tags': ['quotes_associations'],
+        'tags': ['quote_associations'],
         'quote_retrieve': {
             'summary': 'Просмотр цитаты-ассоциации и связанных слов',
             'request': None,

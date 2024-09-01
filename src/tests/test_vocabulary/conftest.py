@@ -4,7 +4,7 @@ from model_bakery import baker
 
 from apps.vocabulary.models import (
     Word,
-    FormsGroup,
+    FormGroup,
     WordTranslation,
     UsageExample,
     Definition,
@@ -195,7 +195,7 @@ def word_form_groups(request):
             UserLearningLanguage.objects.create(user=user, language=language)
         if make:
             objs = baker.make(
-                FormsGroup,
+                FormGroup,
                 author=user,
                 language=language,
                 _quantity=_quantity,
@@ -203,7 +203,7 @@ def word_form_groups(request):
             )
         else:
             objs = baker.prepare(
-                FormsGroup,
+                FormGroup,
                 author=user,
                 language=language,
                 _quantity=_quantity,
@@ -371,8 +371,8 @@ def word_definitions(request):
 
 
 @pytest.fixture
-def word_quotes_associations(request):
-    def get_word_quotes_associations(
+def word_quote_associations(request):
+    def get_word_quote_associations(
         user, data=False, _quantity=1, make=False, **kwargs
     ):
         if make:
@@ -401,7 +401,7 @@ def word_quotes_associations(request):
             return (objs, source, expected)
         return objs
 
-    return get_word_quotes_associations
+    return get_word_quote_associations
 
 
 @pytest.fixture

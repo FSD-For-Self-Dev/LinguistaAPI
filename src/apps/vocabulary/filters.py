@@ -103,11 +103,10 @@ class WordFilter(df.FilterSet):
         """
         if value:
             return queryset.filter(
-                Q(images_associations__isnull=False)
-                | Q(quotes_associations__isnull=False)
+                Q(image_associations__isnull=False)
+                | Q(quote_associations__isnull=False)
             )
         else:
             return queryset.filter(
-                Q(images_associations__isnull=True)
-                & Q(quotes_associations__isnull=True)
+                Q(image_associations__isnull=True) & Q(quote_associations__isnull=True)
             )
