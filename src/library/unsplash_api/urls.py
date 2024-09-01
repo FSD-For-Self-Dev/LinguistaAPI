@@ -6,7 +6,7 @@ from .views import UnsplashImagesView
 
 urlpatterns = [
     path(
-        'unsplash/images/',
+        'images/',
         UnsplashImagesView.as_view(),
         name='get-unsplash-images',
     ),

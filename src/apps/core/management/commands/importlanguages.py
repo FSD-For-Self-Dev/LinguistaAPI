@@ -17,8 +17,8 @@ class Command(BaseCommand):
     """
 
     help = 'Imports language codes and names from ' 'django.conf.locale.LANG_INFO'
-    images_path = 'languages/images/'
-    flag_icons_path = 'languages/images/flag_icons/'
+    images_path = 'apps/languages/images/'
+    flag_icons_path = 'apps/languages/images/flag_icons/'
 
     def add_arguments(self, parser):
         pass

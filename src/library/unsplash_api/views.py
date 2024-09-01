@@ -10,7 +10,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 
-from core.exceptions import ServiceUnavailable
+from apps.core.exceptions import ServiceUnavailable
 
 from .constants import MAIN_URL
 
@@ -54,6 +54,7 @@ class UnsplashImagesView(GenericAPIView):
 
         # raise ServiceUnavailable custom exception if Unsplash service is unreachable
         try:
+            logger.debug(f'Sending get request to `{url}`')
             response = requests.get(
                 url,
                 headers=headers,

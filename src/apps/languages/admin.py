@@ -43,4 +43,5 @@ class UserLearningLanguageAdmin(admin.ModelAdmin):
 
 @admin.register(UserNativeLanguage)
 class UserNativeLanguageAdmin(admin.ModelAdmin):
+    prepopulated_fields = {'slug': ('user', 'language')}
     pass

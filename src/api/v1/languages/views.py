@@ -78,16 +78,30 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             case 'all':
                 return Language.objects.annotate(words_count=Count('words'))
             case 'learning_available':
+                if user.is_anonymous:
+                    # Ingore learning languages for anonymous user
+                    return Language.objects.filter(learning_available=True).order_by(
+                        '-sorting', 'name'
+                    )
                 return (
                     Language.objects.filter(learning_available=True)
                     .exclude(learning_by=self.request.user)
                     .annotate(words_count=Count('words'))
+                    .order_by('-sorting', 'name')
                 )
             case 'all':
                 return Language.objects.annotate(words_count=Count('words'))
             case 'interface':
-                learning_list = user.learning_languages.values_list('name', flat=True)
-                native_list = user.native_languages.values_list('name', flat=True)
+                try:
+                    learning_list = user.learning_languages.values_list(
+                        'name', flat=True
+                    )
+                    native_list = user.native_languages.values_list('name', flat=True)
+                except AttributeError:
+                    # Ingore learning and native languages for anonymous user
+                    return Language.objects.filter(interface_available=True).order_by(
+                        '-sorting', 'name'
+                    )
                 return (
                     Language.objects.filter(interface_available=True)
                     .annotate(
@@ -324,7 +338,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         detail=False,
         url_path='learning-available',
         serializer_class=LanguageSerializer,
-        permission_classes=(IsAuthenticated,),
+        permission_classes=(AllowAny,),
         ordering=('-sorting', 'name'),
         ordering_fields=None,
         search_fields=('name', 'name_local'),
