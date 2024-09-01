@@ -22,13 +22,17 @@ class ExceptionCodes:
     SERVICE_UNAVAILABLE = 'service_unavailable'
     AMOUNT_LIMIT_EXCEEDED = 'amount_limit_exceeded'
 
+    class Images:
+        IMAGE_FILE_OR_URL_IS_REQUIRED = 'empty_image'
+
 
 class ExceptionDetails:
     """Class to store exceptions detail messages."""
 
     class Images:
         INVALID_IMAGE_FILE = _('Invalid image file passed.')
-        INVALID_IMAGE_SIZE = _(f'Image file too large ( > {MAX_IMAGE_SIZE_MB} MB )')
+        INVALID_IMAGE_SIZE = _(f'Image file too large ( > {MAX_IMAGE_SIZE_MB} MB ).')
+        IMAGE_FILE_OR_URL_IS_REQUIRED = _('No image file or url passed.')
 
     class Languages:
         """Languages app exception details."""

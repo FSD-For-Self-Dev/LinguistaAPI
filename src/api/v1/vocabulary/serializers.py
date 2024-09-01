@@ -15,7 +15,7 @@ from rest_framework.fields import Field
 from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework.serializers import Serializer
 
-from apps.core.exceptions import ExceptionDetails, AmountLimits
+from apps.core.exceptions import ExceptionDetails, ExceptionCodes, AmountLimits
 from apps.languages.models import Language, UserLearningLanguage
 from apps.vocabulary.models import (
     Antonym,
@@ -42,6 +42,7 @@ from apps.vocabulary.models import (
 from ..core.serializers_fields import (
     ReadableHiddenField,
     KwargsMethodField,
+    HybridImageOrPrimaryKeyField,
 )
 from ..core.serializers_mixins import (
     ListUpdateSerializer,
@@ -416,6 +417,11 @@ class FormsGroupInLineSerializer(
 class ImageInLineSerializer(HybridImageSerializerMixin):
     """Serializer to list, create word image-associations inside word serializer."""
 
+    image = HybridImageOrPrimaryKeyField(
+        required=False,
+        allow_empty_file=True,
+        related_model=ImageAssociation,
+    )
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
@@ -432,6 +438,7 @@ class ImageInLineSerializer(HybridImageSerializerMixin):
             'id',
             'author',
             'image',
+            'image_url',
             'image_height',
             'image_width',
             'created',
@@ -444,10 +451,26 @@ class ImageInLineSerializer(HybridImageSerializerMixin):
             'created',
         )
 
+    def validate(self, attrs):
+        image = attrs.get('image', None)
+        image_url = attrs.get('image_url', None)
+        if image is None and image_url is None:
+            raise serializers.ValidationError(
+                detail=ExceptionDetails.Images.IMAGE_FILE_OR_URL_IS_REQUIRED,
+                code=ExceptionCodes.Images.IMAGE_FILE_OR_URL_IS_REQUIRED,
+            )
+        return super().validate(attrs)
+
     @extend_schema_field({'type': 'string'})
     def get_association_type(self, obj: ImageAssociation) -> str:
         """Returns type of represented association"""
         return 'image'
+
+    def create(self, validated_data, **kwargs):
+        image = validated_data.get('image', None)
+        if isinstance(image, ImageAssociation):
+            return image
+        return super().create(validated_data, **kwargs)
 
 
 class QuoteInLineSerializer(serializers.ModelSerializer):
@@ -588,10 +611,14 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
         request = self.context.get('request', None)
         if request is not None:
             return map(
-                lambda instance: request.build_absolute_uri(instance.image.url),
-                obj.images_associations.all(),
+                lambda instance: request.build_absolute_uri(instance.image.url)
+                if instance.image
+                else instance.image_url,
+                obj.images_associations.order_by('-wordimageassociations__created'),
             )
-        return obj.images_associations.values_list('image', flat=True)
+        return obj.images_associations.order_by(
+            '-wordimageassociations__created'
+        ).values_list('image', flat=True)
 
 
 class WordLongCardSerializer(
@@ -917,21 +944,16 @@ class WordShortCreateSerializer(
     def get_associations(self, obj: Word) -> list:
         """Returns common list of all associations of any type."""
         images = ImageInLineSerializer(
-            obj.images_associations.all(),
+            obj.images_associations.order_by('-wordimageassociations__created'),
             many=True,
             context={'request': self.context.get('request')},
         )
         quotes = QuoteInLineSerializer(
-            obj.quotes_associations.all(),
+            obj.quotes_associations.order_by('-wordquoteassociations__created'),
             many=True,
             context={'request': self.context.get('request')},
         )
-        result_list = sorted(
-            chain(quotes.data, images.data),
-            key=lambda d: d.get('created'),
-            reverse=True,
-        )
-        return result_list
+        return chain(quotes.data, images.data)
 
     @extend_schema_field({'type': 'string'})
     def get_activity_status_display(self, obj: Word) -> str:

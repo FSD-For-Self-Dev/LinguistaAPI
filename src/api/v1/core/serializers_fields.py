@@ -7,6 +7,7 @@ from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.fields import HybridImageField
 
 from apps.core.exceptions import ExceptionDetails
+from utils.checkers import is_valid_uuid
 
 
 @extend_schema_field({'type': 'string'})
@@ -98,3 +99,23 @@ class CustomHybridImageField(HybridImageField):
     @property
     def INVALID_FILE_MESSAGE(self):
         raise serializers.ValidationError(ExceptionDetails.Images.INVALID_IMAGE_FILE)
+
+
+class HybridImageOrPrimaryKeyField(CustomHybridImageField):
+    """
+    Custom field for handling image-uploads through
+    raw post data, with a fallback to multipart form data
+    or get existing image-instance through UUID primary key.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.related_model = kwargs.pop('related_model', None)
+        super().__init__(*args, **kwargs)
+
+    def to_internal_value(self, data):
+        """
+        Try UUID key first, and then try the HybridImageField.
+        """
+        if is_valid_uuid(data) and self.related_model:
+            return self.related_model.objects.get(pk=data)
+        return super().to_internal_value(data)

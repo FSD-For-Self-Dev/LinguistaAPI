@@ -523,11 +523,17 @@ class ImageAssociation(
     image = models.ImageField(
         _('Image'),
         upload_to=image_associations_path,
-        null=False,
-        blank=False,
+        null=True,
+        blank=True,
+    )
+    image_url = models.CharField(
+        _('Image hotlink'),
+        max_length=512,
+        null=True,
+        blank=True,
     )
 
-    get_object_by_fields = ('image',)
+    get_object_by_fields = ('id',)
 
     class Meta:
         verbose_name = _('Image-association')
@@ -537,7 +543,7 @@ class ImageAssociation(
         get_latest_by = ('created', 'modified')
 
     def __str__(self) -> str:
-        return _(f'Image association `{self.image}` by {self.author}')
+        return _(f'Image association by {self.author}')
 
 
 class QuoteAssociation(

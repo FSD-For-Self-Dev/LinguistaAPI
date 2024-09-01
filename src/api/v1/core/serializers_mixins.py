@@ -526,7 +526,7 @@ class UpdateSerializerMixin:
 class HybridImageSerializerMixin(serializers.ModelSerializer):
     """Custom mixin to add image, image_height, image_width fields."""
 
-    image = CustomHybridImageField()
+    image = CustomHybridImageField(required=True)
     image_height = serializers.SerializerMethodField(
         'get_image_height',
     )
@@ -536,10 +536,13 @@ class HybridImageSerializerMixin(serializers.ModelSerializer):
 
     def validate_image(self, image: ImageFieldFile) -> ImageFieldFile:
         """Check image size."""
-        if image.size > MAX_IMAGE_SIZE:
-            raise serializers.ValidationError(
-                ExceptionDetails.Images.INVALID_IMAGE_SIZE
-            )
+        try:
+            if image and image.size > MAX_IMAGE_SIZE:
+                raise serializers.ValidationError(
+                    ExceptionDetails.Images.INVALID_IMAGE_SIZE
+                )
+        except AttributeError:
+            pass
         return image
 
     @extend_schema_field({'type': 'integer'})
