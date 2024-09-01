@@ -25,6 +25,25 @@ class ExceptionCodes:
     class Images:
         IMAGE_FILE_OR_URL_IS_REQUIRED = 'empty_image'
 
+    class Languages:
+        LANGUAGE_INVALID = 'invalid_language'
+
+    class Vocabulary:
+        WORDS_MUST_BE_SAME_LANGUAGE = 'words_same_language'
+        EXAMPLE_MUST_BE_SAME_LANGUAGE = 'examples_same_language'
+        DEFINITION_MUST_BE_SAME_LANGUAGE = 'definitions_same_language'
+        FORM_GROUP_MUST_BE_SAME_LANGUAGE = 'form_groups_same_language'
+        SYNONYM_MUST_BE_SAME_LANGUAGE = 'synonyms_same_language'
+        ANTONYM_MUST_BE_SAME_LANGUAGE = 'antonyms_same_language'
+        FORM_MUST_BE_SAME_LANGUAGE = 'forms_same_language'
+        SIMILAR_MUST_BE_SAME_LANGUAGE = 'similars_same_language'
+
+        WORDS_MUST_DIFFER = 'words_must_differ'
+        SYNONYMS_MUST_DIFFER = 'synonyms_must_differ'
+        ANTONYMS_MUST_DIFFER = 'antonyms_must_differ'
+        FORMS_MUST_DIFFER = 'forms_must_differ'
+        SIMILARS_MUST_DIFFER = 'similars_must_differ'
+
 
 class ExceptionDetails:
     """Class to store exceptions detail messages."""
@@ -43,6 +62,11 @@ class ExceptionDetails:
         LANGUAGE_NOT_AVAILABLE = _(
             'The selected language is not yet able for learning.'
         )
+        LANGUAGE_MUST_BE_LEARNING = _('Language must be in your learning languages.')
+        LANGUAGE_MUST_BE_LEARNING_OR_NATIVE = _(
+            'Language must be in your learning or native languages.'
+        )
+        LANGUAGE_MUST_BE_NATIVE = _('Language must be in your native languages.')
 
     class Exercises:
         """Exercises app exception details."""
@@ -51,12 +75,6 @@ class ExceptionDetails:
 
     class Vocabulary:
         """Vocabulary app exception details."""
-
-        LANGUAGE_MUST_BE_LEARNING = _('Language must be in your learning languages.')
-        LANGUAGE_MUST_BE_LEARNING_OR_NATIVE = _(
-            'Language must be in your learning or native languages.'
-        )
-        LANGUAGE_MUST_BE_NATIVE = _('Language must be in your native languages.')
 
         FORM_GROUP_ALREADY_EXIST = _('Form group with this name already exists.')
 
@@ -76,7 +94,7 @@ class ExceptionDetails:
         ANTONYM_MUST_BE_SAME_LANGUAGE = _(
             'The antonyms should be in the same language as the word itself.'
         )
-        FROM_MUST_BE_SAME_LANGUAGE = _(
+        FORM_MUST_BE_SAME_LANGUAGE = _(
             'The forms should be in the same language as the word itself.'
         )
         SIMILAR_MUST_BE_SAME_LANGUAGE = _(

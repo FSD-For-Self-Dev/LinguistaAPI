@@ -118,8 +118,8 @@ class ValidateLanguageMixin:
             or language in user.learning_languages.all()
         ):
             raise serializers.ValidationError(
-                ExceptionDetails.Vocabulary.LANGUAGE_MUST_BE_LEARNING_OR_NATIVE,
-                code='invalid_language',
+                ExceptionDetails.Languages.LANGUAGE_MUST_BE_LEARNING_OR_NATIVE,
+                code=ExceptionCodes.Languages.LANGUAGE_INVALID,
             )
         return language
 
@@ -142,7 +142,7 @@ class ValidateLanguageMixin:
                         ExceptionDetails.Languages.LANGUAGE_NOT_AVAILABLE
                     )
             raise serializers.ValidationError(
-                ExceptionDetails.Vocabulary.LANGUAGE_MUST_BE_LEARNING,
+                ExceptionDetails.Languages.LANGUAGE_MUST_BE_LEARNING,
             )
         return language
 
@@ -154,8 +154,8 @@ class ValidateLanguageMixin:
         user = self.context.get('request').user
         if language not in user.native_languages.all():
             raise serializers.ValidationError(
-                ExceptionDetails.Vocabulary.LANGUAGE_MUST_BE_NATIVE,
-                code='invalid_language',
+                ExceptionDetails.Languages.LANGUAGE_MUST_BE_NATIVE,
+                code=ExceptionCodes.Languages.LANGUAGE_INVALID,
             )
         return language
 
@@ -409,7 +409,7 @@ class FormsGroupInLineSerializer(
         if name.capitalize() == 'Infinitive':
             raise serializers.ValidationError(
                 ExceptionDetails.Vocabulary.FORM_GROUP_ALREADY_EXIST,
-                code='already_exist',
+                code=ExceptionCodes.ALREADY_EXIST,
             )
         return name
 
@@ -777,13 +777,13 @@ class WordShortCreateSerializer(
 
     already_exist_detail = ExceptionDetails.Vocabulary.WORD_ALREADY_EXIST
     default_error_messages = {
-        'examples_same_language_detail': {
+        ExceptionCodes.Vocabulary.EXAMPLE_MUST_BE_SAME_LANGUAGE: {
             'examples': ExceptionDetails.Vocabulary.EXAMPLE_MUST_BE_SAME_LANGUAGE,
         },
-        'definitions_same_language_detail': {
+        ExceptionCodes.Vocabulary.DEFINITION_MUST_BE_SAME_LANGUAGE: {
             'definitions': ExceptionDetails.Vocabulary.DEFINITION_MUST_BE_SAME_LANGUAGE,
         },
-        'form_groups_same_language_detail': {
+        ExceptionCodes.Vocabulary.FORM_GROUP_MUST_BE_SAME_LANGUAGE: {
             'form_groups': ExceptionDetails.Vocabulary.FORM_GROUP_MUST_BE_SAME_LANGUAGE,
         },
     }
@@ -969,8 +969,8 @@ class WordSelfRelatedSerializer(NestedSerializerMixin, serializers.ModelSerializ
 
     validate_same_language = True
     default_error_messages = {
-        'same_language_detail': ExceptionDetails.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE,
-        'same_words_detail': ExceptionDetails.Vocabulary.WORDS_MUST_DIFFER,
+        ExceptionCodes.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE: ExceptionDetails.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE,
+        ExceptionCodes.Vocabulary.WORDS_MUST_DIFFER: ExceptionDetails.Vocabulary.WORDS_MUST_DIFFER,
     }
 
     class Meta:
@@ -1014,10 +1014,10 @@ class SynonymInLineSerializer(WordSelfRelatedSerializer):
     """Serializer to list, create word synonyms inside word serializer."""
 
     default_error_messages = {
-        'same_language_detail': {
+        ExceptionCodes.Vocabulary.SYNONYM_MUST_BE_SAME_LANGUAGE: {
             'synonyms': ExceptionDetails.Vocabulary.SYNONYM_MUST_BE_SAME_LANGUAGE,
         },
-        'same_words_detail': {
+        ExceptionCodes.Vocabulary.SYNONYMS_MUST_DIFFER: {
             'synonyms': ExceptionDetails.Vocabulary.SYNONYMS_MUST_DIFFER,
         },
     }
@@ -1042,10 +1042,10 @@ class AntonymInLineSerializer(WordSelfRelatedSerializer):
     """Serializer to list, create word antonyms inside word serializer."""
 
     default_error_messages = {
-        'same_language_detail': {
+        ExceptionCodes.Vocabulary.ANTONYM_MUST_BE_SAME_LANGUAGE: {
             'antonyms': ExceptionDetails.Vocabulary.ANTONYM_MUST_BE_SAME_LANGUAGE,
         },
-        'same_words_detail': {
+        ExceptionCodes.Vocabulary.ANTONYMS_MUST_DIFFER: {
             'antonyms': ExceptionDetails.Vocabulary.ANTONYMS_MUST_DIFFER,
         },
     }
@@ -1070,10 +1070,10 @@ class FormInLineSerializer(WordSelfRelatedSerializer):
     """Serializer to list, create word forms inside word serializer."""
 
     default_error_messages = {
-        'same_language_detail': {
-            'forms': ExceptionDetails.Vocabulary.FROM_MUST_BE_SAME_LANGUAGE,
+        ExceptionCodes.Vocabulary.FORM_MUST_BE_SAME_LANGUAGE: {
+            'forms': ExceptionDetails.Vocabulary.FORM_MUST_BE_SAME_LANGUAGE,
         },
-        'same_words_detail': {
+        ExceptionCodes.Vocabulary.FORMS_MUST_DIFFER: {
             'forms': ExceptionDetails.Vocabulary.FORMS_MUST_DIFFER,
         },
     }
@@ -1097,10 +1097,10 @@ class SimilarInLineSerializer(WordSelfRelatedSerializer):
     """Serializer to list, create similar words inside word serializer."""
 
     default_error_messages = {
-        'same_language_detail': {
+        ExceptionCodes.Vocabulary.SIMILAR_MUST_BE_SAME_LANGUAGE: {
             'similars': ExceptionDetails.Vocabulary.SIMILAR_MUST_BE_SAME_LANGUAGE,
         },
-        'same_words_detail': {
+        ExceptionCodes.Vocabulary.SIMILARS_MUST_DIFFER: {
             'similars': ExceptionDetails.Vocabulary.SIMILARS_MUST_DIFFER,
         },
     }
@@ -1732,7 +1732,7 @@ class DefinitionCreateSerializer(
 
     already_exist_detail = ExceptionDetails.Vocabulary.DEFINITION_ALREADY_EXIST
     default_error_messages = {
-        'words_same_language_detail': {
+        ExceptionCodes.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE: {
             'words': ExceptionDetails.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE_AS_DEFINITION,
         },
     }
@@ -1870,7 +1870,7 @@ class UsageExampleCreateSerializer(
 
     already_exist_detail = ExceptionDetails.Vocabulary.EXAMPLE_ALREADY_EXIST
     default_error_messages = {
-        'words_same_language_detail': {
+        ExceptionCodes.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE: {
             'words': ExceptionDetails.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE_AS_EXAMPLE,
         },
     }
