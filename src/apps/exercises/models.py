@@ -1,6 +1,7 @@
 """Exercises app models."""
 
 import uuid
+import logging
 
 from django.db import models
 from django.utils.translation import gettext as _
@@ -20,6 +21,8 @@ from utils.fillers import slug_filler
 from config.settings import AUTH_USER_MODEL
 
 from .constants import ExercisesLengthLimits, MAX_TEXT_ANSWER_LENGTH
+
+logger = logging.getLogger(__name__)
 
 
 class Exercise(
@@ -459,7 +462,8 @@ class WordSet(
 @receiver(pre_save, sender=WordSet)
 def fill_slug(sender, instance, *args, **kwargs) -> None:
     """Fills slug field before save instance."""
-    return slug_filler(sender, instance, *args, **kwargs)
+    slug = slug_filler(sender, instance, *args, **kwargs)
+    logger.debug(f'Instance {instance} slug filled with value: {slug}')
 
 
 @receiver(admin_created, sender=AUTH_USER_MODEL)

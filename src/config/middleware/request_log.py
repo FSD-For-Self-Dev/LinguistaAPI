@@ -15,6 +15,9 @@ class RequestLogMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
+        # Pass request to controller
+        response = self.get_response(request)
+
         try:
             start_time = time.monotonic()
             log_data = {
@@ -30,9 +33,6 @@ class RequestLogMiddleware:
                     json.loads(request.body.decode('utf-8')) if request.body else {}
                 )
                 log_data['request_body'] = req_body
-
-            # Pass request to controller
-            response = self.get_response(request)
 
             # Add runtime to log_data
             if (

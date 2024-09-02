@@ -16,3 +16,5 @@ def slug_filler(sender, instance, *args, **kwargs) -> None:
     ]
 
     instance.slug = sender.slugify_func(*slugify_data, allow_unicode=True)
+
+    return instance.slug

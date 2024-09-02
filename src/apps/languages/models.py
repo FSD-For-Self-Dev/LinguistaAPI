@@ -1,6 +1,7 @@
 """Languages app models."""
 
 import uuid
+import logging
 
 from django.db import models
 from django.utils.translation import gettext as _
@@ -16,6 +17,8 @@ from apps.core.models import (
 )
 from config.settings import AUTH_USER_MODEL
 from utils.fillers import slug_filler
+
+logger = logging.getLogger(__name__)
 
 
 class Language(WordsCountMixin, models.Model):
@@ -248,4 +251,5 @@ class UserNativeLanguage(SlugModel, CreatedModel):
 @receiver(pre_save, sender=UserNativeLanguage)
 def fill_slug(sender, instance, *args, **kwargs) -> None:
     """Fill slug field before save instance."""
-    return slug_filler(sender, instance, *args, **kwargs)
+    slug = slug_filler(sender, instance, *args, **kwargs)
+    logger.debug(f'Instance {instance} slug filled with value: {slug}')

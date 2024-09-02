@@ -1,6 +1,7 @@
 """Vocabulary app models."""
 
 import uuid
+import logging
 
 from django.core.validators import MinLengthValidator
 from django.db import models
@@ -32,6 +33,8 @@ from utils.fillers import slug_filler
 from .constants import (
     VocabularyLengthLimits,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class Word(
@@ -1211,7 +1214,8 @@ class DefaultWordCards(UserRelatedModel, CreatedModel):
 @receiver(pre_save, sender=Note)
 def fill_slug(sender, instance, *args, **kwargs) -> None:
     """Fill slug field before save instance."""
-    return slug_filler(sender, instance, *args, **kwargs)
+    slug = slug_filler(sender, instance, *args, **kwargs)
+    logger.debug(f'Instance {instance} slug filled with value: {slug}')
 
 
 @receiver(post_delete, sender=Word)

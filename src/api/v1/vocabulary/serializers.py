@@ -16,7 +16,7 @@ from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework.serializers import Serializer
 
 from apps.core.exceptions import ExceptionDetails, ExceptionCodes, AmountLimits
-from apps.languages.models import Language, UserLearningLanguage
+from apps.languages.models import Language, UserLearningLanguage, UserNativeLanguage
 from apps.vocabulary.models import (
     Antonym,
     Collection,
@@ -2261,6 +2261,12 @@ class UserDetailsSerializer(
         return WordStandartCardSerializer(
             words, many=True, context={'request': self.context['request']}
         ).data
+
+    def update(self, instance, validated_data):
+        native_languages = validated_data.pop('native_languages', [])
+        for language in native_languages:
+            UserNativeLanguage.objects.get_or_create(user=instance, language=language)
+        return super().update(instance, validated_data)
 
 
 class MainPageSerailizer(UserDetailsSerializer):
