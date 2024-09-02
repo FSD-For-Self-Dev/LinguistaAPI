@@ -23,3 +23,5 @@ REGEX_HEXCOLOR_MASK_DETAIL = 'Color must be in hex format.'
 
 MAX_IMAGE_SIZE_MB = 4  # 4 MB is max size for uploaded images
 MAX_IMAGE_SIZE = MAX_IMAGE_SIZE_MB * 1024 * 1024  # uploaded images max size in bytes
+
+MAX_SLUG_LENGTH = 1024

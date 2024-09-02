@@ -12,6 +12,7 @@ class CustomUserAdmin(UserAdmin):
         'username',
         'email',
         'image',
+        'words_in_vocabulary',
         'is_active',
         'is_staff',
         'date_joined',

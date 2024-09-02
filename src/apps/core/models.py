@@ -11,6 +11,8 @@ from django.core.exceptions import ObjectDoesNotExist
 from utils.generators import slugify_text_fields
 from config.settings import AUTH_USER_MODEL
 
+from .constants import MAX_SLUG_LENGTH
+
 
 class GetObjectBySlugModelMixin:
     """
@@ -53,7 +55,7 @@ class GetObjectBySlugModelMixin:
                     f'Can not get slug from data. Make sure {field} are passed in '
                     'data.'
                 )
-        return cls.slugify_func(*_slugify_data)
+        return cls.slugify_func(*_slugify_data)[:MAX_SLUG_LENGTH]
 
     @classmethod
     def get_object(cls, data: OrderedDict) -> Type[models.Model] | None:
@@ -156,6 +158,7 @@ class SlugModel(models.Model):
         unique=True,
         blank=False,
         null=False,
+        max_length=MAX_SLUG_LENGTH,
     )
 
     class Meta:
