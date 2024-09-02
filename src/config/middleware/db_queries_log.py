@@ -17,24 +17,27 @@ class DatabaseQueriesLogMiddleware:
         # Pass request to controller
         response = self.get_response(request)
 
-        # Variable to store total execution time
-        query_time = 0
+        try:
+            # Variable to store total execution time
+            query_time = 0
 
-        for query in connection.queries:
-            # Add the time that the query took to the total
+            for query in connection.queries:
+                # Add the time that the query took to the total
+                queries_logger.info(
+                    {
+                        'query': query['sql'],
+                        'execution time': float(query['time']),
+                    }
+                )
+                query_time += float(query['time'])
+
             queries_logger.info(
                 {
-                    'query': query['sql'],
-                    'execution time': float(query['time']),
+                    'total execution time': query_time,
+                    'total number of queries': len(connection.queries),
                 }
             )
-            query_time += float(query['time'])
-
-        queries_logger.info(
-            {
-                'total execution time': query_time,
-                'total number of queries': len(connection.queries),
-            }
-        )
+        except Exception as e:
+            queries_logger.error(f'Error occured during query logging: {e}')
 
         return response

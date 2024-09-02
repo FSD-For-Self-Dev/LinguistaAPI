@@ -2,7 +2,7 @@
 
 import uuid
 
-from django.core.validators import MinLengthValidator, RegexValidator
+from django.core.validators import MinLengthValidator
 from django.db import models
 from django.db.models.functions import Lower
 from django.db.models.signals import pre_save, post_delete
@@ -26,6 +26,7 @@ from apps.core.constants import (
     REGEX_HEXCOLOR_MASK,
     REGEX_HEXCOLOR_MASK_DETAIL,
 )
+from apps.core.validators import CustomRegexValidator
 from utils.fillers import slug_filler
 
 from .constants import (
@@ -61,7 +62,7 @@ class Word(
         max_length=VocabularyLengthLimits.MAX_WORD_LENGTH,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_WORD_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     activity_status = models.CharField(
@@ -203,7 +204,7 @@ class Type(
         unique=True,
         validators=(
             MinLengthValidator(1),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
 
@@ -240,7 +241,7 @@ class Tag(
         unique=True,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_TAG_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
 
@@ -278,7 +279,7 @@ class FormGroup(
         blank=False,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     language = models.ForeignKey(
@@ -294,7 +295,7 @@ class FormGroup(
         blank=True,
         validators=(
             MinLengthValidator(7),
-            RegexValidator(
+            CustomRegexValidator(
                 regex=REGEX_HEXCOLOR_MASK, message=REGEX_HEXCOLOR_MASK_DETAIL
             ),
         ),
@@ -305,7 +306,7 @@ class FormGroup(
         blank=True,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
 
@@ -351,7 +352,7 @@ class WordTranslation(
         help_text=_('A translation of a word or phrase'),
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_TRANSLATION_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     language = models.ForeignKey(
@@ -401,7 +402,7 @@ class Definition(
         help_text=_('A definition of a word or phrase'),
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_DEFINITION_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     language = models.ForeignKey(
@@ -417,7 +418,7 @@ class Definition(
         blank=True,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_DEFINITION_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
 
@@ -462,7 +463,7 @@ class UsageExample(
         help_text=_('An usage example of a word or phrase'),
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_EXAMPLE_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     language = models.ForeignKey(
@@ -478,7 +479,7 @@ class UsageExample(
         blank=True,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_EXAMPLE_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
 
@@ -565,7 +566,7 @@ class QuoteAssociation(
         max_length=VocabularyLengthLimits.MAX_QUOTE_TEXT_LENGTH,
         blank=False,
         validators=(
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     quote_author = models.CharField(
@@ -573,7 +574,7 @@ class QuoteAssociation(
         max_length=VocabularyLengthLimits.MAX_QUOTE_AUTHOR_LENGTH,
         blank=True,
         validators=(
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
 
@@ -614,7 +615,7 @@ class Collection(
         max_length=VocabularyLengthLimits.MAX_COLLECTION_NAME_LENGTH,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_COLLECTION_NAME_LENGTH),
-            RegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
     description = models.CharField(

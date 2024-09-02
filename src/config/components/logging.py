@@ -27,7 +27,6 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            # "level": "DEBUG",
             'class': 'logging.StreamHandler',
             'filters': ['require_debug_true'],
             'formatter': 'verbose',
@@ -39,17 +38,18 @@ LOGGING = {
             'maxBytes': 1024 * 1024 * 5,  # 5 MB
             'formatter': 'verbose',
             'delay': True,
+            'encoding': 'utf-8',
         },
         'queries_file': {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(LOGS_DIR, 'queries.log'),
-            'backupCount': 5,  # keep at most 5 log files
+            'backupCount': 10,  # keep at most 10 log files
             'maxBytes': 1024 * 1024 * 5,  # 5 MB
             'formatter': 'verbose',
             'delay': True,
+            'encoding': 'utf-8',
         },
         'mail_admins': {
-            # "level": "ERROR",
             'class': 'django.utils.log.AdminEmailHandler',
             'filters': ['require_debug_false'],
         },

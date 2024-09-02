@@ -11,11 +11,10 @@ GENDERS = (
     ('F', _('Female')),
 )
 
-REGEX_TEXT_MASK = r"^([A-Za-zА-Яа-яёЁ]+)([A-Za-zА-Яа-я-!?.,:'()ёЁ ]*)$"
-REGEX_TEXT_MASK_DETAIL = (
-    'Acceptable characters: Latin letters (A-Z, a-z), '
-    'Cyrillic letters (А-Я, а-я), Hyphen, '
-    'Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe. '
+REGEX_TEXT_MASK = r"^(\p{L}+)([\p{L}-!?.,:/&'`’() ]*)$"
+REGEX_TEXT_MASK_DETAIL = _(
+    'Acceptable characters: Letters from any language, '
+    'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
     'Make sure word begin with a letter.'
 )
 

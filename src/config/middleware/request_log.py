@@ -15,41 +15,39 @@ class RequestLogMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        start_time = time.monotonic()
-        log_data = {
-            'remote_address': request.META['REMOTE_ADDR'],
-            'server_hostname': socket.gethostname(),
-            'request_method': request.method,
-            'request_path': request.get_full_path(),
-        }
+        try:
+            start_time = time.monotonic()
+            log_data = {
+                'remote_address': request.META['REMOTE_ADDR'],
+                'server_hostname': socket.gethostname(),
+                'request_method': request.method,
+                'request_path': request.get_full_path(),
+            }
 
-        # Only log requests with "/api/" in path
-        if '/api/' in str(request.get_full_path()):
-            try:
+            # Only log requests with "/api/" in path
+            if '/api/' in str(request.get_full_path()):
                 req_body = (
                     json.loads(request.body.decode('utf-8')) if request.body else {}
                 )
                 log_data['request_body'] = req_body
-            except json.JSONDecodeError:
-                pass
 
-        # Pass request to controller
-        response = self.get_response(request)
+            # Pass request to controller
+            response = self.get_response(request)
 
-        # Add runtime to log_data
-        if (
-            response
-            and 'content-type' in response
-            and response['content-type'] == 'application/json'
-        ):
-            try:
+            # Add runtime to log_data
+            if (
+                response
+                and 'content-type' in response
+                and response['content-type'] == 'application/json'
+            ):
                 response_body = json.JSONDecoder().decode(response.content)
                 log_data['response_body'] = response_body
-            except Exception:
-                pass
 
-        log_data['run_time'] = time.time() - start_time
+            log_data['run_time'] = time.time() - start_time
 
-        request_logger.info(msg=log_data)
+            request_logger.info(msg=log_data)
+
+        except Exception as e:
+            request_logger.error(f'Error occured during request logging: {e}')
 
         return response
