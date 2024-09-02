@@ -603,9 +603,11 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
                 url = latest_image_association.image_url
 
             request = self.context.get('request', None)
-            if request is not None:
-                return request.build_absolute_uri(url)
-            return url
+
+            if request is None:
+                return url
+
+            return request.build_absolute_uri(url)
 
         except ObjectDoesNotExist:
             return None
@@ -617,16 +619,16 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
     def get_images(self, obj: Word) -> list[str]:
         """Returns list of image associations urls."""
         request = self.context.get('request', None)
-        if request is not None:
-            return map(
-                lambda instance: request.build_absolute_uri(instance.image.url)
-                if instance.image
-                else instance.image_url,
-                obj.image_associations.order_by('-wordimageassociations__created'),
-            )
-        return obj.image_associations.order_by(
-            '-wordimageassociations__created'
-        ).values_list('image', flat=True)
+
+        if request is None:
+            raise AssertionError('No request was passed in context.')
+
+        return map(
+            lambda instance: request.build_absolute_uri(instance.image.url)
+            if instance.image
+            else instance.image_url,
+            obj.image_associations.order_by('-wordimageassociations__created'),
+        )
 
 
 class WordLongCardSerializer(
@@ -2173,8 +2175,20 @@ class CollectionSerializer(CollectionShortSerializer):
         """
         Returns list of image-associations for all words in given collection.
         """
-        return obj.words.filter(image_associations__isnull=False).values_list(
-            'image_associations__image', flat=True
+        request = self.context.get('request', None)
+
+        if request is None:
+            raise AssertionError('No request was passed in context.')
+
+        return map(
+            lambda data: request.build_absolute_uri(data['image'])
+            if data[0]
+            else data[1],
+            obj.words.filter(image_associations__isnull=False)
+            .order_by('-created')
+            .values_list(
+                'image_associations__image', 'image_associations__image_url', flat=False
+            ),
         )
 
 

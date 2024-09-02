@@ -55,7 +55,7 @@ class GetObjectBySlugModelMixin:
                     f'Can not get slug from data. Make sure {field} are passed in '
                     'data.'
                 )
-        return cls.slugify_func(*_slugify_data)[:MAX_SLUG_LENGTH]
+        return cls.slugify_func(*_slugify_data)
 
     @classmethod
     def get_object(cls, data: OrderedDict) -> Type[models.Model] | None:
