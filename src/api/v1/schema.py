@@ -1670,6 +1670,30 @@ data = {
                 ),
             ],
         },
+        'all_languages_list': {
+            'summary': 'Просмотр списка изучаемых и родных языков пользователя',
+            'description': (
+                'Возвращает список изучаемых и родных языков пользователя, '
+                'сортированных по популярности, названию. '
+                'Требуется авторизация.'
+            ),
+            'request': None,
+            'responses': {
+                status.HTTP_200_OK: LanguageSerializer(many=True),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
+            'parameters': [
+                OpenApiParameter(
+                    'search',
+                    OpenApiTypes.STR,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Поиск по названию, локальному названию языков. '
+                        'Пример использования: `api/languages/all/?search=English`.'
+                    ),
+                ),
+            ],
+        },
         'all_languages_global_list': {
             'summary': 'Просмотр списка всех языков',
             'description': (
