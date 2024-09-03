@@ -12,9 +12,9 @@ ENV DATABASE_URL postgresql://linguista_db_user:gW8u9rifM0xUh4ut1KuOuvX9kq4dEK6k
 
 RUN python manage.py collectstatic --no-input
 RUN python manage.py migrate
-RUN python manage.py importexercises
-RUN python manage.py importlanguages
+RUN python manage.py importlanguages --import_images
 RUN python manage.py importwordtypes
+RUN python manage.py importexercises
 RUN python manage.py makesuperuser
 
 EXPOSE 8000

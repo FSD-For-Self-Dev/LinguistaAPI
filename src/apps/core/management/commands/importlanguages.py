@@ -21,7 +21,12 @@ class Command(BaseCommand):
     flag_icons_path = 'apps/languages/images/flag_icons/'
 
     def add_arguments(self, parser):
-        pass
+        parser.add_argument(
+            '--import_images',
+            action='store_true',
+            default=False,
+            help='Pass if images import is needed no matter languages exist',
+        )
 
     def handle(self, *args, **options):
         cnt = 0
@@ -43,7 +48,9 @@ class Command(BaseCommand):
                         isocode, False
                     )
 
-                    if created:
+                    import_images = options['import_images']
+
+                    if created or import_images:
                         cnt += 1
 
                         try:
