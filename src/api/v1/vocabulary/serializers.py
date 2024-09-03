@@ -227,6 +227,7 @@ class WordTranslationInLineSerializer(
         slug_field='name',
         default=NativeLanguageDefault(),
     )
+    language_icon = serializers.SerializerMethodField('get_language_icon')
 
     already_exist_detail = ExceptionDetails.Vocabulary.TRANSLATION_ALREADY_EXIST
 
@@ -238,6 +239,7 @@ class WordTranslationInLineSerializer(
             'slug',
             'text',
             'language',
+            'language_icon',
             'author',
             'created',
             'modified',
@@ -245,12 +247,23 @@ class WordTranslationInLineSerializer(
         read_only_fields = (
             'id',
             'slug',
+            'language_icon',
             'created',
             'modified',
         )
 
     def validate_language(self, language: Language) -> Language | None:
         return self.validate_language_is_native_or_learning(language)
+
+    @extend_schema_field({'type': 'string'})
+    def get_language_icon(self, obj: WordTranslation) -> str:
+        request = self.context.get('request')
+        try:
+            return request.build_absolute_uri(obj.language.flag_icon.url)
+        except ValueError:
+            return None
+        except AttributeError:
+            return None
 
 
 class UsageExampleInLineSerializer(
