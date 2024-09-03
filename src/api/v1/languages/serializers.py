@@ -39,7 +39,7 @@ class LanguageSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
-class LearningLanguageShortSerailizer(
+class LearningLanguageListSerailizer(
     CountObjsSerializerMixin, serializers.ModelSerializer
 ):
     """Serializer to list users's learning languages."""
@@ -125,7 +125,7 @@ class LearningLanguageShortSerailizer(
 
 class LearningLanguageSerailizer(
     AlreadyExistSerializerHandler,
-    LearningLanguageShortSerailizer,
+    LearningLanguageListSerailizer,
 ):
     """Serializer to retrieve users's learning language details."""
 

@@ -169,7 +169,7 @@ class AmountLimits:
             SIMILARS_AMOUNT_EXCEEDED = _('Similar words amount limit exceeded.')
             FORM_GROUPS_AMOUNT_EXCEEDED = _('Word form groups amount limit exceeded.')
 
-    class Users:
+    class Languages:
         MAX_NATIVE_LANGUAGES_AMOUNT = 2
         MAX_LEARNING_LANGUAGES_AMOUNT = 5
 

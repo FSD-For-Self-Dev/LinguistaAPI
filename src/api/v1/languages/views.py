@@ -61,7 +61,12 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         filters.SearchFilter,
         DjangoFilterBackend,
     )
-    ordering = ('-created', 'language__name')
+    ordering = (
+        '-modified',
+        '-created',
+        '-words_count',
+        'language__name',
+    )
     ordering_fields = (
         'created',
         'language__name',
@@ -76,21 +81,34 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         user = self.request.user
         match self.action:
             case 'all':
-                return Language.objects.annotate(words_count=Count('words'))
+                return (
+                    Language.objects.filter(Q(learning_by=user) | Q(native_for=user))
+                    .annotate(
+                        is_native=Case(
+                            When(
+                                native_for=user,
+                                then=Value(True),
+                            ),
+                            default=Value(False),
+                        ),
+                        words_count=Count('words'),
+                    )
+                    .order_by('-is_native', '-words_count', 'name')
+                )
+            case 'native':
+                return user.native_languages_detail.all()
             case 'learning_available':
                 if user.is_anonymous:
                     # Ingore learning languages for anonymous user
                     return Language.objects.filter(learning_available=True).order_by(
-                        '-sorting', 'name'
+                        '-words_count', 'name'
                     )
                 return (
                     Language.objects.filter(learning_available=True)
                     .exclude(learning_by=self.request.user)
                     .annotate(words_count=Count('words'))
-                    .order_by('-sorting', 'name')
+                    .order_by('-words_count', 'name')
                 )
-            case 'all':
-                return Language.objects.annotate(words_count=Count('words'))
             case 'interface':
                 try:
                     learning_list = user.learning_languages.values_list(
@@ -114,25 +132,18 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                         ),
                         words_count=Count('words'),
                     )
-                    .order_by('-is_learning_or_native', '-sorting', 'name')
+                    .order_by('-is_learning_or_native', '-words_count', 'name')
                 )
-            case 'native':
-                if user.is_authenticated:
-                    return user.native_languages_detail.annotate(
-                        words_count=Count(
-                            'user__wordtranslations',
-                            filter=Q(user__wordtranslations__language=F('language')),
-                        )
-                    )
-                return Language.objects.none()
+            case 'global_list':
+                return Language.objects.annotate(words_count=Count('words')).order_by(
+                    '-words_count'
+                )
             case _:
-                if user.is_authenticated:
-                    return user.learning_languages_detail.annotate(
-                        words_count=Count(
-                            'user__words', filter=Q(user__words__language=F('language'))
-                        )
+                return user.learning_languages_detail.annotate(
+                    words_count=Count(
+                        'user__words', filter=Q(user__words__language=F('language'))
                     )
-                return Language.objects.none()
+                )
 
     def get_serializer_class(self) -> Serializer:
         match self.action:
@@ -151,7 +162,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 return super().get_serializer_class()
 
     def list(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Returns all user's learning languages, its amount."""
+        """Returns list of user's learning languages with counter."""
         response_data = super().list(request, *args, **kwargs).data
         return Response({'count': len(response_data), 'results': response_data})
 
@@ -174,11 +185,12 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                     ),
                     new_objects_amount=len(serializer.validated_data),
                     amount_limit=kwargs.get(
-                        'amount_limit', AmountLimits.Users.MAX_LEARNING_LANGUAGES_AMOUNT
+                        'amount_limit',
+                        AmountLimits.Languages.MAX_LEARNING_LANGUAGES_AMOUNT,
                     ),
                     detail=kwargs.get(
                         'amount_limit_exceeded_detail',
-                        AmountLimits.Users.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
+                        AmountLimits.Languages.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
                     ),
                 )
             except AmountLimitExceeded as exception:
@@ -277,7 +289,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         serializer_class=LearningLanguageSerailizer,
     )
     def collections(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Returns all user's collections that have words with given language."""
+        """Returns list of user's collections that have words with given language."""
         instance = self.get_object()
         logger.debug(f'Obtained instance: {instance}')
 
@@ -299,12 +311,27 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             }
         )
 
+    @extend_schema(operation_id='all_languages_list', methods=('get',))
+    @action(
+        methods=('get',),
+        detail=False,
+        permission_classes=(IsAuthenticated,),
+        serializer_class=LanguageSerializer,
+        ordering=None,
+        ordering_fields=None,
+        search_fields=('name', 'name_local'),
+    )
+    def all(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns all user's learning and native languages."""
+        return self.list(request)
+
     @extend_schema(operation_id='native_languages_list', methods=('get',))
     @action(
         methods=('get',),
         detail=False,
         permission_classes=(IsAuthenticated,),
         serializer_class=NativeLanguageSerailizer,
+        ordering=('-created', 'language__name'),
         ordering_fields=None,
         filter_backends=(
             filters.OrderingFilter,
@@ -313,21 +340,22 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         search_fields=None,
     )
     def native(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Returns all user's native languages."""
+        """Returns list of user's native languages."""
         return self.list(request)
 
-    @extend_schema(operation_id='all_languages_list', methods=('get',))
+    @extend_schema(operation_id='all_languages_global_list', methods=('get',))
     @action(
         methods=('get',),
         detail=False,
+        url_path='global-list',
         serializer_class=LanguageSerializer,
         permission_classes=(AllowAny,),
         ordering=('-sorting', 'name'),
         ordering_fields=None,
         search_fields=('name', 'name_local'),
     )
-    def all(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Returns all languages."""
+    def global_list(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
+        """Returns all global languages."""
         return super().list(request)
 
     @extend_schema(
@@ -358,7 +386,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         search_fields=('name', 'name_local'),
     )
     def interface(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Returns all available for interface translation languages."""
+        """Returns list of languages that available for interface translation."""
         return self.list(request)
 
     @extend_schema(operation_id='language_cover_choices_retrieve', methods=('get',))
@@ -372,7 +400,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     )
     def cover_choices(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """
-        Returns all available images to be set as cover for given learning language.
+        Returns list of images that can be set as cover for given learning language.
         """
         learning_language: UserLearningLanguage = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')

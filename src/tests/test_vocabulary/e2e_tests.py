@@ -2872,7 +2872,7 @@ class TestLanguagesEndpoints:
         language_names = languages(
             name=True,
             extra_data={'learning_available': True},
-            _quantity=AmountLimits.Users.MAX_LEARNING_LANGUAGES_AMOUNT + 1,
+            _quantity=AmountLimits.Languages.MAX_LEARNING_LANGUAGES_AMOUNT + 1,
         )
         source_data = [
             {

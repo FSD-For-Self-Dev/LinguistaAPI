@@ -57,7 +57,7 @@ from ..core.serializers_mixins import (
 from ..users.serializers import UserListSerializer
 from ..languages.serializers import (
     LanguageSerializer,
-    LearningLanguageShortSerailizer,
+    LearningLanguageListSerailizer,
     LearningLanguageSerailizer,
 )
 
@@ -113,37 +113,56 @@ class ValidateLanguageMixin:
         learning or native languages.
         """
         user = self.context.get('request').user
+
+        # Adds language to native if language is not lerning or native for user
         if not (
             language in user.native_languages.all()
             or language in user.learning_languages.all()
         ):
-            raise serializers.ValidationError(
-                ExceptionDetails.Languages.LANGUAGE_MUST_BE_LEARNING_OR_NATIVE,
-                code=ExceptionCodes.Languages.LANGUAGE_INVALID,
-            )
+            # Checks amount limits
+            if (
+                user.native_languages.count() + 1
+                > AmountLimits.Languages.MAX_NATIVE_LANGUAGES_AMOUNT
+            ):
+                raise serializers.ValidationError(
+                    ExceptionDetails.Languages.LANGUAGE_MUST_BE_LEARNING_OR_NATIVE,
+                    code=ExceptionCodes.Languages.LANGUAGE_INVALID,
+                )
+
+            UserNativeLanguage.objects.create(user=user, language=language)
+            return language
+
         return language
 
-    def validate_language_is_learning(
-        self, language: Language, add_to_learning=True
-    ) -> Language | None:
+    def validate_language_is_learning(self, language: Language) -> Language | None:
         """
         Raises ValidationError if language does not belong to user's
         learning languages.
         """
         user = self.context.get('request').user
+
+        # Adds language to learning if language is not learning for user
         if language not in user.learning_languages.all():
-            if add_to_learning:
-                if language.learning_available:
-                    # Adds language to learning if available
-                    UserLearningLanguage.objects.create(user=user, language=language)
-                    return language
-                else:
+            # Checks if available
+            if language.learning_available:
+                # Checks amount limits
+                if (
+                    user.learning_languages.count() + 1
+                    > AmountLimits.Languages.MAX_LEARNING_LANGUAGES_AMOUNT
+                ):
                     raise serializers.ValidationError(
-                        ExceptionDetails.Languages.LANGUAGE_NOT_AVAILABLE
+                        ExceptionDetails.Languages.LANGUAGE_MUST_BE_LEARNING,
+                        code=ExceptionCodes.Languages.LANGUAGE_INVALID,
                     )
-            raise serializers.ValidationError(
-                ExceptionDetails.Languages.LANGUAGE_MUST_BE_LEARNING,
-            )
+
+                UserLearningLanguage.objects.create(user=user, language=language)
+                return language
+
+            else:
+                raise serializers.ValidationError(
+                    ExceptionDetails.Languages.LANGUAGE_NOT_AVAILABLE
+                )
+
         return language
 
     def validate_language_is_native(self, language: Language) -> Language | None:
@@ -2208,7 +2227,7 @@ class UserDetailsSerializer(
         'get_objs_count',
         objs_related_name='learning_languages',
     )
-    learning_languages = LearningLanguageShortSerailizer(
+    learning_languages = LearningLanguageListSerailizer(
         read_only=True,
         many=True,
         source='learning_languages_detail',
@@ -2248,9 +2267,9 @@ class UserDetailsSerializer(
         self, languages: QuerySet[Language]
     ) -> QuerySet[Language]:
         """Raises ValidationError if amount limits for native languages exceeded."""
-        if len(languages) > AmountLimits.Users.MAX_NATIVE_LANGUAGES_AMOUNT:
+        if len(languages) > AmountLimits.Languages.MAX_NATIVE_LANGUAGES_AMOUNT:
             raise serializers.ValidationError(
-                AmountLimits.Users.Details.NATIVE_LANGUAGES_AMOUNT_EXCEEDED
+                AmountLimits.Languages.Details.NATIVE_LANGUAGES_AMOUNT_EXCEEDED
             )
         return languages
 

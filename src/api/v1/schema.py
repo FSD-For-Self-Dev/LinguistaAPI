@@ -1434,8 +1434,8 @@ data = {
                             name=ExceptionCodes.AMOUNT_LIMIT_EXCEEDED,
                             value={
                                 'exception_code': ExceptionCodes.AMOUNT_LIMIT_EXCEEDED,
-                                'detail': AmountLimits.Users.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
-                                'amount_limit': AmountLimits.Users.MAX_LEARNING_LANGUAGES_AMOUNT,
+                                'detail': AmountLimits.Languages.Details.LEARNING_LANGUAGES_AMOUNT_EXCEEDED,
+                                'amount_limit': AmountLimits.Languages.MAX_LEARNING_LANGUAGES_AMOUNT,
                             },
                         ),
                     ],
@@ -1670,7 +1670,7 @@ data = {
                 ),
             ],
         },
-        'all_languages_list': {
+        'all_languages_global_list': {
             'summary': 'Просмотр списка всех языков',
             'description': (
                 'Возвращает список всех языков мира с сортировкой по '
