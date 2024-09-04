@@ -33,7 +33,7 @@ from apps.vocabulary.filters import CollectionFilter, WordFilter
 from apps.vocabulary.models import (
     Collection,
     FormGroup,
-    Type,
+    WordType,
     Definition,
     WordTranslation,
     UsageExample,
@@ -1707,7 +1707,7 @@ class TagViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """List all possible types of words and phrases."""
 
-    queryset = Type.objects.all()
+    queryset = WordType.objects.all()
     serializer_class = TypeSerializer
     lookup_field = 'slug'
     http_method_names = ('get',)
@@ -1717,9 +1717,9 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     search_fields = ('name',)
     ordering = ('-words_count',)
 
-    def get_queryset(self) -> QuerySet[Type]:
+    def get_queryset(self) -> QuerySet[WordType]:
         # Annotate with words amount to use in sorting
-        return Type.objects.annotate(words_count=Count('words', distinct=True))
+        return WordType.objects.annotate(words_count=Count('words', distinct=True))
 
 
 @extend_schema(tags=['forms groups'])

@@ -17,7 +17,7 @@ from .models import (
     Similar,
     Synonym,
     Tag,
-    Type,
+    WordType,
     UsageExample,
     Word,
     WordDefinitions,
@@ -104,8 +104,8 @@ class WordAdmin(admin.ModelAdmin):
     )
 
 
-@admin.register(Type)
-class TypeAdmin(TabbedTranslationAdmin):
+@admin.register(WordType)
+class WordTypeAdmin(TabbedTranslationAdmin):
     prepopulated_fields = {'slug': ('name',)}
     list_display = ('name', 'slug', 'words_count')
     list_display_links = ('name',)

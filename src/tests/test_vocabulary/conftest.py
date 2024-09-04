@@ -8,7 +8,7 @@ from apps.vocabulary.models import (
     WordTranslation,
     UsageExample,
     Definition,
-    Type,
+    WordType,
     Tag,
     Note,
     Collection,
@@ -156,7 +156,7 @@ def word_types(request):
     def get_word_types_data(
         user=None, data=False, source_only=False, _quantity=1, **kwargs
     ):
-        objs = baker.make(Type, _quantity=_quantity)
+        objs = baker.make(WordType, _quantity=_quantity)
         if data:
             source_data = [obj.name for obj in objs]
             expected_data = source_data

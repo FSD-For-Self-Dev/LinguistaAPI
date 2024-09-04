@@ -2,13 +2,13 @@
 
 from modeltranslation.translator import TranslationOptions, register
 
-from .models import Type
+from .models import WordType
 
 
-@register(Type)
+@register(WordType)
 class TypeTranslationOptions(TranslationOptions):
     """
-    Internationalization settings for fields of the Type model.
+    Internationalization settings for fields of the WordType model.
     """
 
     fields = ('name',)

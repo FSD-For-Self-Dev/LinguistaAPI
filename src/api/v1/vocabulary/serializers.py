@@ -29,7 +29,7 @@ from apps.vocabulary.models import (
     Similar,
     Synonym,
     Tag,
-    Type,
+    WordType,
     UsageExample,
     Word,
     WordTranslation,
@@ -749,7 +749,7 @@ class WordShortCreateSerializer(
     )
     types = serializers.SlugRelatedField(
         slug_field='name',
-        queryset=Type.objects.all(),
+        queryset=WordType.objects.all(),
         many=True,
         required=False,
     )
@@ -1182,7 +1182,7 @@ class WordSerializer(WordShortCreateSerializer):
     )
     types = serializers.SlugRelatedField(
         slug_field='name',
-        queryset=Type.objects.order_by('name'),
+        queryset=WordType.objects.order_by('name'),
         many=True,
         required=False,
     )
@@ -2096,7 +2096,7 @@ class TypeSerializer(CountObjsSerializerMixin, serializers.ModelSerializer):
     words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
 
     class Meta:
-        model = Type
+        model = WordType
         fields = (
             'id',
             'name',

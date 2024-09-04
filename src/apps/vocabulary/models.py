@@ -80,8 +80,8 @@ class Word(
         default=False,
     )
     types = models.ManyToManyField(
-        'Type',
-        verbose_name=_('Type'),
+        'WordType',
+        verbose_name=_('WordType'),
         related_name='words',
         blank=True,
     )
@@ -187,7 +187,7 @@ class Word(
         return f'{self.text} (by {self.author})'
 
 
-class Type(
+class WordType(
     GetObjectBySlugModelMixin,
     WordsCountMixin,
     SlugModel,
@@ -202,7 +202,7 @@ class Type(
         editable=False,
     )
     name = models.CharField(
-        _('Type name'),
+        _('Word type name'),
         max_length=64,
         unique=True,
         validators=(
@@ -214,9 +214,9 @@ class Type(
     slugify_fields = ('name',)
 
     class Meta:
-        verbose_name = _('Type')
-        verbose_name_plural = _('Types')
-        db_table_comment = _('Words and phrases types')
+        verbose_name = _('Word type')
+        verbose_name_plural = _('Word types')
+        db_table_comment = _('Word or phrase types')
         ordering = ('-created', '-modified', '-id')
         get_latest_by = ('created', 'modified')
 
@@ -1206,7 +1206,7 @@ class DefaultWordCards(UserRelatedModel, CreatedModel):
 
 @receiver(pre_save, sender=Word)
 @receiver(pre_save, sender=Collection)
-@receiver(pre_save, sender=Type)
+@receiver(pre_save, sender=WordType)
 @receiver(pre_save, sender=FormGroup)
 @receiver(pre_save, sender=WordTranslation)
 @receiver(pre_save, sender=Definition)

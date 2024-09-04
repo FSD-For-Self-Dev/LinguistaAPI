@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from apps.vocabulary.models import (
     Word,
     Tag,
-    Type,
+    WordType,
     WordTranslation,
     UsageExample,
     Definition,
@@ -280,7 +280,7 @@ class TestVocabularyEndpoints:
         'filter_field, related_model, filter_attr, use_manager',
         [
             ('tags', Tag, 'name', True),
-            ('types', Type, 'slug', True),
+            ('types', WordType, 'slug', True),
             ('language', Language, 'isocode', False),
         ],
     )
@@ -404,7 +404,7 @@ class TestVocabularyEndpoints:
         """
         language = learning_language(user)
         word = baker.prepare(Word, author=user, language=language, _fill_optional=True)
-        word_types = baker.make(Type, _quantity=1)
+        word_types = baker.make(WordType, _quantity=1)
         word_tags = baker.prepare(Tag, _quantity=1)
         source_json = {
             'language': word.language.name,
