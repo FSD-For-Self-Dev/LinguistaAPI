@@ -107,8 +107,8 @@ class WordAdmin(admin.ModelAdmin):
 @admin.register(Type)
 class TypeAdmin(TabbedTranslationAdmin):
     prepopulated_fields = {'slug': ('name',)}
-    list_display = ('slug', 'name', 'words_count')
-    list_display_links = ('slug',)
+    list_display = ('name', 'slug', 'words_count')
+    list_display_links = ('name',)
 
 
 class CollectionWordInLine(admin.TabularInline):
