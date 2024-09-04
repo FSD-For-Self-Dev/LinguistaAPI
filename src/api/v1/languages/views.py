@@ -50,7 +50,7 @@ logger = logging.getLogger(__name__)
 class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     """User's learning, native languages CRUD."""
 
-    http_method_names = ('get', 'post', 'delete')
+    http_method_names = ('get', 'post', 'delete', 'head')
     lookup_field = 'language__name'
     queryset = UserLearningLanguage.objects.none()
     serializer_class = LearningLanguageSerailizer
