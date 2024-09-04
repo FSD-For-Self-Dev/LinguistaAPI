@@ -4,6 +4,8 @@ set -o errexit
 
 python -m pip install -r requirements.txt
 
+source venv/bin/activate
+
 cd src/
 
 python manage.py collectstatic --no-input
