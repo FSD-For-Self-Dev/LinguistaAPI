@@ -215,6 +215,11 @@ sudo ufw enable
 sudo ufw status
 ```
 
+### Запустите юнит nginx
+```bash
+sudo systemctl start nginx
+```
+
 ### Настройте юнит nginx
 ```bash
 sudo nano /etc/nginx/sites-enabled/default
