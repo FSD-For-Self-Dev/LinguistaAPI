@@ -4,7 +4,7 @@ from django.core.management.base import BaseCommand
 
 from tqdm import tqdm
 
-from apps.vocabulary.models import Type
+from apps.vocabulary.models import WordType
 
 TYPE_CHOICES = [
     ('NOUN', 'Noun', 3),
@@ -43,7 +43,7 @@ class Command(BaseCommand):
         cnt = 0
         for type_info in tqdm(TYPE_CHOICES, desc='Importing types'):
             try:
-                _, created = Type.objects.get_or_create(
+                _, created = WordType.objects.get_or_create(
                     name=type_info[1],
                 )
                 if created:
