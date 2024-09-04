@@ -319,7 +319,7 @@ class WordViewSet(
 ):
     """Words CRUD and actions with word related objects."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
     queryset = Word.objects.none()
     serializer_class = WordSerializer
@@ -1088,7 +1088,7 @@ class WordTranslationViewSet(
 ):
     """Words translations CRUD."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
     queryset = WordTranslation.objects.none()
     serializer_class = WordTranslationSerializer
@@ -1163,7 +1163,7 @@ class UsageExampleViewSet(
 ):
     """Words usage examples CRUD."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
     queryset = UsageExample.objects.none()
     serializer_class = UsageExampleSerializer
@@ -1238,7 +1238,7 @@ class DefinitionViewSet(
 ):
     """Words definitions CRUD."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
     queryset = Definition.objects.none()
     serializer_class = DefinitionSerializer
@@ -1304,7 +1304,7 @@ class DefinitionViewSet(
 class AssociationViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """Words associations CRUD."""
 
-    http_method_names = ('get', 'head')
+    http_method_names = ('get',)
     queryset = ImageAssociation.objects.none()
     serializer_class = AllAssociationsSerializer
     permission_classes = (IsAuthenticated,)
@@ -1335,7 +1335,7 @@ class ImageViewSet(
 ):
     """Words image-associations CRUD."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'id'
     queryset = ImageAssociation.objects.none()
     serializer_class = ImageInLineSerializer
@@ -1401,7 +1401,7 @@ class QuoteViewSet(
 ):
     """Words quote-associtaions CRUD."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'id'
     queryset = QuoteAssociation.objects.none()
     serializer_class = QuoteInLineSerializer
@@ -1460,7 +1460,7 @@ class SynonymViewSet(
 ):
     """Retrieve, update, destroy actions for words synonyms."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
     queryset = Word.objects.none()
     serializer_class = SynonymSerializer
@@ -1538,7 +1538,7 @@ class AntonymViewSet(
 ):
     """Retrieve, update, destroy actions for words antonyms."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
     queryset = Word.objects.none()
     serializer_class = AntonymSerializer
@@ -1616,7 +1616,7 @@ class SimilarViewSet(
 ):
     """Retrieve, update, destroy actions for similar words."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
     queryset = Word.objects.none()
     serializer_class = SimilarSerializer
@@ -1686,7 +1686,7 @@ class TagViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
 
     queryset = WordTag.objects.none()
     serializer_class = TagListSerializer
-    http_method_names = ('get', 'head')
+    http_method_names = ('get',)
     pagination_class = None
     permission_classes = (IsAuthenticated,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
@@ -1710,7 +1710,7 @@ class TypeViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = WordType.objects.all()
     serializer_class = TypeSerializer
     lookup_field = 'slug'
-    http_method_names = ('get', 'head')
+    http_method_names = ('get',)
     pagination_class = None
     permission_classes = (AllowAny,)
     filter_backends = (filters.SearchFilter, filters.OrderingFilter)
@@ -1732,7 +1732,7 @@ class FormGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     queryset = FormGroup.objects.none()
     serializer_class = FormGroupListSerializer
     lookup_field = 'slug'
-    http_method_names = ('get', 'head')
+    http_method_names = ('get',)
     permission_classes = (IsAuthenticated,)
     pagination_class = None
     filter_backends = (filters.SearchFilter,)
@@ -1773,7 +1773,7 @@ class CollectionViewSet(
     queryset = Collection.objects.none()
     serializer_class = CollectionSerializer
     lookup_field = 'slug'
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     permission_classes = (IsAuthenticated, IsAuthorOrReadOnly)
     pagination_class = LimitPagination
     filter_backends = (
@@ -2020,7 +2020,7 @@ class CollectionViewSet(
 class MainPageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """Retrieve main page data."""
 
-    http_method_names = ('get', 'head')
+    http_method_names = ('get',)
     lookup_field = 'slug'
     queryset = User.objects.none()
     serializer_class = MainPageSerailizer

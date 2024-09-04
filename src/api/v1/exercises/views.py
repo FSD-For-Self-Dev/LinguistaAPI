@@ -60,7 +60,7 @@ class ExerciseViewSet(
 ):
     """Retrieve, list exercises."""
 
-    http_method_names = ('get', 'post', 'patch', 'delete', 'head')
+    http_method_names = ('get', 'post', 'patch', 'delete')
     lookup_field = 'slug'
     queryset = Exercise.objects.all()
     serializer_class = ExerciseListSerializer
