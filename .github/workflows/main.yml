@@ -65,6 +65,7 @@ jobs:
         password: ${{ secrets.PASSWORD }}
         key: ${{ secrets.SSH_KEY }}
         script: |
+          cd LinguistaAPI
           sudo git pull
           sudo build.sh
           sudo systemctl daemon-reload
