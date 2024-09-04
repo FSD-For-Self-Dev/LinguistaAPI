@@ -16,7 +16,7 @@ from .models import (
     Note,
     Similar,
     Synonym,
-    Tag,
+    WordTag,
     WordType,
     UsageExample,
     Word,
@@ -123,7 +123,7 @@ class CollectionAdmin(admin.ModelAdmin):
     inlines = (CollectionWordInLine,)
 
 
-@admin.register(Tag)
+@admin.register(WordTag)
 class TagAdmin(admin.ModelAdmin):
     list_display = ('name', 'author', 'words_count')
     list_display_links = ('name',)

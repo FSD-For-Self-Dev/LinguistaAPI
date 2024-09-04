@@ -9,7 +9,7 @@ from django.contrib.auth import get_user_model
 
 from apps.vocabulary.models import (
     Word,
-    Tag,
+    WordTag,
     WordType,
     WordTranslation,
     UsageExample,
@@ -183,7 +183,7 @@ class TestVocabularyEndpoints:
         'search_field, search_attr, related_model',
         [
             ('translations', 'text', WordTranslation),
-            ('tags', 'name', Tag),
+            ('tags', 'name', WordTag),
             ('definitions', 'text', Definition),
             ('definitions', 'translation', Definition),
         ],
@@ -279,7 +279,7 @@ class TestVocabularyEndpoints:
     @pytest.mark.parametrize(
         'filter_field, related_model, filter_attr, use_manager',
         [
-            ('tags', Tag, 'name', True),
+            ('tags', WordTag, 'name', True),
             ('types', WordType, 'slug', True),
             ('language', Language, 'isocode', False),
         ],
@@ -405,7 +405,7 @@ class TestVocabularyEndpoints:
         language = learning_language(user)
         word = baker.prepare(Word, author=user, language=language, _fill_optional=True)
         word_types = baker.make(WordType, _quantity=1)
-        word_tags = baker.prepare(Tag, _quantity=1)
+        word_tags = baker.prepare(WordTag, _quantity=1)
         source_json = {
             'language': word.language.name,
             'text': word.text,
@@ -576,7 +576,7 @@ class TestVocabularyEndpoints:
             ('translations', 'word_translations', WordTranslation, 'text'),
             ('examples', 'word_usage_examples', UsageExample, 'text'),
             ('definitions', 'word_definitions', Definition, 'text'),
-            ('tags', 'word_tags', Tag, 'name'),
+            ('tags', 'word_tags', WordTag, 'name'),
             ('form_groups', 'word_form_groups', FormGroup, 'name'),
             ('synonyms', 'related_words_data', Word, 'text'),
             ('antonyms', 'related_words_data', Word, 'text'),
@@ -859,7 +859,7 @@ class TestVocabularyEndpoints:
             ('translations', 'word_translations', WordTranslation, True, ''),
             ('examples', 'word_usage_examples', UsageExample, True, ''),
             ('definitions', 'word_definitions', Definition, True, ''),
-            ('tags', 'word_tags', Tag, True, ''),
+            ('tags', 'word_tags', WordTag, True, ''),
             ('collections', 'collections', Collection, False, ''),
             # (
             #     'image_associations',
@@ -1047,7 +1047,7 @@ class TestVocabularyEndpoints:
             ('translations', WordTranslation),
             ('examples', UsageExample),
             ('definitions', Definition),
-            ('tags', Tag),
+            ('tags', WordTag),
             ('form_groups', FormGroup),
             ('image_associations', ImageAssociation),
             ('quote_associations', QuoteAssociation),
@@ -1226,7 +1226,7 @@ class TestVocabularyEndpoints:
     @pytest.mark.parametrize(
         'objs_related_name, related_model, res_name',
         [
-            ('tags', Tag, ''),
+            ('tags', WordTag, ''),
             ('translations', WordTranslation, ''),
             ('examples', UsageExample, ''),
             ('definitions', Definition, ''),

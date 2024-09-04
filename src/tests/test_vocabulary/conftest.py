@@ -9,7 +9,7 @@ from apps.vocabulary.models import (
     UsageExample,
     Definition,
     WordType,
-    Tag,
+    WordTag,
     Note,
     Collection,
     QuoteAssociation,
@@ -171,11 +171,11 @@ def word_tags(request):
     def get_word_tags_data(user, data=False, _quantity=1, make=False, **kwargs):
         if make:
             objs = baker.make(
-                Tag, author=user, _quantity=_quantity, _fill_optional=True
+                WordTag, author=user, _quantity=_quantity, _fill_optional=True
             )
         else:
             objs = baker.prepare(
-                Tag, author=user, _quantity=_quantity, _fill_optional=True
+                WordTag, author=user, _quantity=_quantity, _fill_optional=True
             )
         if data:
             source = [{'name': obj.name} for obj in objs]

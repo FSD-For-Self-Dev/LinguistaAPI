@@ -86,7 +86,7 @@ class Word(
         blank=True,
     )
     tags = models.ManyToManyField(
-        'Tag',
+        'WordTag',
         verbose_name=_('Word tags'),
         related_name='words',
         blank=True,
@@ -224,7 +224,7 @@ class WordType(
         return f'{self.name}'
 
 
-class Tag(
+class WordTag(
     GetObjectModelMixin,
     WordsCountMixin,
     AuthorModel,
@@ -251,9 +251,9 @@ class Tag(
     get_object_by_fields = ('name', 'author')
 
     class Meta:
-        verbose_name = _('Tag')
-        verbose_name_plural = _('Tags')
-        db_table_comment = _('Words and phrases tags')
+        verbose_name = _('Word tag')
+        verbose_name_plural = _('Word tags')
+        db_table_comment = _('Word or phrase tags')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
 
@@ -1224,7 +1224,7 @@ def clear_extra_objects(sender, *args, **kwargs) -> None:
     WordTranslation.objects.filter(words__isnull=True).delete()
     UsageExample.objects.filter(words__isnull=True).delete()
     Definition.objects.filter(words__isnull=True).delete()
-    Tag.objects.filter(words__isnull=True).delete()
+    WordTag.objects.filter(words__isnull=True).delete()
     FormGroup.objects.filter(words__isnull=True).delete()
     ImageAssociation.objects.filter(words__isnull=True).delete()
     QuoteAssociation.objects.filter(words__isnull=True).delete()

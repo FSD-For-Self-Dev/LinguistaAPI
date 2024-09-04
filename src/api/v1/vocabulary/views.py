@@ -38,7 +38,7 @@ from apps.vocabulary.models import (
     WordTranslation,
     UsageExample,
     Word,
-    Tag,
+    WordTag,
     ImageAssociation,
     QuoteAssociation,
     FavoriteCollection,
@@ -1684,7 +1684,7 @@ class SimilarViewSet(
 class TagViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """List all user's tags."""
 
-    queryset = Tag.objects.none()
+    queryset = WordTag.objects.none()
     serializer_class = TagListSerializer
     http_method_names = ('get',)
     pagination_class = None
@@ -1694,12 +1694,12 @@ class TagViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     ordering = ('-words_count', '-modified', '-created')
     ordering_fields = ('created', 'words_count')
 
-    def get_queryset(self) -> QuerySet[Tag]:
+    def get_queryset(self) -> QuerySet[WordTag]:
         # Annotate tags with words amount to use in sorting
         user = self.request.user
         if user.is_authenticated:
-            return user.tags.annotate(words_count=Count('words', distinct=True))
-        return Tag.objects.none()
+            return user.wordtags.annotate(words_count=Count('words', distinct=True))
+        return WordTag.objects.none()
 
 
 @extend_schema(tags=['types'])

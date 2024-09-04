@@ -59,8 +59,8 @@ msgid "Is the word problematic for you"
 msgstr "Проблемно ли для вас это слово"
 
 #: .\models.py:125 .\models.py:258
-msgid "Type"
-msgstr "Тип"
+msgid "Word type"
+msgstr "Тип слова"
 
 #: .\models.py:131
 msgid "Word tags"
@@ -135,32 +135,32 @@ msgid "Users words and phrases"
 msgstr "Добавленные пользователями слова и фразы"
 
 #: .\models.py:246
-msgid "Type name"
-msgstr "Имя типа"
+msgid "Word type name"
+msgstr "Имя типа слова"
 
 #: .\models.py:259
-msgid "Types"
-msgstr "Типы"
+msgid "Word types"
+msgstr "Типы слов"
 
 #: .\models.py:260
-msgid "Words and phrases types"
-msgstr "Типы слов и фраз"
+msgid "Word or phrase types"
+msgstr "Типы слов или фраз"
 
 #: .\models.py:283
 msgid "Tag name"
 msgstr "Имя тега"
 
 #: .\models.py:295
-msgid "Tag"
-msgstr "Тег"
+msgid "Word tag"
+msgstr "Теги слова"
 
 #: .\models.py:296
-msgid "Tags"
-msgstr "Теги"
+msgid "Word tags"
+msgstr "Теги слов"
 
 #: .\models.py:297
-msgid "Words and phrases tags"
-msgstr "Теги слов и фраз"
+msgid "Word or phrase tags"
+msgstr "Теги слов или фраз"
 
 #: .\models.py:321
 msgid "Group name"

@@ -28,7 +28,7 @@ from apps.vocabulary.models import (
     Note,
     Similar,
     Synonym,
-    Tag,
+    WordTag,
     WordType,
     UsageExample,
     Word,
@@ -552,7 +552,7 @@ class TagSerializer(AlreadyExistSerializerHandler, serializers.ModelSerializer):
     already_exist_detail = ExceptionDetails.Vocabulary.TAG_ALREADY_EXIST
 
     class Meta:
-        model = Tag
+        model = WordTag
         list_serializer_class = ListUpdateSerializer
         fields = ('name', 'author')
 
@@ -2085,7 +2085,7 @@ class TagListSerializer(TagSerializer, CountObjsSerializerMixin):
     words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
 
     class Meta:
-        model = Tag
+        model = WordTag
         fields = ('name', 'author', 'words_count')
         read_only_fields = ('words_count',)
 
@@ -2311,7 +2311,7 @@ class MainPageSerailizer(UserDetailsSerializer):
     last_10_collections = serializers.SerializerMethodField('get_last_10_collections')
     tags_count = KwargsMethodField(
         'get_objs_count',
-        objs_related_name='tags',
+        objs_related_name='wordtags',
     )
     last_10_tags = serializers.SerializerMethodField('get_last_10_tags')
     images_count = KwargsMethodField(
@@ -2378,7 +2378,7 @@ class MainPageSerailizer(UserDetailsSerializer):
     @extend_schema_field(TagListSerializer(many=True))
     def get_last_10_tags(self, obj) -> ReturnDict:
         """Returns list of 10 last added user's tags."""
-        return self.get_last_10_objs(obj, 'tags', TagListSerializer)
+        return self.get_last_10_objs(obj, 'wordtags', TagListSerializer)
 
     @extend_schema_field(ImageListSerializer(many=True))
     def get_last_10_images(self, obj) -> ReturnDict:
