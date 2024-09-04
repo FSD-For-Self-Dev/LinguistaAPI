@@ -43,7 +43,7 @@ python3 -m venv venv
 python -m pip install -r requirements.txt
 ```
 
-### Создайте файл окружения .env и заполните его по примеру [example.env](https://github.com/FSD-For-Self-Dev/LinguistaAPI/blob/develop/src/example.env)
+### Создайте файл окружения .env и заполните его по примеру [example_prod.env](https://github.com/FSD-For-Self-Dev/LinguistaAPI/blob/develop/src/example_prod.env)
 ```bash
 neno .env
 ```
