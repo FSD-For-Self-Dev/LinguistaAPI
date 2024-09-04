@@ -2,9 +2,9 @@
 # exit on error
 set -o errexit
 
-python -m pip install -r requirements.txt
-
 source venv/bin/activate
+
+python -m pip install -r requirements.txt
 
 cd src/
 

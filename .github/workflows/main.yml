@@ -67,7 +67,7 @@ jobs:
         script: |
           cd LinguistaAPI
           sudo git pull
-          sudo build.sh
+          sudo ./build.sh
           sudo systemctl daemon-reload
           sudo systemctl restart gunicorn
           sudo systemctl reload nginx

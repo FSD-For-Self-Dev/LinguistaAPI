@@ -349,7 +349,8 @@ git pull
 
 ### Перейдите в директорию с файлом build.sh и выполните build-скрипт
 ```bash
-sudo build.sh
+sudo chmod +x build.sh  # добавить разрешение на исполнение скрипта
+sudo ./build.sh
 ```
 
 ### Перезапустите все службы
