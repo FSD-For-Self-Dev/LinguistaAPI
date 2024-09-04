@@ -65,9 +65,11 @@ jobs:
         password: ${{ secrets.PASSWORD }}
         key: ${{ secrets.SSH_KEY }}
         script: |
-          sudo docker pull fsdforselfdev/linguista:latest
-          sudo docker stop $(sudo docker ps -a -q)
-          sudo docker run --rm -d -p 5000:5000 fsdforselfdev/linguista:latest
+          sudo git pull
+          sudo build.sh
+          sudo systemctl daemon-reload
+          sudo systemctl restart gunicorn
+          sudo systemctl reload nginx
 
   send_message:
     name: Send success message
