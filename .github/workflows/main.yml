@@ -53,6 +53,7 @@ jobs:
         tags: fsdforselfdev/linguista:latest
 
   deploy:
+    name: Pull latest Docker image from Docker Hub
     runs-on: ubuntu-latest
     needs: build-and-push-to-dockerhub
     steps:
@@ -68,6 +69,7 @@ jobs:
           sudo docker run --rm -d -p 5000:5000 fsdforselfdev/linguista:latest
 
   send_message:
+    name: Send success message
     runs-on: ubuntu-latest
     needs: deploy
     steps:
