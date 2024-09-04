@@ -23,7 +23,7 @@ User = get_user_model()
 class UserViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     """List users."""
 
-    http_method_names = ('get',)
+    http_method_names = ('get', 'head')
     queryset = User.objects.none()
     serializer_class = UserListSerializer
     permission_classes = (IsAuthenticated,)
