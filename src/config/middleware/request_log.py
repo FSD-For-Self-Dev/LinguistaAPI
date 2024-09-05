@@ -40,7 +40,8 @@ class RequestLogMiddleware:
                 and 'content-type' in response
                 and response['content-type'] == 'application/json'
             ):
-                response_body = json.JSONDecoder().decode(response.content)
+                encoding = response.info().get_param('charset', 'utf8')
+                response_body = json.loads(response.body.read().decode(encoding))
                 log_data['response_body'] = response_body
 
             log_data['run_time'] = time.time() - start_time
