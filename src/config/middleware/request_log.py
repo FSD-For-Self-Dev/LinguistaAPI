@@ -40,7 +40,7 @@ class RequestLogMiddleware:
                 and 'content-type' in response
                 and response['content-type'] == 'application/json'
             ):
-                encoding = response.info().get_param('charset', 'utf8')
+                encoding = getattr(response, 'charset', 'utf-8')
                 response_body = json.loads(response.body.read().decode(encoding))
                 log_data['response_body'] = response_body
 
