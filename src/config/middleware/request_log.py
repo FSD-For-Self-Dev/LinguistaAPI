@@ -41,7 +41,7 @@ class RequestLogMiddleware:
                 and response['content-type'] == 'application/json'
             ):
                 encoding = getattr(response, 'charset', 'utf-8')
-                response_body = json.loads(response.body.read().decode(encoding))
+                response_body = json.loads(response.content.read().decode(encoding))
                 log_data['response_body'] = response_body
 
             log_data['run_time'] = time.time() - start_time
