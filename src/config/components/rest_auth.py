@@ -49,3 +49,9 @@ ACCOUNT_EMAIL_CONFIRMATION_AUTHENTICATED_REDIRECT_URL = os.environ.get(
 LOGIN_URL = os.environ.get('LOGIN_URL', 'http://localhost:8000/api/auth/login/')
 ACCOUNT_CONFIRM_EMAIL_ON_GET = True
 ACCOUNT_LOGIN_ON_EMAIL_CONFIRMATION = False
+ACCOUNT_AUTHENTICATION_METHOD = 'username_email'
+
+AUTHENTICATION_BACKENDS = (
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
+)
