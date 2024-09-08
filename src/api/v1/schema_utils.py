@@ -8,44 +8,6 @@ from drf_spectacular.utils import (
     inline_serializer,
 )
 
-unauthorized_response = OpenApiResponse(
-    description=(
-        'Пользователь не авторизован.\n' 'Не был передан заголовок Authorization.',
-    ),
-    response=inline_serializer(
-        name='unauthorized',
-        fields={
-            'detail': CharField(),
-        },
-    ),
-    examples=[
-        OpenApiExample(
-            name='unauthorized',
-            value={
-                'detail': 'Учетные данные не были предоставлены.',
-            },
-        ),
-    ],
-)
-
-not_found_response = OpenApiResponse(
-    description=('Страница по этому url не найдена.',),
-    response=inline_serializer(
-        name='not_found',
-        fields={
-            'detail': CharField(),
-        },
-    ),
-    examples=[
-        OpenApiExample(
-            name='not_found',
-            value={
-                'detail': 'Страница не найдена.',
-            },
-        ),
-    ],
-)
-
 
 def get_detail_response(detail_message, description=''):
     return OpenApiResponse(

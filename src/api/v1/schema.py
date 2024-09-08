@@ -62,6 +62,7 @@ from .vocabulary.serializers import (
     SimilarInLineSerializer,
     AssociationsCreateSerializer,
     LearningLanguageWithLastWordsSerailizer,
+    UserDetailsSerializer,
 )
 from .exercises.serializers import (
     ExerciseListSerializer,
@@ -82,10 +83,13 @@ from .languages.serializers import (
     LanguageCoverImageSerailizer,
 )
 from .schema_utils import (
-    unauthorized_response,
-    not_found_response,
     get_detail_response,
     get_validation_error_response,
+)
+from .schema_responses import (
+    unauthorized_response,
+    not_found_response,
+    user_patch_validation_error_examples,
 )
 
 
@@ -407,15 +411,55 @@ data = {
         'tags': ['user_profile'],
         'user_retrieve': {
             'summary': 'Просмотр профиля пользователя',
+            'description': (
+                'Возвращает данные текущего пользователя.\n ' 'Требуется авторизация.'
+            ),
+            'responses': {
+                status.HTTP_200_OK: UserDetailsSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
         },
         'user_update': {
             'summary': 'Редактирование профиля пользователя',
+            'description': (
+                'Обновляет все данные текущего пользователя.\n '
+                'Требуется авторизация.'
+            ),
+            'request': UserDetailsSerializer,
+            'responses': {
+                status.HTTP_200_OK: UserDetailsSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=user_patch_validation_error_examples
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
         },
         'user_partial_update': {
             'summary': 'Редактирование профиля пользователя',
+            'description': (
+                'Обновляет переданные данные пользователя.\n ' 'Требуется авторизация.'
+            ),
+            'request': UserDetailsSerializer,
+            'responses': {
+                status.HTTP_200_OK: UserDetailsSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=user_patch_validation_error_examples
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
         },
         'user_destroy': {
             'summary': 'Удаление аккаунта пользователя',
+            'description': (
+                'Удаляет аккаунт текущего пользователя без возможности '
+                'восстановления.\n '
+                'Требуется авторизация.'
+            ),
+            'request': None,
+            'responses': {
+                status.HTTP_204_NO_CONTENT: None,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
         },
         # other methods
     },
