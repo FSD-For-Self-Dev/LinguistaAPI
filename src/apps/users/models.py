@@ -6,10 +6,17 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext as _
 
-from apps.core.constants import GENDERS
+from apps.core.validators import CustomRegexValidator
 from apps.core.models import (
     CreatedModel,
     ModifiedModel,
+)
+
+from .constants import (
+    GENDERS,
+    REGEX_NAME_MASK,
+    REGEX_NAME_MASK_DETAIL,
+    UsersLengthLimits,
 )
 
 
@@ -30,6 +37,12 @@ class User(AbstractUser, CreatedModel, ModifiedModel):
     email = models.EmailField(
         _('Email'),
         blank=False,
+    )
+    first_name = models.CharField(
+        max_length=UsersLengthLimits.FIRST_NAME_MAX_LENGTH,
+        validators=(
+            CustomRegexValidator(regex=REGEX_NAME_MASK, message=REGEX_NAME_MASK_DETAIL),
+        ),
     )
     gender = models.CharField(
         _('Gender'),
