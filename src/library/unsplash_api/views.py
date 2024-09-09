@@ -22,6 +22,7 @@ class UnsplashImagesView(GenericAPIView):
 
     http_method_names = ('get', 'options')
     permission_classes = (AllowAny,)
+    serializer_class = None
 
     all_images_list_url = MAIN_URL + 'photos/'
     search_images_url = MAIN_URL + 'search/photos/'
