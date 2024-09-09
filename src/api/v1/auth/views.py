@@ -1,5 +1,7 @@
 """Authentication custom views."""
 
+from django.conf import settings
+
 from rest_framework.generics import RetrieveUpdateDestroyAPIView
 
 from dj_rest_auth.views import (
@@ -47,8 +49,10 @@ class CustomLoginView(LoginView):
     get=extend_schema(operation_id='auth_logout'),
 )
 class CustomLogoutView(LogoutView):
-    http_method_names = ('post',)
-    pass
+    http_method_names = (
+        ('get',) if getattr(settings, 'ACCOUNT_LOGOUT_ON_GET', False) else ('post',)
+    )
+    serializer_class = None
 
 
 @extend_schema(tags=['authentication'])
