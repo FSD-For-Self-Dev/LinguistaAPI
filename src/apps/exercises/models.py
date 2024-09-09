@@ -206,7 +206,7 @@ class WordsUpdateHistory(CreatedModel, ActivityStatusModel):
         default=ActivityStatusModel.INACTIVE,
     )
     new_activity_status = models.CharField(
-        _('Activity status'),
+        _('New activity status'),
         max_length=8,
         choices=ActivityStatusModel.ACTIVITY,
         blank=False,
