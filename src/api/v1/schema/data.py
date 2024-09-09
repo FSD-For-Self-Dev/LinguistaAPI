@@ -1,15 +1,11 @@
-"""API schema generator."""
-
-import logging
+"""API schema core data."""
 
 from rest_framework import status
 from rest_framework.serializers import (
-    Serializer,
     CharField,
     IntegerField,
     ListField,
 )
-from drf_spectacular.openapi import AutoSchema
 from drf_spectacular.utils import (
     OpenApiParameter,
     OpenApiTypes,
@@ -21,7 +17,7 @@ from drf_spectacular.utils import (
 
 from apps.core.exceptions import ExceptionCodes, ExceptionDetails, AmountLimits
 
-from .vocabulary.serializers import (
+from api.v1.vocabulary.serializers import (
     WordStandartCardSerializer,
     WordSerializer,
     WordShortCreateSerializer,
@@ -64,7 +60,7 @@ from .vocabulary.serializers import (
     LearningLanguageWithLastWordsSerailizer,
     UserDetailsSerializer,
 )
-from .exercises.serializers import (
+from api.v1.exercises.serializers import (
     ExerciseListSerializer,
     ExerciseProfileSerializer,
     SetListSerializer,
@@ -73,89 +69,25 @@ from .exercises.serializers import (
     CollectionWithAvailableWordsSerializer,
     TranslatorUserDefaultSettingsSerializer,
 )
-from .users.serializers import (
+from api.v1.users.serializers import (
     UserListSerializer,
 )
-from .languages.serializers import (
+from api.v1.languages.serializers import (
     LanguageSerializer,
     LearningLanguageSerailizer,
     NativeLanguageSerailizer,
     LanguageCoverImageSerailizer,
 )
-from .schema_utils import (
+
+from .utils import (
     get_detail_response,
     get_validation_error_response,
 )
-from .schema_responses import (
+from .responses import (
     unauthorized_response,
     not_found_response,
     user_patch_validation_error_examples,
 )
-
-
-logger = logging.getLogger(__name__)
-
-
-class CustomSchema(AutoSchema):
-    """Custom schema generator to generate schema from common data dictionary."""
-
-    def get_tags(self) -> list[str]:
-        try:
-            return data[self.view.__class__.__name__]['tags']
-        except Exception:
-            return data['default']['tags']
-
-    def get_description(self) -> str | None:
-        try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
-                'description'
-            ]
-        except Exception:
-            return super().get_description()
-
-    def get_summary(self) -> str | None:
-        try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
-                'summary'
-            ]
-        except Exception:
-            logger.warning(
-                f'Информация об операции отсутствует в данных схемы (не передан `summary`) '
-                f'[{self.view.__class__.__name__}: {self.get_operation_id().lower()}]'
-            )
-            return super().get_summary()
-
-    def get_request_serializer(self) -> Serializer | None:
-        try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
-                'request'
-            ]
-        except Exception:
-            return super().get_request_serializer()
-
-    def get_response_serializers(self) -> dict[int, OpenApiResponse]:
-        try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
-                'responses'
-            ]
-        except Exception:
-            return super().get_response_serializers()
-
-    def get_examples(self):
-        try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
-                'examples'
-            ]
-        except Exception:
-            return super().get_examples()
-
-    def get_override_parameters(self) -> list[OpenApiParameter]:
-        try:
-            return data[self.view.__class__.__name__][self.get_operation_id().lower()][
-                'parameters'
-            ]
-        except Exception:
-            return super().get_override_parameters()
 
 
 data = {

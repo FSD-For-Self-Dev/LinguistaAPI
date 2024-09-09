@@ -1,3 +1,5 @@
+"""Utils to use in API schema."""
+
 from rest_framework.serializers import (
     CharField,
     ListField,
