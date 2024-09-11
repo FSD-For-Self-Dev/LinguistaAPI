@@ -947,7 +947,7 @@ class WordSelfRelatedWithNoteModel(WordSelfRelatedModel):
         editable=False,
     )
     note = models.CharField(
-        max_length=512,
+        max_length=VocabularyLengthLimits.MAX_NOTE_LENGTH,
         verbose_name=_('Note'),
         help_text=_('Note for %(class)ss'),
         blank=True,
