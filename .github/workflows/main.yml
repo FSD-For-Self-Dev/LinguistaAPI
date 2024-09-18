@@ -82,6 +82,7 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         script: |
           cd /~/LinguistaAPI
+          echo ${{ secrets.PASSWORD }}
           sudo -S git stash
           sudo -S git pull
           sudo -S chmod +x build.sh
