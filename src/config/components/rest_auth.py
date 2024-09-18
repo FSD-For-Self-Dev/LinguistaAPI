@@ -9,7 +9,7 @@ SIMPLE_JWT = {
 SITE_ID = 1
 
 REST_AUTH = {
-    'LOGIN_SERIALIZER': 'dj_rest_auth.serializers.LoginSerializer',
+    'LOGIN_SERIALIZER': 'api.v1.auth.serializers.CustomLoginSerializer',
     'TOKEN_SERIALIZER': 'dj_rest_auth.serializers.TokenSerializer',
     'JWT_SERIALIZER': 'dj_rest_auth.serializers.JWTSerializer',
     'JWT_SERIALIZER_WITH_EXPIRATION': 'dj_rest_auth.serializers.JWTSerializerWithExpiration',
