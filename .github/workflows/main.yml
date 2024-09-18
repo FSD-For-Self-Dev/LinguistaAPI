@@ -82,13 +82,12 @@ jobs:
         key: ${{ secrets.SSH_KEY }}
         script: |
           cd /~/LinguistaAPI
-          sudo git stash
-          sudo git pull
-          sudo chmod +x build.sh
-          sudo ./build.sh
-          sudo systemctl daemon-reload
-          sudo systemctl restart gunicorn
-          sudo systemctl reload nginx
+          sudo -S git stash
+          sudo -S git pull
+          sudo -S chmod +x build.sh
+          sudo -S ./build.sh
+          sudo -S systemctl restart gunicorn
+          sudo -S systemctl reload nginx
 
   send_message:
     name: Send success message
