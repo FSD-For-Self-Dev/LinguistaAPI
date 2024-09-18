@@ -615,9 +615,9 @@ class Collection(
     )
     title = models.CharField(
         _('Collection title'),
-        max_length=VocabularyLengthLimits.MAX_COLLECTION_NAME_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_COLLECTION_TITLE_LENGTH,
         validators=(
-            MinLengthValidator(VocabularyLengthLimits.MIN_COLLECTION_NAME_LENGTH),
+            MinLengthValidator(VocabularyLengthLimits.MIN_COLLECTION_TITLE_LENGTH),
             CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )
