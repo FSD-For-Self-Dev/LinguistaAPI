@@ -68,10 +68,12 @@ data = {
                     OpenApiParameter.QUERY,
                     description=(
                         'Принимает поле, по которому необходимо сортировать результаты. '
-                        'Доступные поля: '
-                        'words_count (количество слов языка), created (дата добавления). '
                         'Для сортировки по убыванию используется префикс `-`. '
                         'Пример использования: `api/languages/?ordering=-words_count`.'
+                    ),
+                    enum=(
+                        'words_count',
+                        'created',
                     ),
                 ),
                 OpenApiParameter(
