@@ -142,7 +142,7 @@ class AmountLimits:
     class Vocabulary:
         MAX_TYPES_AMOUNT = 3
         MAX_TAGS_AMOUNT = 10
-        MAX_TRANSLATIONS_AMOUNT = 24
+        MAX_TRANSLATIONS_AMOUNT = 10
         MAX_NOTES_AMOUNT = 10
         MAX_EXAMPLES_AMOUNT = 10
         MAX_DEFINITIONS_AMOUNT = 10
