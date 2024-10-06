@@ -11,6 +11,32 @@
 ssh root@ip_вашего_сервера
 ```
 
+### Создайте своего пользователя
+```bash
+adduser linguista_user
+```
+
+### Назначьте пользователя администратором
+```bash
+usermod linguista_user -aG sudo
+```
+
+### Переключитесь на этого пользователя
+```bash
+su linguista_user
+```
+
+### Задайте права доступа к файлам пользователя
+```bash
+sudo chmod 755 /home/linguista_user/
+ls -l /home/  # проверить изменения
+```
+
+### Перейдите в рабочую директорию
+```bash
+cd ~
+```
+
 ### Обновите пакетный менеджер
 ```bash
 sudo apt update
@@ -27,11 +53,6 @@ sudo apt install python3-venv python3-pip git -y
 git clone https://github.com/FSD-For-Self-Dev/LinguistaAPI.git
 ```
 
-### Перейдите в папку репозитория с файлом manage.py
-```bash
-cd LinguistaAPI/src
-```
-
 ### Создайте и активируйте виртуальное окружение
 ```bash
 python3 -m venv venv
@@ -43,9 +64,14 @@ python3 -m venv venv
 python -m pip install -r requirements.txt
 ```
 
+### Перейдите в папку репозитория с файлом manage.py
+```bash
+cd LinguistaAPI/src
+```
+
 ### Создайте файл окружения .env и заполните его по примеру [example_prod.env](https://github.com/FSD-For-Self-Dev/LinguistaAPI/blob/develop/src/example_prod.env)
 ```bash
-neno .env
+nano .env
 ```
 
 ## Создание базы данных Postgresql
@@ -95,12 +121,12 @@ CREATE DATABASE linguista_db;
 
 ### Вернитесь в директорию с файлом manage.py и обновите .env
 ```bash
-cd LinguistaAPI/src
 nano .env
 ```
 
 #### Укажите данные для подключения к вашей БД
 ```
+DB_ENGINE=django.db.backends.postgresql
 DB_NAME=linguista_db
 DB_HOST=localhost
 DB_PORT=5432
@@ -345,7 +371,7 @@ sudo docker stop $(sudo docker ps -a -q)
 sudo docker run --rm -d -p 5000:5000 <имя-пользователя>/<имя-репозитория>
 ```
 
-## Дополнительно: Деплой с помощью git pull
+## Дополнительно: Обновление через git pull
 
 ### Подтяните изменения из репозитория
 ```bash
