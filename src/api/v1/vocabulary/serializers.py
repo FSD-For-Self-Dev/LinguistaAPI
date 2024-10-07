@@ -15,7 +15,7 @@ from rest_framework.fields import Field
 from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework.serializers import Serializer
 
-from apps.core.exceptions import ExceptionDetails, ExceptionCodes, AmountLimits
+from apps.core.constants import ExceptionDetails, ExceptionCodes, AmountLimits
 from apps.languages.models import Language, UserLearningLanguage, UserNativeLanguage
 from apps.vocabulary.models import (
     Antonym,
@@ -155,7 +155,14 @@ class ValidateLanguageMixin:
                         code=ExceptionCodes.Languages.LANGUAGE_INVALID,
                     )
 
-                UserLearningLanguage.objects.create(user=user, language=language)
+                user_language = UserLearningLanguage.objects.create(
+                    user=user, language=language
+                )
+                default_cover_image = language.images.last()
+                if default_cover_image:
+                    user_language.cover = default_cover_image
+                    user_language.save()
+
                 return language
 
             else:
@@ -971,7 +978,7 @@ class WordShortCreateSerializer(
                     or 'language' in attrs
                     and data['language'] != attrs['language']
                 ):
-                    self.fail(attr_name + '_same_language_detail')
+                    self.fail(attr_name + '_same_language')
         return super().validate(attrs)
 
     def fail(self, key: str, *args, **kwargs) -> None:
@@ -1032,10 +1039,10 @@ class WordSelfRelatedSerializer(NestedSerializerMixin, serializers.ModelSerializ
                 and 'language' in from_word
                 and to_word.language != from_word['language']
             ):
-                self.fail('same_language_detail')
+                self.fail(ExceptionCodes.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE)
             from_word_slug = Word.get_slug_from_data(**from_word)
             if to_word.slug == from_word_slug:
-                self.fail('same_words_detail')
+                self.fail(ExceptionCodes.Vocabulary.WORDS_MUST_DIFFER)
         return super().validate(attrs)
 
     def create(
@@ -1800,7 +1807,7 @@ class DefinitionCreateSerializer(
                 or 'language' in attrs
                 and data['language'] != attrs['language']
             ):
-                self.fail('words_same_language_detail')
+                self.fail(ExceptionCodes.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE)
         return super().validate(attrs)
 
     def fail(self, key: str, *args, **kwargs) -> None:
@@ -1938,7 +1945,7 @@ class UsageExampleCreateSerializer(
                 or 'language' in attrs
                 and data['language'] != attrs['language']
             ):
-                self.fail('words_same_language_detail')
+                self.fail(ExceptionCodes.Vocabulary.WORDS_MUST_BE_SAME_LANGUAGE)
         return super().validate(attrs)
 
     def fail(self, key: str, *args, **kwargs) -> None:

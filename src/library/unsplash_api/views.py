@@ -10,7 +10,7 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 
-from apps.core.exceptions import ServiceUnavailable
+from api.v1.core.exceptions import ServiceUnavailable
 
 from .constants import MAIN_URL
 

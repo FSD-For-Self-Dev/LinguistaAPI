@@ -13,12 +13,11 @@ from django.db.models.fields.files import ImageFieldFile
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 
-from apps.core.exceptions import (
+from api.v1.core.exceptions import (
     ObjectAlreadyExist,
     AmountLimitExceeded,
-    ExceptionDetails,
 )
-from apps.core.constants import MAX_IMAGE_SIZE
+from apps.core.constants import MAX_IMAGE_SIZE, ExceptionDetails
 from utils.getters import get_object_by_pk
 
 from .serializers_fields import ReadWriteSerializerMethodField, CustomHybridImageField

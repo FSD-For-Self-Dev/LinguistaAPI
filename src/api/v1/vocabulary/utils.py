@@ -18,15 +18,16 @@ from .serializers import (
 
 logger = logging.getLogger(__name__)
 
+WORD_CARD_TYPES = {
+    'standart': WordStandartCardSerializer,
+    'short': WordShortCardSerializer,
+    'long': WordLongCardSerializer,
+}
+DEFAULT_WORD_CARD_TYPE = 'standart'
+
 
 def get_word_cards_type(request: HttpRequest) -> Serializer:
     """Returns serializer class for words list."""
-    types = {
-        'standart': WordStandartCardSerializer,
-        'short': WordShortCardSerializer,
-        'long': WordLongCardSerializer,
-    }
-    default_type = 'standart'
 
     # Return serializer class based on `cards_type` query parameter if passed
     # or try to get user default word cards type setting from database
@@ -35,7 +36,9 @@ def get_word_cards_type(request: HttpRequest) -> Serializer:
     logger.debug(f'Word cards view query parameter passed: {type_param}')
 
     if type_param:
-        return types.get(type_param, types.get(default_type))
+        return WORD_CARD_TYPES.get(
+            type_param, WORD_CARD_TYPES.get(DEFAULT_WORD_CARD_TYPE)
+        )
 
     try:
         user_default_type = DefaultWordCards.objects.get(user=request.user).cards_type
@@ -44,10 +47,12 @@ def get_word_cards_type(request: HttpRequest) -> Serializer:
             f'{user_default_type}'
         )
     except Exception:
-        user_default_type = default_type
-        logger.debug(f'Word cards type parameter is set to default: {default_type}')
+        user_default_type = DEFAULT_WORD_CARD_TYPE
+        logger.debug(
+            f'Word cards type parameter is set to default: {DEFAULT_WORD_CARD_TYPE}'
+        )
 
-    return types.get(user_default_type)
+    return WORD_CARD_TYPES.get(user_default_type)
 
 
 def annotate_words_with_counters(

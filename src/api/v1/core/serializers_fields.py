@@ -6,7 +6,7 @@ from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.fields import HybridImageField
 
-from apps.core.exceptions import ExceptionDetails
+from apps.core.constants import ExceptionDetails
 from utils.checkers import is_valid_uuid
 
 

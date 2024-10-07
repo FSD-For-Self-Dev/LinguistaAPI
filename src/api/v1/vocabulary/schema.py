@@ -1,12 +1,17 @@
 """Vocabulary schema data."""
 
 from rest_framework import status
+from rest_framework.serializers import (
+    CharField,
+    IntegerField,
+)
 from drf_spectacular.utils import (
-    OpenApiParameter,
-    OpenApiTypes,
     OpenApiResponse,
+    inline_serializer,
 )
 
+from api.v1.schema.responses import unauthorized_response, pagination_parameters
+from api.v1.schema.utils import get_validation_error_response, get_conflict_response
 from api.v1.vocabulary.serializers import (
     WordStandartCardSerializer,
     WordSerializer,
@@ -46,7 +51,26 @@ from api.v1.vocabulary.serializers import (
     FormInLineSerializer,
     SimilarForWordListSerializer,
     SimilarInLineSerializer,
-    AssociationsCreateSerializer,
+    MainPageSerailizer,
+)
+
+from .schema_examples import (
+    word_standart_cards_example,
+    word_short_cards_example,
+    word_long_cards_example,
+    words_filters_parameters,
+    words_ordering_parameter,
+    words_search_parameter,
+    word_validation_errors_examples,
+    word_types_amount_limit_example,
+    word_already_exists_conflict_example,
+    collection_validation_errors_examples,
+    translation_validation_errors_examples,
+    definition_validation_errors_examples,
+    example_validation_errors_examples,
+    note_validation_errors_examples,
+    image_validation_errors_examples,
+    quote_validation_errors_examples,
 )
 
 
@@ -55,598 +79,1002 @@ data = {
         'tags': ['main_page'],
         'main_page_retrieve': {
             'summary': 'Просмотр главной страницы',
+            'description': (
+                'Возвращает данные для отображения главной страницы. '
+                'Требуется авторизация.'
+            ),
+            'responses': {
+                status.HTTP_200_OK: MainPageSerailizer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
         },
         # other methods
     },
     'WordViewSet': {
         'tags': ['vocabulary'],
         'words_list': {
-            'summary': 'Просмотр списка слов из своего словаря',
+            'summary': 'Просмотр списка слов из словаря пользователя',
             'description': (
-                'Просмотреть список своих слов с пагинацией и применением '
-                'фильтров, сортировки и поиска. Нужна авторизация.'
+                'Возвращает список слов из словаря текущего пользователя '
+                'с пагинацией, фильтрами, сортировой и поиском. '
+                'Требуется авторизация.'
             ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: OpenApiResponse(
                     response=WordStandartCardSerializer,
-                    description='Success response via ?cards_type=standart query param',
+                    description='Успешный ответ.',
+                    examples=[
+                        word_standart_cards_example,
+                        word_short_cards_example,
+                        word_long_cards_example,
+                    ],
                 ),
-                # status.HTTP_200_OK: OpenApiResponse(
-                #     response=WordShortCardSerializer,
-                #     description='Success response via ?cards_type=short query param'
-                # ),
-                # status.HTTP_200_OK: OpenApiResponse(
-                #     response=WordLongCardSerializer,
-                #     description='Success response via ?cards_type=long query param'
-                # ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
             'parameters': [
-                OpenApiParameter(
-                    'activity_status',
-                    OpenApiTypes.STR,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по статусу активности. Принимает варианты '
-                        'I (для Неактивных (Inactive)), '
-                        'A (для Активных (Active)), '
-                        'M (для Усвоенных (Mastered)).'
-                    ),
-                ),
-                OpenApiParameter(
-                    'created__date',
-                    OpenApiTypes.DATE,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по дате добавления слова. Включая сравнение больше и '
-                        'меньше: created__date__gt и created__date__lt.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'created__year',
-                    OpenApiTypes.NUMBER,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по году добавления слова. Включая сравнение больше и '
-                        'меньше: created__year__gt и created__year__lt.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'created__month',
-                    OpenApiTypes.NUMBER,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по месяцу добавления слова. Включая сравнение больше и '
-                        'меньше: created__month__gt и created__month__lt.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'last_exercise_date__date',
-                    OpenApiTypes.DATE,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по дате последней тренировки с этим словом. '
-                        'Включая сравнение больше и меньше: '
-                        'last_exercise_date__date__gt и last_exercise_date__date__lt.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'last_exercise_date__year',
-                    OpenApiTypes.NUMBER,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по году последней тренировки с этим словом. '
-                        'Включая сравнение больше и меньше: '
-                        'last_exercise_date__year__gt и last_exercise_date__year__lt.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'last_exercise_date__month',
-                    OpenApiTypes.NUMBER,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по месяцу последней тренировки с этим словом. '
-                        'Включая сравнение больше и меньше: '
-                        'last_exercise_date__month__gt и last_exercise_date__month__lt.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'language',
-                    OpenApiTypes.STR,
-                    OpenApiParameter.QUERY,
-                    description=('Фильтр по языку. Принимает isocode языка.'),
-                ),
-                OpenApiParameter(
-                    'is_problematic',
-                    OpenApiTypes.BOOL,
-                    OpenApiParameter.QUERY,
-                    description=('Фильтр по метке "проблемное".'),
-                ),
-                OpenApiParameter(
-                    'have_associations',
-                    OpenApiTypes.BOOL,
-                    OpenApiParameter.QUERY,
-                    description=('Фильтр по наличию хотя бы одной ассоциации у слова.'),
-                ),
-                OpenApiParameter(
-                    'tags',
-                    OpenApiTypes.STR,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по тегам. Принимает name тегов через запятую, '
-                        'если несколько.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'types',
-                    OpenApiTypes.STR,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по типам. Принимает slug типов через запятую, '
-                        'если несколько.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'first_letter',
-                    OpenApiTypes.STR,
-                    OpenApiParameter.QUERY,
-                    description=('Фильтр по первой букве слова.'),
-                ),
-                OpenApiParameter(
-                    'last_letter',
-                    OpenApiTypes.STR,
-                    OpenApiParameter.QUERY,
-                    description=('Фильтр по последней букве слова.'),
-                ),
-                OpenApiParameter(
-                    'translations_count',
-                    OpenApiTypes.NUMBER,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по кол-ву переводов. Включая сравнение больше и '
-                        'меньше: translations_count__gt и translations_count__lt.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'examples_count',
-                    OpenApiTypes.NUMBER,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Фильтр по кол-ву примеров. Включая сравнение больше и '
-                        'меньше: examples_count__gt и examples_count__lt.'
-                    ),
-                ),
-                OpenApiParameter(
-                    'cards_type',
-                    OpenApiTypes.STR,
-                    OpenApiParameter.QUERY,
-                    description=(
-                        'Смена вида карточек слов (сериализатора слов), '
-                        'принимает значения: standart, long, short.'
-                    ),
-                ),
+                *pagination_parameters,
+                *words_filters_parameters,
+                words_ordering_parameter,
+                words_search_parameter,
             ],
         },
         'word_create': {
             'summary': 'Добавление нового слова в свой словарь',
+            'description': 'Возвращает профиль созданного слова. Требуется авторизация.',
             'request': WordSerializer,
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_409_CONFLICT: get_conflict_response(
+                    examples=[
+                        word_types_amount_limit_example,
+                        word_already_exists_conflict_example,
+                    ]
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_retrieve': {
             'summary': 'Просмотр профиля слова',
+            'description': ('Возвращает все данные слова. Требуется авторизация. '),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: WordSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_partial_update': {
             'summary': 'Редактирование слова из своего словаря',
+            'description': (
+                'Возвращает обновленные данные слова. Требуется авторизация. '
+            ),
             'request': WordSerializer,
             'responses': {
                 status.HTTP_200_OK: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_409_CONFLICT: get_conflict_response(
+                    examples=[
+                        word_types_amount_limit_example,
+                        word_already_exists_conflict_example,
+                    ]
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_destroy': {
             'summary': 'Удаление слова из своего словаря',
+            'description': (
+                'Удаляет слово из словаря пользователя. '
+                'Возвращает обновленный словарь пользователя. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: WordStandartCardSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='paginated_words',
+                    fields={
+                        'count': IntegerField(),
+                        'next': CharField(),
+                        'previous': CharField(),
+                        'results': WordStandartCardSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_random': {
             'summary': 'Получить случайное слово из своего словаря',
+            'description': (
+                'Возвращает данные случайного слова из словаря пользователя. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: WordStandartCardSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_problematic_toggle': {
             'summary': 'Изменить метку "проблемное" у слова',
+            'description': (
+                'Изменяет метку "проблемное" слова с True на False и наоборот.'
+                'Возвращает обновленные данные слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_multiple_create': {
             'summary': 'Создание нескольких слов подряд',
+            'description': 'Возвращает обновленный словарь пользователя. ',
             'request': MultipleWordsSerializer,
             'responses': {
                 status.HTTP_201_CREATED: WordStandartCardSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_409_CONFLICT: get_conflict_response(
+                    examples=[
+                        word_types_amount_limit_example,
+                        word_already_exists_conflict_example,
+                    ]
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_tags_list': {
-            'summary': 'Просмотр всех тегов слова',
+            'summary': 'Просмотр списка тегов слова',
+            'description': (
+                'Возвращает список тегов слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: TagListSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='tags_list',
+                    fields={
+                        'count': IntegerField(),
+                        'tags': TagListSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_collections_list': {
-            'summary': 'Просмотр всех коллекций с этим словом',
+            'summary': 'Просмотр списка коллекций с этим словом',
+            'description': (
+                'Возвращает список коллекций, содержащих текущее слово, и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: CollectionShortSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='collections_list',
+                    fields={
+                        'count': IntegerField(),
+                        'collections': CollectionShortSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_collections_add': {
             'summary': 'Добавление слова в коллекции',
-            'request': CollectionShortSerializer,
+            'description': (
+                'Передайте список коллекций, в которые необходимо добавить текущее слово. '
+                'Добавляет слово в переданные коллекции. '
+                'Если коллекции не найдены, создаёт новые. '
+                'Возвращает обновленные данные слова. '
+                'Требуется авторизация. '
+            ),
+            'request': CollectionShortSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=collection_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_translations_list': {
-            'summary': 'Просмотр всех переводов слова',
+            'summary': 'Просмотр списка переводов слова',
+            'description': (
+                'Возвращает список всех переводов слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: WordTranslationInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='translations_list',
+                    fields={
+                        'count': IntegerField(),
+                        'translations': WordTranslationInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_translations_create': {
-            'summary': 'Добавление новых переводов к слову',
-            'request': WordTranslationInLineSerializer,
+            'summary': 'Добавление переводов к слову',
+            'description': (
+                'Передайте список переводов, чтобы добавить их к текущему слову. '
+                'Если переводы не найдены, создаёт новые. '
+                'Возвращает обновленные данные слова. '
+                'Требуется авторизация. '
+            ),
+            'request': WordTranslationInLineSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=translation_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_translations_retrieve': {
             'summary': 'Просмотр перевода слова',
+            'description': (
+                'Возвращает данные перевода слова. ' 'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: WordTranslationInLineSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_translation_partial_update': {
             'summary': 'Редактирование перевода слова',
+            'description': (
+                'Возвращает обновленные данные перевода слова. '
+                'Требуется авторизация. '
+            ),
             'request': WordTranslationInLineSerializer,
             'responses': {
                 status.HTTP_200_OK: WordTranslationInLineSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=translation_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_translation_destroy': {
             'summary': 'Удаление перевода слова',
+            'description': (
+                'Возвращает обновленный список переводов слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: WordTranslationInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='translations_list_after_delete',
+                    fields={
+                        'count': IntegerField(),
+                        'translations': WordTranslationInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_definitions_list': {
-            'summary': 'Просмотр всех определений слова',
+            'summary': 'Просмотр списка определений слова',
+            'description': (
+                'Возвращает список всех определений слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: DefinitionInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='definitions_list',
+                    fields={
+                        'count': IntegerField(),
+                        'definitions': DefinitionInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_definitions_create': {
-            'summary': 'Добавление новых определений к слову',
-            'request': DefinitionInLineSerializer,
+            'summary': 'Добавление определений к слову',
+            'description': (
+                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
+            ),
+            'request': DefinitionInLineSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=definition_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_definition_retrieve': {
             'summary': 'Просмотр определения слова',
+            'description': (
+                'Возвращает данные определения слова. ' 'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: DefinitionInLineSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_definition_partial_update': {
             'summary': 'Редактирование определения слова',
+            'description': (
+                'Возвращает обновленные данные определения слова. '
+                'Требуется авторизация. '
+            ),
             'request': DefinitionInLineSerializer,
             'responses': {
                 status.HTTP_200_OK: DefinitionInLineSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=definition_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_definition_destroy': {
             'summary': 'Удаление определения слова',
+            'description': (
+                'Возвращает обновленный список определений слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: DefinitionInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='definitions_list_after_delete',
+                    fields={
+                        'count': IntegerField(),
+                        'definitions': DefinitionInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_examples_list': {
-            'summary': 'Просмотр всех примеров использования слова',
+            'summary': 'Просмотр списка примеров использования слова',
+            'description': (
+                'Возвращает список всех примеров использования слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: UsageExampleInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='examples_list',
+                    fields={
+                        'count': IntegerField(),
+                        'examples': UsageExampleInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_examples_create': {
-            'summary': 'Добавление новых примеров использования к слову',
-            'request': UsageExampleInLineSerializer,
+            'summary': 'Добавление примеров использования к слову',
+            'description': (
+                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
+            ),
+            'request': UsageExampleInLineSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=example_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_example_retrieve': {
             'summary': 'Просмотр примера использования слова',
+            'description': (
+                'Возвращает данные примера использования слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: UsageExampleInLineSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_example_partial_update': {
             'summary': 'Редактирование примера использования слова',
+            'description': (
+                'Возвращает обновленные данные примера использования слова. '
+                'Требуется авторизация. '
+            ),
             'request': UsageExampleInLineSerializer,
             'responses': {
                 status.HTTP_200_OK: UsageExampleInLineSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=example_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_example_destroy': {
             'summary': 'Удаление примера использования слова',
+            'description': (
+                'Возвращает обновленный список примеров использования слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: UsageExampleInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='examples_list_after_delete',
+                    fields={
+                        'count': IntegerField(),
+                        'examples': UsageExampleInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_notes_list': {
-            'summary': 'Просмотр всех заметок слова',
+            'summary': 'Просмотр списка заметок слова',
+            'description': (
+                'Возвращает список всех заметок слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: NoteInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='notes_list',
+                    fields={
+                        'count': IntegerField(),
+                        'notes': NoteInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_notes_create': {
-            'summary': 'Добавление новых заметок к слову',
-            'request': NoteInLineSerializer,
+            'summary': 'Добавление заметок к слову',
+            'description': (
+                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
+            ),
+            'request': NoteInLineSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=note_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_note_retrieve': {
             'summary': 'Просмотр заметки слова',
+            'description': (
+                'Возвращает данные заметки слова. ' 'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: NoteForWordSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_note_partial_update': {
             'summary': 'Редактирование заметки слова',
+            'description': (
+                'Возвращает обновленные данные заметки слова. '
+                'Требуется авторизация. '
+            ),
             'request': NoteForWordSerializer,
             'responses': {
                 status.HTTP_200_OK: NoteForWordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=note_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_note_destroy': {
             'summary': 'Удаление заметки слова',
+            'description': ('Удаляет заметку слова. ' 'Требуется авторизация. '),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: WordSerializer,
+                status.HTTP_204_NO_CONTENT: None,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_synonyms_list': {
-            'summary': 'Просмотр всех синонимов слова',
+            'summary': 'Просмотр списка синонимов слова',
+            'description': (
+                'Возвращает список всех синонимов слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: SynonymForWordListSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='synonyms_list',
+                    fields={
+                        'count': IntegerField(),
+                        'synonyms': SynonymForWordListSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_synonyms_create': {
-            'summary': 'Добавление новых синонимов к слову',
-            'request': SynonymForWordListSerializer,
+            'summary': 'Добавление синонимов к слову',
+            'description': (
+                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
+            ),
+            'request': SynonymForWordListSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_synonym_retrieve': {
             'summary': 'Просмотр синонима слова',
+            'description': (
+                'Возвращает данные синонима слова. ' 'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: SynonymInLineSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_synonym_partial_update': {
             'summary': 'Редактирование синонима слова',
+            'description': (
+                'Возвращает обновленные данные синонима слова. '
+                'Требуется авторизация. '
+            ),
             'request': SynonymInLineSerializer,
             'responses': {
                 status.HTTP_200_OK: SynonymInLineSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_synonym_destroy': {
             'summary': 'Удаление синонима слова',
+            'description': (
+                'Удаляет слово из синонимов слова. '
+                'Возвращает обновленный список синонимов. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: SynonymForWordListSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='synonyms_list_after_delete',
+                    fields={
+                        'count': IntegerField(),
+                        'synonyms': SynonymForWordListSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_antonyms_list': {
             'summary': 'Просмотр всех антонимов слова',
+            'description': (
+                'Возвращает список всех антонимов слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: AntonymForWordListSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='antonyms_list',
+                    fields={
+                        'count': IntegerField(),
+                        'antonyms': AntonymForWordListSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_antonyms_create': {
             'summary': 'Добавление новых антонимов к слову',
-            'request': AntonymForWordListSerializer,
+            'description': (
+                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
+            ),
+            'request': AntonymForWordListSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_antonym_retrieve': {
             'summary': 'Просмотр антонима слова',
+            'description': (
+                'Возвращает данные антонима слова. ' 'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: AntonymInLineSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_antonym_partial_update': {
             'summary': 'Редактирование антонима слова',
+            'description': (
+                'Возвращает обновленные данные антонима слова. '
+                'Требуется авторизация. '
+            ),
             'request': AntonymInLineSerializer,
             'responses': {
                 status.HTTP_200_OK: AntonymInLineSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_antonym_destroy': {
             'summary': 'Удаление антонима слова',
+            'description': (
+                'Удаляет слово из антонимов слова. '
+                'Возвращает обновленный список антонимов. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: AntonymForWordListSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='antonyms_list_after_delete',
+                    fields={
+                        'count': IntegerField(),
+                        'antonyms': AntonymForWordListSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_forms_list': {
             'summary': 'Просмотр всех форм слова',
+            'description': (
+                'Возвращает список всех форм слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: FormForWordListSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='forms_list',
+                    fields={
+                        'count': IntegerField(),
+                        'forms': FormForWordListSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_forms_create': {
             'summary': 'Добавление новых форм к слову',
-            'request': FormForWordListSerializer,
+            'description': (
+                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
+            ),
+            'request': FormForWordListSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_form_retrieve': {
             'summary': 'Просмотр формы слова',
+            'description': (
+                'Возвращает данные формы слова. ' 'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: FormInLineSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_form_partial_update': {
             'summary': 'Редактирование формы слова',
+            'description': (
+                'Возвращает обновленные данные формы слова. ' 'Требуется авторизация. '
+            ),
             'request': FormInLineSerializer,
             'responses': {
                 status.HTTP_200_OK: FormInLineSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_form_destroy': {
             'summary': 'Удаление формы слова',
+            'description': (
+                'Удаляет слово из форм слова. '
+                'Возвращает обновленный список форм. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: FormForWordListSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='forms_list_after_delete',
+                    fields={
+                        'count': IntegerField(),
+                        'forms': FormForWordListSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_similars_list': {
             'summary': 'Просмотр всех похожих слов слова',
+            'description': (
+                'Возвращает список всех похожих слов и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: SimilarForWordListSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='similars_list',
+                    fields={
+                        'count': IntegerField(),
+                        'similars': SimilarForWordListSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_similars_create': {
             'summary': 'Добавление новых похожих слов к слову',
-            'request': SimilarForWordListSerializer,
+            'description': (
+                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
+            ),
+            'request': SimilarForWordListSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_similar_retrieve': {
             'summary': 'Просмотр похожего слова слова',
+            'description': (
+                'Возвращает данные похожего слова. ' 'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: SimilarInLineSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_similar_partial_update': {
             'summary': 'Редактирование похожего слова слова',
+            'description': (
+                'Возвращает обновленные данные похожего слова. '
+                'Требуется авторизация. '
+            ),
             'request': SimilarInLineSerializer,
             'responses': {
                 status.HTTP_200_OK: SimilarInLineSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=word_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_similar_destroy': {
             'summary': 'Удаление похожего слова слова',
+            'description': (
+                'Удаляет слово из похожих слов. '
+                'Возвращает обновленный список похожих слов. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: SimilarForWordListSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='similars_list_after_delete',
+                    fields={
+                        'count': IntegerField(),
+                        'similars': SimilarForWordListSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_associations_list': {
             'summary': 'Просмотр всех ассоциаций слова',
+            'description': (
+                'Возвращает список всех ассоциаций и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
-            # 'responses'
-        },
-        'word_associations_create': {
-            'summary': 'Добавление новых ассоциаций к слову',
-            'request': AssociationsCreateSerializer,
             'responses': {
-                status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_200_OK: OpenApiResponse(
+                    response=inline_serializer(
+                        name='associations_list',
+                        fields={
+                            'count': IntegerField(),
+                            'associations': ImageInLineSerializer(
+                                many=True
+                            ),  # [need fix] or QuoteInLineSerializer
+                        },
+                    ),
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_images_list': {
             'summary': 'Просмотр списка всех картинок-ассоциаций слова',
+            'description': (
+                'Возвращает список всех картинок-ассоциаций слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: ImageInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='images_list',
+                    fields={
+                        'count': IntegerField(),
+                        'images': ImageInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
+        },
+        'word_images_upload': {
+            'summary': 'Загрузка новых картинок-ассоциаций слова',
+            'description': (
+                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
+            ),
+            'request': ImageInLineSerializer(many=True),
+            'responses': {
+                status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=image_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_image_retrieve': {
             'summary': 'Просмотр картинки-ассоциации слова',
+            'description': (
+                'Возвращает данные картинки-ассоциации слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: ImageInLineSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_image_partial_update': {
             'summary': 'Редактирование картинки-ассоциации слова',
+            'description': (
+                'Возвращает обновленные данные картинки-ассоциации слова. '
+                'Требуется авторизация. '
+            ),
             'request': ImageInLineSerializer,
             'responses': {
                 status.HTTP_200_OK: ImageInLineSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=image_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_image_destroy': {
             'summary': 'Удаление картинки-ассоциации слова',
+            'description': (
+                'Удаляет картинку из ассоциаций слова. '
+                'Возвращает обновленный список картинок-ассоциаций слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: ImageInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='images_list_after_delete',
+                    fields={
+                        'count': IntegerField(),
+                        'images': ImageInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_quotes_list': {
             'summary': 'Просмотр списка всех цитат-ассоциаций слова',
+            'description': (
+                'Возвращает список всех цитат-ассоциаций слова и их количество. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: QuoteInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='quotes_list',
+                    fields={
+                        'count': IntegerField(),
+                        'quotes': QuoteInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
+        },
+        'word_quotes_create': {
+            'summary': 'Добавление новых цитат-ассоциаций слова',
+            'description': (
+                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
+            ),
+            'request': QuoteInLineSerializer(many=True),
+            'responses': {
+                status.HTTP_201_CREATED: WordSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=quote_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_quote_retrieve': {
             'summary': 'Просмотр цитаты-ассоциации слова',
+            'description': (
+                'Возвращает данные цитаты-ассоциации слова. ' 'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: QuoteInLineSerializer,
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_quote_partial_update': {
             'summary': 'Редактирование цитаты-ассоциации слова',
+            'description': (
+                'Возвращает обновленные данные цитаты-ассоциации слова. '
+                'Требуется авторизация. '
+            ),
             'request': QuoteInLineSerializer,
             'responses': {
                 status.HTTP_200_OK: QuoteInLineSerializer,
+                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
+                    examples=quote_validation_errors_examples,
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'word_quote_destroy': {
             'summary': 'Удаление цитаты-ассоциации слова',
+            'description': (
+                'Удаляет цитату из ассоциаций слова. '
+                'Возвращает обновленный список цитат-ассоциаций слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: QuoteInLineSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='quotes_list_after_delete',
+                    fields={
+                        'count': IntegerField(),
+                        'quotes': QuoteInLineSerializer(many=True),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
         'words_favorites_list': {
             'summary': 'Просмотр списка избранных слов',
+            'description': (
+                'Возвращает список избранных слов '
+                'с пагинацией, фильтрами, сортировой и поиском. '
+                'Принимает те же параметры, что и список слов. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: WordStandartCardSerializer,
@@ -654,6 +1082,11 @@ data = {
         },
         'word_favorite_create': {
             'summary': 'Добавление слова в избранное',
+            'description': (
+                'Добавляет выбранное слово в список избранных слов. '
+                'Возвращает обновленные данные слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_201_CREATED: WordSerializer,
@@ -661,16 +1094,14 @@ data = {
         },
         'word_favorite_destroy': {
             'summary': 'Удаление слова из избранного',
+            'description': (
+                'Удаляет выбранное слово из списка избранных слов. '
+                'Возвращает обновленные данные слова. '
+                'Требуется авторизация. '
+            ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: WordSerializer,
-            },
-        },
-        'images_upload': {
-            'summary': 'Загрузка картинок-ассоциаций',
-            # 'request'
-            'responses': {
-                status.HTTP_201_CREATED: ImageInLineSerializer,
             },
         },
         # other methods

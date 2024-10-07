@@ -305,10 +305,9 @@ class FormGroup(
     )
     translation = models.CharField(
         _('Group name translation'),
-        max_length=VocabularyLengthLimits.MAX_FORMSGROUP_NAME_LENGTH,
+        max_length=VocabularyLengthLimits.MAX_FORMSGROUP_TRANSLATION_LENGTH,
         blank=True,
         validators=(
-            MinLengthValidator(VocabularyLengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
             CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
     )

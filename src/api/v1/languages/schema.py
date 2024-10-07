@@ -15,7 +15,7 @@ from drf_spectacular.utils import (
     PolymorphicProxySerializer,
 )
 
-from apps.core.exceptions import ExceptionCodes, ExceptionDetails, AmountLimits
+from apps.core.constants import ExceptionCodes, ExceptionDetails, AmountLimits
 
 from api.v1.vocabulary.serializers import (
     LearningLanguageWithLastWordsSerailizer,

@@ -24,7 +24,7 @@ from apps.vocabulary.models import (
     QuoteAssociation,
 )
 from apps.languages.models import Language, UserLearningLanguage
-from apps.core.exceptions import AmountLimits
+from apps.core.constants import AmountLimits
 
 logger = logging.getLogger(__name__)
 

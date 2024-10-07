@@ -19,7 +19,7 @@ from rest_framework.utils.serializer_helpers import ReturnDict
 from rest_framework.serializers import Serializer
 from rest_framework.viewsets import GenericViewSet
 
-from apps.core.exceptions import ObjectAlreadyExist, AmountLimitExceeded
+from api.v1.core.exceptions import ObjectAlreadyExist, AmountLimitExceeded
 from utils.checkers import check_amount_limit
 
 logger = logging.getLogger(__name__)

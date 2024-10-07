@@ -18,7 +18,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.serializers import Serializer
 
-from apps.core.exceptions import AmountLimitExceeded, AmountLimits
+from apps.core.constants import AmountLimits
 from apps.exercises.models import (
     Exercise,
     FavoriteExercise,
@@ -29,6 +29,7 @@ from utils.getters import get_admin_user
 
 from ..core.pagination import LimitPagination
 from ..core.mixins import FavoriteMixin
+from ..core.exceptions import AmountLimitExceeded
 from ..vocabulary.views import ActionsWithRelatedWordsMixin, CollectionViewSet
 from ..vocabulary.serializers import CollectionShortSerializer
 from .serializers import (

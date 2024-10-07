@@ -12,7 +12,7 @@ from apps.languages.models import (
     UserLearningLanguage,
     UserNativeLanguage,
 )
-from apps.core.exceptions import ExceptionDetails
+from apps.core.constants import ExceptionDetails
 
 from ..core.serializers_fields import CapitalizedCharField, KwargsMethodField
 from ..core.serializers_mixins import (

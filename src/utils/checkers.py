@@ -3,7 +3,7 @@
 import logging
 from uuid import UUID
 
-from apps.core.exceptions import AmountLimitExceeded
+from api.v1.core.exceptions import AmountLimitExceeded
 
 logger = logging.getLogger(__name__)
 

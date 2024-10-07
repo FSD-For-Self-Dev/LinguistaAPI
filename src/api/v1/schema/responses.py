@@ -6,6 +6,8 @@ from rest_framework.serializers import (
 from drf_spectacular.utils import (
     OpenApiResponse,
     OpenApiExample,
+    OpenApiParameter,
+    OpenApiTypes,
     inline_serializer,
 )
 
@@ -77,5 +79,23 @@ user_patch_validation_error_examples = [
                 'Acceptable characters: Letters from any language, Apostrophe, Space. Make sure name begin with a letter.'
             ]
         },
+    ),
+]
+
+pagination_parameters = [
+    OpenApiParameter(
+        'limit',
+        OpenApiTypes.INT,
+        OpenApiParameter.QUERY,
+        description=(
+            'Параметр пагинации. '
+            'Ограничение количества результатов на каждую страницу. '
+        ),
+    ),
+    OpenApiParameter(
+        'page',
+        OpenApiTypes.NUMBER,
+        OpenApiParameter.QUERY,
+        description=('Параметр пагинации. ' 'Номер страницы. '),
     ),
 ]

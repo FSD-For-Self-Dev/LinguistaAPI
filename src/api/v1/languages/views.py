@@ -16,9 +16,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 from django_filters.rest_framework import DjangoFilterBackend
 
 from apps.languages.models import Language, UserLearningLanguage, UserNativeLanguage
-from apps.core.exceptions import (
-    AmountLimitExceeded,
-    ObjectAlreadyExist,
+from apps.core.constants import (
     AmountLimits,
 )
 from utils.checkers import check_amount_limit
@@ -31,6 +29,10 @@ from .serializers import (
     CoverSetSerailizer,
 )
 from ..core.mixins import ActionsWithRelatedObjectsMixin
+from ..core.exceptions import (
+    AmountLimitExceeded,
+    ObjectAlreadyExist,
+)
 from ..vocabulary.serializers import (
     LearningLanguageWithLastWordsSerailizer,
     CollectionShortSerializer,

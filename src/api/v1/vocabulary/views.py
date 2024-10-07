@@ -25,8 +25,7 @@ from rest_framework.serializers import Serializer
 from rest_framework.exceptions import NotFound
 
 from utils.getters import get_admin_user
-from apps.core.exceptions import (
-    ObjectAlreadyExist,
+from apps.core.constants import (
     AmountLimits,
 )
 from apps.vocabulary.filters import CollectionFilter, WordFilter
@@ -54,6 +53,7 @@ from ..core.mixins import (
     DestroyReturnListMixin,
     FavoriteMixin,
 )
+from ..core.exceptions import ObjectAlreadyExist
 from .utils import get_word_cards_type, annotate_words_with_counters
 from .serializers import (
     WordStandartCardSerializer,

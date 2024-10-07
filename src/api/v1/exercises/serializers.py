@@ -11,7 +11,7 @@ from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.relations import PresentablePrimaryKeyRelatedField
 from rest_framework.utils.serializer_helpers import ReturnDict
 
-from apps.core.exceptions import AmountLimitExceeded, AmountLimits, ExceptionDetails
+from apps.core.constants import AmountLimits, ExceptionDetails
 from apps.vocabulary.models import Word, Collection
 from apps.exercises.models import (
     Exercise,
@@ -34,6 +34,7 @@ from ..core.serializers_fields import (
     KwargsMethodField,
     ReadableHiddenField,
 )
+from ..core.exceptions import AmountLimitExceeded
 from ..vocabulary.serializers import (
     WordShortCardSerializer,
     WordSuperShortSerializer,
