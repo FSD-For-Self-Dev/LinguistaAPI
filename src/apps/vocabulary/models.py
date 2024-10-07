@@ -29,6 +29,7 @@ from apps.core.constants import (
 )
 from apps.core.validators import CustomRegexValidator
 from utils.fillers import slug_filler
+from utils.images import compress
 
 from .constants import (
     VocabularyLengthLimits,
@@ -547,6 +548,12 @@ class ImageAssociation(
 
     def __str__(self) -> str:
         return _(f'Image association by {self.author}')
+
+    def save(self, *args, **kwargs) -> None:
+        """Compress the image file before saving it."""
+        if self.image:
+            self.image = compress(self.image)
+        return super().save(*args, **kwargs)
 
 
 class QuoteAssociation(

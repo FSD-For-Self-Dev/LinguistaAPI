@@ -17,6 +17,7 @@ from apps.core.models import (
 )
 from config.settings import AUTH_USER_MODEL
 from utils.fillers import slug_filler
+from utils.images import compress
 
 logger = logging.getLogger(__name__)
 
@@ -148,6 +149,12 @@ class LanguageCoverImage(CreatedModel, ModifiedModel):
 
     def __str__(self) -> str:
         return f'Image for {self.language.name} language: {self.image.url}'
+
+    def save(self, *args, **kwargs) -> None:
+        """Compress the image file before saving it."""
+        if self.image:
+            self.image = compress(self.image)
+        return super().save(*args, **kwargs)
 
 
 class UserLearningLanguage(

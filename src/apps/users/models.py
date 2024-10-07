@@ -11,6 +11,7 @@ from apps.core.models import (
     CreatedModel,
     ModifiedModel,
 )
+from utils.images import compress
 
 from .constants import (
     GENDERS,
@@ -81,6 +82,12 @@ class User(AbstractUser, CreatedModel, ModifiedModel):
 
     def __str__(self) -> str:
         return self.username
+
+    def save(self, *args, **kwargs) -> None:
+        """Compress profile image file before saving it."""
+        if self.image:
+            self.image = compress(self.image)
+        return super().save(*args, **kwargs)
 
     def words_in_vocabulary(self) -> int:
         """Returns words in user's vocabulary amount."""
