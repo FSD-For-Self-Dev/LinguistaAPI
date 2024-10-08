@@ -2,11 +2,15 @@
 # exit on error
 set -o errexit
 
-poetry install
+source venv/bin/activate
+
+python -m pip install -r requirements.txt
+
+cd src/
 
 python manage.py collectstatic --no-input
 python manage.py migrate
-python manage.py importexercises
-python manage.py importlanguages
-python manage.py importwordtypes
 python manage.py makesuperuser
+python manage.py importlanguages --import_images
+python manage.py importwordtypes
+python manage.py importexercises

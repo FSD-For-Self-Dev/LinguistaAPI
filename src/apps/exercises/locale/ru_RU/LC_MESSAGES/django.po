@@ -1,0 +1,286 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-07-29 12:59+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: .\exercises\apps.py:10 .\exercises\models.py:72
+msgid "Exercises"
+msgstr "Упражнения"
+
+#: .\exercises\models.py:39
+msgid "Exercise name"
+msgstr "Название упражнения"
+
+#: .\exercises\models.py:43
+msgid "Description"
+msgstr "Описание"
+
+#: .\exercises\models.py:47
+msgid "Constraint description"
+msgstr "Описание ограничения"
+
+#: .\exercises\models.py:52
+msgid "Exercise icon"
+msgstr "Иконка упражнения"
+
+#: .\exercises\models.py:58
+msgid "Is the exercise available for users"
+msgstr "Упражнение доступно для прохождения пользователями"
+
+#: .\exercises\models.py:64
+msgid "Exercise available hints"
+msgstr "Подсказки доступные в упражнении"
+
+#: .\exercises\models.py:71 .\exercises\models.py:140
+#: .\exercises\models.py:387 .\exercises\models.py:434
+msgid "Exercise"
+msgstr "Упражнение"
+
+#: .\exercises\models.py:73
+msgid "Exercises with user's words"
+msgstr "Упражнение со словами"
+
+#: .\exercises\models.py:90
+msgid "Hint name"
+msgstr "Название подсказки"
+
+#: .\exercises\models.py:95
+msgid "Hint details"
+msgstr "Описание подсказки"
+
+#: .\exercises\models.py:99
+msgid "Hint short code"
+msgstr "Короткий код подсказки"
+
+#: .\exercises\models.py:105
+msgid "Hint"
+msgstr "Подсказка"
+
+#: .\exercises\models.py:106
+msgid "Hints"
+msgstr "Подсказки"
+
+#: .\exercises\models.py:107
+msgid "Hints available to users for use in exercises"
+msgstr "Подсказки досутпные для пользователей в упражнениях"
+
+#: .\exercises\models.py:122
+msgid "Free input (one translation is enough)"
+msgstr "Свободный ввод (одного перевода достаточно)"
+
+#: .\exercises\models.py:123
+msgid "Free input (maximum translations quantity)"
+msgstr "Свободный ввод (максимальное кол-во переводов)"
+
+#: .\exercises\models.py:124
+msgid "Choose from variants"
+msgstr "Выбор из вариантов ответа"
+
+#: .\exercises\models.py:134 .\exercises\models.py:340
+#: .\exercises\models.py:393
+msgid "User"
+msgstr "Пользователь"
+
+#: .\exercises\models.py:145
+msgid "Words in exercise amount"
+msgstr "Количество слов пройденных в упражнении"
+
+#: .\exercises\models.py:148
+msgid "Correct answers amount"
+msgstr "Количество правильных ответов"
+
+#: .\exercises\models.py:151
+msgid "Incorrect answers amount"
+msgstr "Количество неправильных ответов"
+
+#: .\exercises\models.py:154 .\exercises\models.py:351
+msgid "Set time limit"
+msgstr "Установленное ограничение времени"
+
+#: .\exercises\models.py:159
+msgid "The time in which the exercise was completed"
+msgstr "Время прохождения упражнения"
+
+#: .\exercises\models.py:164 .\exercises\models.py:345
+msgid "Exercise chosen mode"
+msgstr "Выбранный режим прохождения упражнения"
+
+#: .\exercises\models.py:172
+msgid "Approach available hints"
+msgstr "Подсказки доступные в этом подходе"
+
+#: .\exercises\models.py:177
+msgid "User exercise approach"
+msgstr "Прохождение упражнения пользователем"
+
+#: .\exercises\models.py:178
+msgid "Users exercise approaches"
+msgstr "Прохождения упражнений пользователем"
+
+#: .\exercises\models.py:179
+msgid "History details of users passing exercises"
+msgstr "История прохождения упражнений пользователем"
+
+#: .\exercises\models.py:197
+msgid "Inactive"
+msgstr "Неактивное"
+
+#: .\exercises\models.py:198
+msgid "Active"
+msgstr "Активное"
+
+#: .\exercises\models.py:199
+msgid "Mastered"
+msgstr "Усвоенное"
+
+#: .\exercises\models.py:204 .\exercises\models.py:268
+msgid "Word"
+msgstr "Слово"
+
+#: .\exercises\models.py:209 .\exercises\models.py:216
+msgid "Activity status"
+msgstr "Статус активности"
+
+#: .\exercises\models.py:224 .\exercises\models.py:262
+msgid "Approach"
+msgstr "Подход"
+
+#: .\exercises\models.py:230
+msgid "Word activity status changes history"
+msgstr "История изменения статуса активности слова"
+
+#: .\exercises\models.py:231 .\exercises\models.py:232
+msgid "Words activity status changes history"
+msgstr "История изменения статуса активности слов"
+
+#: .\exercises\models.py:250
+msgid "Correct"
+msgstr "Правильно"
+
+#: .\exercises\models.py:251
+msgid "Incorrect"
+msgstr "Неправильно"
+
+#: .\exercises\models.py:252
+msgid "Semi-correct"
+msgstr "Почти правильно"
+
+#: .\exercises\models.py:274
+msgid "Word translation"
+msgstr "Перевод слова"
+
+#: .\exercises\models.py:294
+msgid "User answer time"
+msgstr "Время ответа пользователя"
+
+#: .\exercises\models.py:301
+msgid "Hints used"
+msgstr "Использованные подсказки"
+
+#: .\exercises\models.py:306
+msgid "Exercise history detail"
+msgstr "Пошаговая история прохождения упражнения"
+
+#: .\exercises\models.py:307
+msgid "Exercise history details"
+msgstr "Пошаговая история прохождения упражнений"
+
+#: .\exercises\models.py:308
+msgid "History details of users passing some exercise"
+msgstr "Ответы пользователя в подходе"
+
+#: .\exercises\models.py:327
+msgid "From learning"
+msgstr "С изучаемого языка"
+
+#: .\exercises\models.py:328
+msgid "From native"
+msgstr "С родного языка"
+
+#: .\exercises\models.py:329
+msgid "From learning to learning"
+msgstr "С изучаемого языка на изучаемый"
+
+#: .\exercises\models.py:330
+msgid "Alternately"
+msgstr "Попеременно"
+
+#: .\exercises\models.py:356
+msgid "Every word repetitions amount"
+msgstr "Количество повторений каждого слова"
+
+#: .\exercises\models.py:360
+msgid "Translate from learning or native language"
+msgstr "Перевод с изучаемого или родного языка"
+
+#: .\exercises\models.py:367
+msgid "Translator exercise user default settings"
+msgstr "Настройки пользователя по умолчанию для упражнения Переводчик"
+
+#: .\exercises\models.py:368
+msgid "Translator exercise users default settings"
+msgstr "Настройки пользователей по умолчанию для упражнения Переводчик"
+
+#: .\exercises\models.py:370
+msgid "Translator exercise settings which are used by default for the user"
+msgstr ""
+"Настройки для упражнения Переводчик применяемый по умолчанию для пользователя"
+
+#: .\exercises\models.py:399
+msgid "Favorite exercise"
+msgstr "Избранное упражнение"
+
+#: .\exercises\models.py:400
+msgid "Favorite exercises"
+msgstr "Избранные упражнения"
+
+#: .\exercises\models.py:401
+msgid "Users favorite exercises"
+msgstr "Избранные упражнения"
+
+#: .\exercises\models.py:429
+msgid "Word set name"
+msgstr "Название набора слов"
+
+#: .\exercises\models.py:439
+msgid "Last exercise date"
+msgstr "Дата последней тренировки"
+
+#: .\exercises\models.py:446
+msgid "Set words"
+msgstr "Слова набора"
+
+#: .\exercises\models.py:453
+msgid "Word set"
+msgstr "Набор слов"
+
+#: .\exercises\models.py:454
+msgid "Word sets"
+msgstr "Наборы слов"
+
+#: .\exercises\models.py:456
+msgid ""
+"Sets of words available for the exercise saved by the user for a quick start"
+msgstr "Набор доступных для упражнения слов для быстрого старта"
+
+#: .\exercises\serializers.py:118
+msgid "Same word set already exists."
+msgstr "Такой сохраненный набор для этого упражнения уже есть."
+
+#: .\exercises\views.py:189
+msgid "You haven't done this exercise yet."
+msgstr "Вы еще не проходили это упражнение"

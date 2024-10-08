@@ -1,0 +1,75 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-07-29 12:54+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+
+#: .\languages\apps.py:10 .\languages\models.py:95 .\languages\models.py:96
+msgid "Languages"
+msgstr "Языки"
+
+#: .\languages\models.py:51
+msgid "Language name"
+msgstr "Название языка"
+
+#: .\languages\models.py:57
+msgid "Language name (in that language)"
+msgstr "Название языка (на этом языке)"
+
+#: .\languages\models.py:64
+msgid "ISO 639-1 Language code"
+msgstr "ISO 639-1 код языка"
+
+#: .\languages\models.py:69
+msgid "2 character language code without country"
+msgstr "2 символьный код языка без страны"
+
+#: .\languages\models.py:72
+msgid "Sorting order"
+msgstr "Порядок сортировки"
+
+#: .\languages\models.py:76
+msgid "Increase to show at top of the list"
+msgstr "Увеличьте, чтобы поднять в списке"
+
+#: .\languages\models.py:79
+msgid "Is the language available for user to add to learning ones"
+msgstr "Язык доступен для добавления в изучаемые"
+
+#: .\languages\models.py:83
+msgid "Is the language available as interface language"
+msgstr "Язык доступен для перевода интерфейса"
+
+#: .\languages\models.py:87
+msgid "Language flag icon"
+msgstr "Иконка флага языка"
+
+#: .\languages\models.py:94 .\languages\models.py:113
+msgid "Language"
+msgstr "Язык"
+
+#: .\languages\models.py:118 .\languages\models.py:125
+msgid "Language image"
+msgstr "Картинка языка"
+
+#: .\languages\models.py:126
+msgid "Languages images"
+msgstr "Картинки языков"
+
+#: .\languages\models.py:128
+msgid "Images available to be set as cover for the learning language"
+msgstr "Картинки доступные для обновления обложки изучаемого языка"
