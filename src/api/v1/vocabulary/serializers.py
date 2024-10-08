@@ -25,7 +25,6 @@ from apps.vocabulary.models import (
     FavoriteWord,
     Form,
     FormGroup,
-    Note,
     Similar,
     Synonym,
     WordTag,
@@ -184,39 +183,6 @@ class ValidateLanguageMixin:
                 code=ExceptionCodes.Languages.LANGUAGE_INVALID,
             )
         return language
-
-
-class NoteInLineSerializer(AlreadyExistSerializerHandler, serializers.ModelSerializer):
-    """Serializer to list, create word notes inside word serializer."""
-
-    id = serializers.IntegerField(required=False)
-    author = ReadableHiddenField(
-        default=serializers.CurrentUserDefault(),
-        representation_field='username',
-    )
-    word = serializers.HiddenField(default=None)
-
-    already_exist_detail = ExceptionDetails.Vocabulary.NOTE_ALREADY_EXIST
-
-    class Meta:
-        model = Note
-        list_serializer_class = ListUpdateSerializer
-        foreign_key_field_name = 'word'
-        fields = (
-            'id',
-            'slug',
-            'text',
-            'word',
-            'author',
-            'created',
-            'modified',
-        )
-        read_only_fields = (
-            'slug',
-            'word',
-            'created',
-            'modified',
-        )
 
 
 class WordTranslationInLineSerializer(
@@ -797,14 +763,6 @@ class WordShortCreateSerializer(
         serializer_class=UserListSerializer,
         many=False,
     )
-    notes_count = KwargsMethodField(
-        'get_objs_count',
-        objs_related_name='notes',
-    )
-    notes = NoteInLineSerializer(
-        many=True,
-        required=False,
-    )
     associations_count = serializers.SerializerMethodField('get_associations_count')
     associations = serializers.SerializerMethodField('get_associations')
     images_count = KwargsMethodField(
@@ -847,6 +805,7 @@ class WordShortCreateSerializer(
             'slug',
             'language',
             'text',
+            'note',
             'author',
             'types',
             'tags',
@@ -866,8 +825,6 @@ class WordShortCreateSerializer(
             'quote_associations',
             'associations_count',
             'associations',
-            'notes_count',
-            'notes',
             'created',
             'modified',
         )
@@ -881,7 +838,6 @@ class WordShortCreateSerializer(
             'images',
             'associations_count',
             'associations',
-            'notes_count',
             'created',
             'modified',
         )
@@ -922,10 +878,6 @@ class WordShortCreateSerializer(
             'definitions': (
                 AmountLimits.Vocabulary.MAX_DEFINITIONS_AMOUNT,
                 AmountLimits.Vocabulary.Details.DEFINITIONS_AMOUNT_EXCEEDED,
-            ),
-            'notes': (
-                AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
-                AmountLimits.Vocabulary.Details.NOTES_AMOUNT_EXCEEDED,
             ),
             'image_associations': (
                 AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
@@ -1235,8 +1187,6 @@ class WordSerializer(WordShortCreateSerializer):
         objs_related_name='collections',
     )
     collections = CollectionShortSerializer(many=True, required=False)
-    notes_count = KwargsMethodField('get_objs_count', objs_related_name='notes')
-    notes = NoteInLineSerializer(many=True, required=False)
 
     already_exist_detail = ExceptionDetails.Vocabulary.WORD_ALREADY_EXIST
 
@@ -1247,6 +1197,7 @@ class WordSerializer(WordShortCreateSerializer):
             'slug',
             'language',
             'text',
+            'note',
             'author',
             'favorite',
             'is_problematic',
@@ -1276,8 +1227,6 @@ class WordSerializer(WordShortCreateSerializer):
             'similars',
             'collections_count',
             'collections',
-            'notes_count',
-            'notes',
             'created',
             'modified',
         )
@@ -1295,7 +1244,6 @@ class WordSerializer(WordShortCreateSerializer):
             'forms_count',
             'similars_count',
             'collections_count',
-            'notes_count',
             'activity_status',
             'created',
             'modified',
@@ -1338,10 +1286,6 @@ class WordSerializer(WordShortCreateSerializer):
             'definitions': (
                 AmountLimits.Vocabulary.MAX_DEFINITIONS_AMOUNT,
                 AmountLimits.Vocabulary.Details.DEFINITIONS_AMOUNT_EXCEEDED,
-            ),
-            'notes': (
-                AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
-                AmountLimits.Vocabulary.Details.NOTES_AMOUNT_EXCEEDED,
             ),
             'image_associations': (
                 AmountLimits.Vocabulary.MAX_IMAGES_AMOUNT,
@@ -1559,15 +1503,6 @@ class SimilarForWordListSerializer(
             intermediary_related_name='similar_to_words',
             parent_first=parent_first,
         )
-
-
-class NoteForWordSerializer(NoteInLineSerializer):
-    """Serializer to retrieve, update note for given word."""
-
-    word = ReadableHiddenField(
-        default=CurrentWordDefault(),
-        serializer_class=WordSuperShortSerializer,
-    )
 
 
 class WordTranslationListSerializer(serializers.ModelSerializer):

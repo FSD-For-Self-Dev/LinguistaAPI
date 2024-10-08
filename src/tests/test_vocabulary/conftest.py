@@ -10,7 +10,6 @@ from apps.vocabulary.models import (
     Definition,
     WordType,
     WordTag,
-    Note,
     Collection,
     QuoteAssociation,
 )
@@ -402,44 +401,6 @@ def word_quote_associations(request):
         return objs
 
     return get_word_quote_associations
-
-
-@pytest.fixture
-def word_notes(request):
-    def get_word_notes(user, data=False, _quantity=1, make=False, **kwargs):
-        if make:
-            objs = baker.make(
-                Note,
-                author=user,
-                word=kwargs.get('word', None),
-                _quantity=_quantity,
-                _fill_optional=True,
-            )
-        else:
-            objs = baker.prepare(
-                Note,
-                author=user,
-                word=kwargs.get('word', None),
-                _quantity=_quantity,
-                _fill_optional=True,
-            )
-        if data:
-            source = [
-                {
-                    'text': obj.text,
-                }
-                for obj in objs
-            ]
-            expected = [
-                {
-                    'text': obj.text,
-                }
-                for obj in objs
-            ]
-            return (objs, source, expected)
-        return objs
-
-    return get_word_notes
 
 
 @pytest.fixture

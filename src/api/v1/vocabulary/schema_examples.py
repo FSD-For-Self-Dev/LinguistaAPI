@@ -492,14 +492,10 @@ word_validation_errors_examples = [
         },
     ),
     OpenApiExample(
-        name='invalid_notes',
+        name='invalid_note',
         value={
-            'notes': [
-                {
-                    'text': [
-                        f'Убедитесь, что это значение содержит не более {VocabularyLengthLimits.MAX_NOTE_LENGTH} символов.'
-                    ]
-                }
+            'note': [
+                f'Убедитесь, что это значение содержит не более {VocabularyLengthLimits.MAX_NOTE_LENGTH} символов.'
             ],
         },
     ),

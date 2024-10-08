@@ -151,7 +151,6 @@ class AmountLimits:
         MAX_TYPES_AMOUNT = 3
         MAX_TAGS_AMOUNT = 10
         MAX_TRANSLATIONS_AMOUNT = 10
-        MAX_NOTES_AMOUNT = 10
         MAX_EXAMPLES_AMOUNT = 10
         MAX_DEFINITIONS_AMOUNT = 10
         MAX_FORMS_AMOUNT = 10
@@ -166,7 +165,6 @@ class AmountLimits:
             TYPES_AMOUNT_EXCEEDED = _('Word types amount limit exceeded.')
             TAGS_AMOUNT_EXCEEDED = _('Word tags amount limit exceeded.')
             TRANSLATIONS_AMOUNT_EXCEEDED = _('Word translations amount limit exceeded.')
-            NOTES_AMOUNT_EXCEEDED = _('Word notes amount limit exceeded.')
             EXAMPLES_AMOUNT_EXCEEDED = _('Word examples amount limit exceeded.')
             DEFINITIONS_AMOUNT_EXCEEDED = _('Word definitions amount limit exceeded.')
             FORMS_AMOUNT_EXCEEDED = _('Word forms amount limit exceeded.')

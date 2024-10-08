@@ -41,8 +41,6 @@ from api.v1.vocabulary.serializers import (
     DefinitionListSerializer,
     DefinitionCreateSerializer,
     DefinitionSerializer,
-    NoteInLineSerializer,
-    NoteForWordSerializer,
     SynonymForWordListSerializer,
     SynonymInLineSerializer,
     AntonymForWordListSerializer,
@@ -68,7 +66,6 @@ from .schema_examples import (
     translation_validation_errors_examples,
     definition_validation_errors_examples,
     example_validation_errors_examples,
-    note_validation_errors_examples,
     image_validation_errors_examples,
     quote_validation_errors_examples,
 )
@@ -513,73 +510,6 @@ data = {
                         'examples': UsageExampleInLineSerializer(many=True),
                     },
                 ),
-                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
-            },
-        },
-        'word_notes_list': {
-            'summary': 'Просмотр списка заметок слова',
-            'description': (
-                'Возвращает список всех заметок слова и их количество. '
-                'Требуется авторизация. '
-            ),
-            'request': None,
-            'responses': {
-                status.HTTP_200_OK: inline_serializer(
-                    name='notes_list',
-                    fields={
-                        'count': IntegerField(),
-                        'notes': NoteInLineSerializer(many=True),
-                    },
-                ),
-                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
-            },
-        },
-        'word_notes_create': {
-            'summary': 'Добавление заметок к слову',
-            'description': (
-                'Возвращает обновленные данные слова. ' 'Требуется авторизация. '
-            ),
-            'request': NoteInLineSerializer(many=True),
-            'responses': {
-                status.HTTP_201_CREATED: WordSerializer,
-                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
-                    examples=note_validation_errors_examples,
-                ),
-                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
-            },
-        },
-        'word_note_retrieve': {
-            'summary': 'Просмотр заметки слова',
-            'description': (
-                'Возвращает данные заметки слова. ' 'Требуется авторизация. '
-            ),
-            'request': None,
-            'responses': {
-                status.HTTP_200_OK: NoteForWordSerializer,
-                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
-            },
-        },
-        'word_note_partial_update': {
-            'summary': 'Редактирование заметки слова',
-            'description': (
-                'Возвращает обновленные данные заметки слова. '
-                'Требуется авторизация. '
-            ),
-            'request': NoteForWordSerializer,
-            'responses': {
-                status.HTTP_200_OK: NoteForWordSerializer,
-                status.HTTP_400_BAD_REQUEST: get_validation_error_response(
-                    examples=note_validation_errors_examples,
-                ),
-                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
-            },
-        },
-        'word_note_destroy': {
-            'summary': 'Удаление заметки слова',
-            'description': ('Удаляет заметку слова. ' 'Требуется авторизация. '),
-            'request': None,
-            'responses': {
-                status.HTTP_204_NO_CONTENT: None,
                 status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },

@@ -14,7 +14,6 @@ from apps.vocabulary.models import (
     WordTranslation,
     UsageExample,
     Definition,
-    Note,
     FavoriteWord,
     Collection,
     FavoriteCollection,
@@ -410,6 +409,7 @@ class TestVocabularyEndpoints:
             'language': word.language.name,
             'text': word.text,
             'is_problematic': word.is_problematic,
+            'note': word.note,
             'favorite': True,
             'types': [word_type.name for word_type in word_types],
             'tags': [{'name': word_tag.name} for word_tag in word_tags],
@@ -418,6 +418,7 @@ class TestVocabularyEndpoints:
             'language': word.language.name,
             'text': word.text,
             'is_problematic': word.is_problematic,
+            'note': word.note,
             'favorite': True,
             'types': [word_type.name for word_type in word_types],
             'tags': [{'name': word_tag.name} for word_tag in word_tags],
@@ -441,7 +442,6 @@ class TestVocabularyEndpoints:
             ('examples', 'word_usage_examples', True, 'examples'),
             ('definitions', 'word_definitions', True, 'definitions'),
             ('collections', 'collections', True, 'collections'),
-            ('notes', 'word_notes', True, 'notes'),
             # ('image_associations', 'word_image_associations', True, 'associations'),
             ('quote_associations', 'word_quote_associations', True, 'associations'),
         ],
@@ -760,7 +760,6 @@ class TestVocabularyEndpoints:
                 'related_words_data',
                 AmountLimits.Vocabulary.MAX_SIMILARS_AMOUNT,
             ),
-            ('notes', 'word_notes', AmountLimits.Vocabulary.MAX_NOTES_AMOUNT),
             # (
             #     'image_associations',
             #     'word_image_associations',
@@ -965,32 +964,6 @@ class TestVocabularyEndpoints:
                 for field, value in new_objs_expected_data[0]['from_word'].items()
             ]
         )
-
-    def test_word_partial_update_notes(self, auth_api_client, user, word_notes):
-        """
-        Заметки успешно обновляются при обновлении слова с валидными
-        данными от авторизованного пользователя.
-        """
-        word = baker.make(Word, author=user)
-        old_notes = baker.make(Note, author=user, word=word, _quantity=1)
-        _, new_notes_source_data, new_notes_expected_data = word_notes(
-            user=user, word=word, data=True
-        )
-
-        response = auth_api_client(user).patch(
-            f'{self.endpoint}{word.slug}/',
-            data={'notes': new_notes_source_data},
-            format='json',
-        )
-
-        assert response.status_code == 200 or response.status_code == 301
-        assert all(
-            [
-                response.data['notes'][0][field] == value
-                for field, value in new_notes_expected_data[0].items()
-            ]
-        )
-        assert not Note.objects.filter(text=old_notes[0].text, word=word).exists()
 
     def test_word_partial_update_favorite(self, auth_api_client, user):
         """
@@ -1235,7 +1208,6 @@ class TestVocabularyEndpoints:
             ('similars', Word, ''),
             ('forms', Word, ''),
             ('collections', Collection, ''),
-            ('notes', Note, ''),
             ('image_associations', ImageAssociation, 'associations'),
             ('quote_associations', QuoteAssociation, 'associations'),
         ],
@@ -1291,7 +1263,6 @@ class TestVocabularyEndpoints:
             ('forms', 'related_words_data'),
             ('similars', 'related_words_data'),
             ('collections', 'collections'),
-            ('notes', 'word_notes'),
         ],
     )
     def test_related_objs_create_action(
@@ -1364,17 +1335,6 @@ class TestVocabularyEndpoints:
         assert all(
             [response.data[field] == value for field, value in expected_data[0].items()]
         )
-
-    def test_notes_retrieve_action(self, auth_api_client, user, word_notes):
-        word = baker.make(Word, author=user)
-        objs = word_notes(user, word=word, make=True, _quantity=1)
-
-        response = auth_api_client(user).get(
-            f'{self.endpoint}{word.slug}/notes/{objs[0].slug}/',
-        )
-
-        assert response.status_code == 200
-        assert response.data['text'] == objs[0].text
 
     @pytest.mark.parametrize(
         'objs_related_name, fixture_name',
@@ -1451,28 +1411,6 @@ class TestVocabularyEndpoints:
             [response.data[field] == value for field, value in expected_data[0].items()]
         )
 
-    def test_notes_partial_update_action(self, auth_api_client, user, word_notes):
-        word = baker.make(Word, author=user)
-        objs = word_notes(user, make=True, word=word)
-        _, source_data, expected_data = word_notes(
-            user, make=False, data=True, word=word
-        )
-        try:
-            lookup = objs[0].slug
-        except AttributeError:
-            lookup = objs[0].id
-
-        response = auth_api_client(user).patch(
-            f'{self.endpoint}{word.slug}/notes/{lookup}/',
-            data=source_data[0],
-            format='json',
-        )
-
-        assert response.status_code == 200 or response.status_code == 301
-        assert all(
-            [response.data[field] == value for field, value in expected_data[0].items()]
-        )
-
     @pytest.mark.parametrize(
         'objs_related_name, fixture_name',
         [
@@ -1531,7 +1469,6 @@ class TestVocabularyEndpoints:
             ('antonyms', 'related_words_data', ''),
             ('forms', 'related_words_data', ''),
             ('similars', 'related_words_data', ''),
-            ('notes', 'word_notes', ''),
         ],
     )
     def test_related_objs_destroy_action(

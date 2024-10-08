@@ -80,6 +80,11 @@ class Word(
         _('Is the word problematic for you'),
         default=False,
     )
+    note = models.CharField(
+        _('Note text'),
+        max_length=VocabularyLengthLimits.MAX_NOTE_LENGTH,
+        blank=True,
+    )
     types = models.ManyToManyField(
         'WordType',
         verbose_name=_('WordType'),
@@ -1064,46 +1069,6 @@ class Similar(WordSelfRelatedModel):
         ]
 
 
-class Note(
-    GetObjectBySlugModelMixin,
-    SlugModel,
-    AuthorModel,
-    CreatedModel,
-    ModifiedModel,
-):
-    """Word notes."""
-
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
-    word = models.ForeignKey(
-        'Word',
-        verbose_name=_('Word'),
-        on_delete=models.CASCADE,
-        related_name='notes',
-        null=False,
-    )
-    text = models.CharField(
-        _('Note text'),
-        max_length=VocabularyLengthLimits.MAX_NOTE_LENGTH,
-        blank=False,
-    )
-
-    slugify_fields = ('text', ('word', 'text'))
-
-    class Meta:
-        verbose_name = _('Note')
-        verbose_name_plural = _('Notes')
-        db_table_comment = _('Word notes')
-        ordering = ('-created', '-id')
-        get_latest_by = ('created',)
-
-    def __str__(self) -> str:
-        return _(f'Note to the word `{self.word}`: {self.text} ')
-
-
 class FavoriteWord(GetObjectModelMixin, UserRelatedModel, CreatedModel):
     """Users favorite words."""
 
@@ -1217,7 +1182,6 @@ class DefaultWordCards(UserRelatedModel, CreatedModel):
 @receiver(pre_save, sender=WordTranslation)
 @receiver(pre_save, sender=Definition)
 @receiver(pre_save, sender=UsageExample)
-@receiver(pre_save, sender=Note)
 def fill_slug(sender, instance, *args, **kwargs) -> None:
     """Fill slug field before save instance."""
     slug = slug_filler(sender, instance, *args, **kwargs)

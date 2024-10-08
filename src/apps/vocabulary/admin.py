@@ -13,7 +13,6 @@ from .models import (
     Form,
     FormGroup,
     ImageAssociation,
-    Note,
     Similar,
     Synonym,
     WordTag,
@@ -69,11 +68,6 @@ class WordDefinitionsInline(admin.TabularInline):
     model = WordDefinitions
 
 
-class NoteInline(admin.TabularInline):
-    prepopulated_fields = {'slug': ('text',)}
-    model = Note
-
-
 class WordImageAssociationsInline(admin.TabularInline):
     model = WordImageAssociations
 
@@ -98,7 +92,6 @@ class WordAdmin(admin.ModelAdmin):
         AntonymInline,
         FormInline,
         SimilarInline,
-        NoteInline,
         WordImageAssociationsInline,
         WordQuoteAssociationsInline,
     )
@@ -154,12 +147,6 @@ class UsageExampleAdmin(admin.ModelAdmin):
 class DefinitionAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('text', 'author')}
     list_display = ('slug', 'text', 'translation', 'words_count')
-    list_display_links = ('slug',)
-
-
-@admin.register(Note)
-class NoteAdmin(admin.ModelAdmin):
-    list_display = ('slug', 'text', 'word', 'created')
     list_display_links = ('slug',)
 
 

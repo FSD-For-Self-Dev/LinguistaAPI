@@ -89,8 +89,6 @@ from .serializers import (
     CollectionShortSerializer,
     CollectionListSerializer,
     CollectionSerializer,
-    NoteInLineSerializer,
-    NoteForWordSerializer,
     ImageInLineSerializer,
     ImageListSerializer,
     QuoteInLineSerializer,
@@ -369,8 +367,6 @@ class WordViewSet(
         match self.action:
             case 'list' | 'destroy' | 'multiple_create' | 'favorites':
                 return get_word_cards_type(self.request)
-            case 'notes_create':
-                return NoteForWordSerializer
             case _:
                 return super().get_serializer_class()
 
@@ -654,51 +650,6 @@ class WordViewSet(
             delete_through_manager=True,
             response_objs_name='examples',
             response_serializer_class=UsageExampleInLineSerializer,
-            *args,
-            **kwargs,
-        )
-
-    @extend_schema(operation_id='word_notes_list', methods=('get',))
-    @action(
-        methods=('get',),
-        detail=True,
-        serializer_class=NoteInLineSerializer,
-        permission_classes=(IsAuthenticated,),
-    )
-    def notes(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Returns list of all notes for given word."""
-        return self.list_related_objs(request, objs_related_name='notes')
-
-    @extend_schema(operation_id='word_notes_create', methods=('post',))
-    @notes.mapping.post
-    def notes_create(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Creates new notes for given word."""
-        return self.create_related_objs(
-            request,
-            objs_related_name='notes',
-            amount_limit=AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
-            amount_limit_exceeded_detail=AmountLimits.Vocabulary.MAX_NOTES_AMOUNT,
-            set_objs=False,
-            response_serializer_class=WordSerializer,
-        )
-
-    @extend_schema(operation_id='word_note_retrieve', methods=('get',))
-    @extend_schema(operation_id='word_note_partial_update', methods=('patch',))
-    @extend_schema(operation_id='word_note_destroy', methods=('delete',))
-    @action(
-        methods=('get', 'patch', 'delete'),
-        detail=True,
-        url_path=r'notes/(?P<note_slug>[\w-]+)',
-        serializer_class=NoteForWordSerializer,
-    )
-    def notes_detail(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Retrieve, update, destroy note for given word."""
-        return self.detail_action(
-            request,
-            objs_related_name='notes',
-            lookup_field='slug',
-            lookup_query_param='note_slug',
-            delete_return_list=False,
             *args,
             **kwargs,
         )
