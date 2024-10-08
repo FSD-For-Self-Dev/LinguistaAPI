@@ -186,7 +186,10 @@ class ValidateLanguageMixin:
 
 
 class WordTranslationInLineSerializer(
-    AlreadyExistSerializerHandler, ValidateLanguageMixin, serializers.ModelSerializer
+    AlreadyExistSerializerHandler,
+    ValidateLanguageMixin,
+    CountObjsSerializerMixin,
+    serializers.ModelSerializer,
 ):
     """Serializer to list, create word translations inside word serializer."""
 
@@ -201,6 +204,7 @@ class WordTranslationInLineSerializer(
         default=NativeLanguageDefault(),
     )
     language_icon = serializers.SerializerMethodField('get_language_icon')
+    words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
 
     already_exist_detail = ExceptionDetails.Vocabulary.TRANSLATION_ALREADY_EXIST
 
@@ -214,6 +218,7 @@ class WordTranslationInLineSerializer(
             'language',
             'language_icon',
             'author',
+            'words_count',
             'created',
             'modified',
         )
@@ -221,6 +226,7 @@ class WordTranslationInLineSerializer(
             'id',
             'slug',
             'language_icon',
+            'words_count',
             'created',
             'modified',
         )
@@ -240,7 +246,7 @@ class WordTranslationInLineSerializer(
 
 
 class UsageExampleInLineSerializer(
-    AlreadyExistSerializerHandler, serializers.ModelSerializer
+    AlreadyExistSerializerHandler, CountObjsSerializerMixin, serializers.ModelSerializer
 ):
     """Serializer to list, create word usage examples inside word serializer."""
 
@@ -254,6 +260,7 @@ class UsageExampleInLineSerializer(
         slug_field='name',
         required=True,
     )
+    words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
 
     already_exist_detail = ExceptionDetails.Vocabulary.EXAMPLE_ALREADY_EXIST
 
@@ -267,19 +274,21 @@ class UsageExampleInLineSerializer(
             'language',
             'text',
             'translation',
+            'words_count',
             'created',
             'modified',
         )
         read_only_fields = (
             'id',
             'slug',
+            'words_count',
             'created',
             'modified',
         )
 
 
 class DefinitionInLineSerializer(
-    AlreadyExistSerializerHandler, serializers.ModelSerializer
+    AlreadyExistSerializerHandler, CountObjsSerializerMixin, serializers.ModelSerializer
 ):
     """Serializer to list, create word definitions inside word serializer."""
 
@@ -293,6 +302,7 @@ class DefinitionInLineSerializer(
         slug_field='name',
         required=True,
     )
+    words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
 
     already_exist_detail = ExceptionDetails.Vocabulary.DEFINITION_ALREADY_EXIST
 
@@ -306,12 +316,14 @@ class DefinitionInLineSerializer(
             'language',
             'text',
             'translation',
+            'words_count',
             'created',
             'modified',
         )
         read_only_fields = (
             'id',
             'slug',
+            'words_count',
             'created',
             'modified',
         )
@@ -419,7 +431,7 @@ class FormGroupInLineSerializer(
         return name
 
 
-class ImageInLineSerializer(HybridImageSerializerMixin):
+class ImageInLineSerializer(HybridImageSerializerMixin, CountObjsSerializerMixin):
     """Serializer to list, create word image-associations inside word serializer."""
 
     image = HybridImageOrPrimaryKeyField(
@@ -434,6 +446,7 @@ class ImageInLineSerializer(HybridImageSerializerMixin):
     association_type = serializers.SerializerMethodField(
         'get_association_type',
     )
+    words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
 
     class Meta:
         model = ImageAssociation
@@ -446,14 +459,18 @@ class ImageInLineSerializer(HybridImageSerializerMixin):
             'image_url',
             'image_height',
             'image_width',
+            'words_count',
             'created',
+            'modified',
         )
         read_only_fields = (
             'association_type',
             'id',
             'image_height',
             'image_width',
+            'words_count',
             'created',
+            'modified',
         )
 
     def validate(self, attrs):
@@ -478,7 +495,7 @@ class ImageInLineSerializer(HybridImageSerializerMixin):
         return super().create(validated_data, **kwargs)
 
 
-class QuoteInLineSerializer(serializers.ModelSerializer):
+class QuoteInLineSerializer(CountObjsSerializerMixin, serializers.ModelSerializer):
     """Serializer to list, create word quote-associations inside word serializer."""
 
     author = ReadableHiddenField(
@@ -488,6 +505,7 @@ class QuoteInLineSerializer(serializers.ModelSerializer):
     association_type = serializers.SerializerMethodField(
         'get_association_type',
     )
+    words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
 
     class Meta:
         model = QuoteAssociation
@@ -498,12 +516,16 @@ class QuoteInLineSerializer(serializers.ModelSerializer):
             'text',
             'quote_author',
             'author',
+            'words_count',
             'created',
+            'modified',
         )
         read_only_fields = (
             'association_type',
             'id',
+            'words_count',
             'created',
+            'modified',
         )
 
     @extend_schema_field({'type': 'string'})
@@ -1015,6 +1037,8 @@ class WordSelfRelatedSerializer(NestedSerializerMixin, serializers.ModelSerializ
 class SynonymInLineSerializer(WordSelfRelatedSerializer):
     """Serializer to list, create word synonyms inside word serializer."""
 
+    words_count = serializers.SerializerMethodField('get_words_count')
+
     default_error_messages = {
         ExceptionCodes.Vocabulary.SYNONYM_MUST_BE_SAME_LANGUAGE: {
             'synonyms': ExceptionDetails.Vocabulary.SYNONYM_MUST_BE_SAME_LANGUAGE,
@@ -1032,16 +1056,24 @@ class SynonymInLineSerializer(WordSelfRelatedSerializer):
             'to_word',
             'from_word',
             'note',
+            'words_count',
             'created',
         )
         read_only_fields = (
-            'created',
             'to_word',
+            'words_count',
+            'created',
         )
+
+    @extend_schema_field({'type': 'integer'})
+    def get_words_count(self, obj) -> int | None:
+        return obj.from_word.synonyms.count()
 
 
 class AntonymInLineSerializer(WordSelfRelatedSerializer):
     """Serializer to list, create word antonyms inside word serializer."""
+
+    words_count = serializers.SerializerMethodField('get_words_count')
 
     default_error_messages = {
         ExceptionCodes.Vocabulary.ANTONYM_MUST_BE_SAME_LANGUAGE: {
@@ -1060,16 +1092,24 @@ class AntonymInLineSerializer(WordSelfRelatedSerializer):
             'to_word',
             'from_word',
             'note',
+            'words_count',
             'created',
         )
         read_only_fields = (
-            'created',
             'to_word',
+            'words_count',
+            'created',
         )
+
+    @extend_schema_field({'type': 'integer'})
+    def get_words_count(self, obj) -> int | None:
+        return obj.from_word.antonyms.count()
 
 
 class FormInLineSerializer(WordSelfRelatedSerializer):
     """Serializer to list, create word forms inside word serializer."""
+
+    words_count = serializers.SerializerMethodField('get_words_count')
 
     default_error_messages = {
         ExceptionCodes.Vocabulary.FORM_MUST_BE_SAME_LANGUAGE: {
@@ -1087,16 +1127,24 @@ class FormInLineSerializer(WordSelfRelatedSerializer):
         fields = (
             'to_word',
             'from_word',
+            'words_count',
             'created',
         )
         read_only_fields = (
-            'created',
             'to_word',
+            'words_count',
+            'created',
         )
+
+    @extend_schema_field({'type': 'integer'})
+    def get_words_count(self, obj) -> int | None:
+        return obj.from_word.forms.count()
 
 
 class SimilarInLineSerializer(WordSelfRelatedSerializer):
     """Serializer to list, create similar words inside word serializer."""
+
+    words_count = serializers.SerializerMethodField('get_words_count')
 
     default_error_messages = {
         ExceptionCodes.Vocabulary.SIMILAR_MUST_BE_SAME_LANGUAGE: {
@@ -1114,12 +1162,18 @@ class SimilarInLineSerializer(WordSelfRelatedSerializer):
         fields = (
             'to_word',
             'from_word',
+            'words_count',
             'created',
         )
         read_only_fields = (
-            'created',
             'to_word',
+            'words_count',
+            'created',
         )
+
+    @extend_schema_field({'type': 'integer'})
+    def get_words_count(self, obj) -> int | None:
+        return obj.from_word.similars.count()
 
 
 class WordSerializer(WordShortCreateSerializer):
