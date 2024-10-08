@@ -274,6 +274,8 @@ class UsageExampleInLineSerializer(
             'language',
             'text',
             'translation',
+            'source',
+            'source_url',
             'words_count',
             'created',
             'modified',
@@ -1834,6 +1836,8 @@ class UsageExampleListSerializer(serializers.ModelSerializer):
             'author',
             'language',
             'text',
+            'source',
+            'source_url',
             'other_words_count',
             'last_4_words',
         )
@@ -1880,6 +1884,8 @@ class UsageExampleSerializer(
             'language',
             'text',
             'translation',
+            'source',
+            'source_url',
         )
         read_only_fields = (
             'id',

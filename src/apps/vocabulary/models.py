@@ -460,6 +460,19 @@ class UsageExample(
 ):
     """Users words and phrases usage examples."""
 
+    OTHER = 'other'
+    BOOK = 'book'
+    FILM = 'film'
+    SONG = 'song'
+    QUOTE = 'quote'
+    SOURCE_OPTIONS = [
+        (OTHER, _('Other')),
+        (BOOK, _('Book')),
+        (FILM, _('Film')),
+        (SONG, _('Song')),
+        (QUOTE, _('Quote')),
+    ]
+
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
@@ -489,6 +502,19 @@ class UsageExample(
             MinLengthValidator(VocabularyLengthLimits.MIN_EXAMPLE_LENGTH),
             CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
         ),
+    )
+    source = models.CharField(
+        _('Example source type'),
+        max_length=64,
+        choices=SOURCE_OPTIONS,
+        blank=False,
+        default=OTHER,
+    )
+    source_url = models.CharField(
+        _('Example source hotlink'),
+        max_length=512,
+        null=True,
+        blank=True,
     )
 
     slugify_fields = ('text', ('author', 'username'))
