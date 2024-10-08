@@ -70,5 +70,10 @@ urlpatterns = [
         name='redoc',
     ),
     path('auth/', include('api.v1.auth.urls')),
+    path(
+        'vocabulary/share/<slug:uuid>/',
+        WordViewSet.as_view({'get': 'share'}),
+        name='share',
+    ),
     path('', include(router.urls)),
 ]

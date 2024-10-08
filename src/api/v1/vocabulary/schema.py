@@ -210,6 +210,31 @@ data = {
                 status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
+        'word_share_link': {
+            'summary': 'Поделиться словом',
+            'description': (
+                'Возвращает ссылку для получения доступа к данным слова. '
+                'Требуется авторизация. '
+            ),
+            'request': None,
+            'responses': {
+                status.HTTP_200_OK: inline_serializer(
+                    name='get_share_link',
+                    fields={
+                        'link': CharField(),
+                    },
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
+        },
+        'word_share': {
+            'summary': 'Просмотр профиля слова по ссылке',
+            'description': 'Возвращает данные слова.',
+            'request': None,
+            'responses': {
+                status.HTTP_200_OK: WordSerializer,
+            },
+        },
         'word_multiple_create': {
             'summary': 'Создание нескольких слов подряд',
             'description': 'Возвращает обновленный словарь пользователя. ',

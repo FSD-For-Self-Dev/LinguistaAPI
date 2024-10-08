@@ -16,13 +16,14 @@ from drf_spectacular.utils import (
     extend_schema,
     extend_schema_view,
 )
-from rest_framework import filters, mixins, status, viewsets
+from rest_framework import filters, mixins, status, viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from rest_framework.serializers import Serializer
 from rest_framework.exceptions import NotFound
+from rest_framework.reverse import reverse
 
 from utils.getters import get_admin_user
 from apps.core.constants import (
@@ -322,6 +323,7 @@ class WordViewSet(
     queryset = Word.objects.none()
     serializer_class = WordSerializer
     permission_classes = (IsAuthenticated,)
+    permission_classes_by_action = {'share': [permissions.AllowAny]}
     pagination_class = LimitPagination
     filter_backends = (
         filters.SearchFilter,
@@ -361,7 +363,12 @@ class WordViewSet(
                     return annotate_words_with_counters(
                         instance=user, words_related_name='words'
                     )
-        return Word.objects.none()
+        else:
+            match self.action:
+                case 'share':
+                    return Word.objects.all()
+                case _:
+                    return Word.objects.none()
 
     def get_serializer_class(self) -> Serializer:
         match self.action:
@@ -369,6 +376,17 @@ class WordViewSet(
                 return get_word_cards_type(self.request)
             case _:
                 return super().get_serializer_class()
+
+    def get_permissions(self):
+        try:
+            # return permission_classes depending on `action`
+            return [
+                permission()
+                for permission in self.permission_classes_by_action[self.action]
+            ]
+        except KeyError:
+            # action is not set return default permission_classes
+            return [permission() for permission in self.permission_classes]
 
     @extend_schema(operation_id='word_random')
     @action(
@@ -449,6 +467,42 @@ class WordViewSet(
         except NotFound as exception:
             logger.error(f'ObjectDoesNotExist exception occured: {exception}')
             raise exception
+
+    @extend_schema(operation_id='word_share')
+    @action(
+        methods=('get',),
+        detail=False,
+        url_path='share/<slug:uuid>',
+    )
+    def share(self, request, pk=None, *args, **kwargs):
+        """Returns word data."""
+        self.lookup_url_kwarg = 'uuid'
+        self.lookup_field = 'id'
+        return self.retrieve(request, pk, *args, **kwargs)
+
+    @extend_schema(operation_id='word_share_link')
+    @action(
+        methods=('get',),
+        detail=True,
+        url_path='share-link',
+    )
+    def get_share_link(self, request, *args, **kwargs):
+        """Returns word share link."""
+        instance: Word = self.get_object()
+
+        logger.info(
+            f'Getting share link by user {self.request.user.username} '
+            f'for the word `{instance.text}`. '
+        )
+
+        return Response(
+            {
+                'link': request.build_absolute_uri(
+                    reverse('share', args=[str(instance.id)])
+                )
+            },
+            status=status.HTTP_200_OK,
+        )
 
     @extend_schema(operation_id='word_tags_list', methods=('get',))
     @action(
