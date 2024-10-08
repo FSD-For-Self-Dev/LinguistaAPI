@@ -4,6 +4,7 @@ from rest_framework import status
 from rest_framework.serializers import (
     CharField,
     IntegerField,
+    ListField,
 )
 from drf_spectacular.utils import (
     OpenApiResponse,
@@ -293,6 +294,7 @@ data = {
                     name='translations_list',
                     fields={
                         'count': IntegerField(),
+                        'languages': ListField(child=CharField()),
                         'translations': WordTranslationInLineSerializer(many=True),
                     },
                 ),
