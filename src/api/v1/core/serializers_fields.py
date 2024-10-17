@@ -2,6 +2,8 @@
 
 from typing import Any
 
+from django.utils.translation import gettext as _
+
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.fields import HybridImageField
@@ -119,3 +121,21 @@ class HybridImageOrPrimaryKeyField(CustomHybridImageField):
         if is_valid_uuid(data) and self.related_model:
             return self.related_model.objects.get(pk=data)
         return super().to_internal_value(data)
+
+
+class LanguageSlugRelatedField(serializers.SlugRelatedField):
+    """Custom SlugRelatedField to change does_not_exist error message for languages."""
+
+    default_error_messages = {
+        'does_not_exist': _('Language {value} was not found. Check its spelling.'),
+        'invalid': _('Invalid value.'),
+    }
+
+
+class TypeSlugRelatedField(serializers.SlugRelatedField):
+    """Custom SlugRelatedField to change does_not_exist error message for word types."""
+
+    default_error_messages = {
+        'does_not_exist': _('Type {value} was not found. Check its spelling.'),
+        'invalid': _('Invalid value.'),
+    }

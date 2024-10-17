@@ -42,6 +42,8 @@ from ..core.serializers_fields import (
     ReadableHiddenField,
     KwargsMethodField,
     HybridImageOrPrimaryKeyField,
+    LanguageSlugRelatedField,
+    TypeSlugRelatedField,
 )
 from ..core.serializers_mixins import (
     ListUpdateSerializer,
@@ -53,6 +55,7 @@ from ..core.serializers_mixins import (
     UpdateSerializerMixin,
     HybridImageSerializerMixin,
 )
+from ..core.exceptions import AmountLimitExceeded
 from ..users.serializers import UserListSerializer
 from ..languages.serializers import (
     LanguageSerializer,
@@ -198,7 +201,7 @@ class WordTranslationInLineSerializer(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         default=NativeLanguageDefault(),
@@ -255,7 +258,7 @@ class UsageExampleInLineSerializer(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
@@ -299,7 +302,7 @@ class DefinitionInLineSerializer(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
@@ -398,7 +401,7 @@ class FormGroupInLineSerializer(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
@@ -589,7 +592,7 @@ class WordShortCardSerializer(
 ):
     """Serializer to list words with minimum details."""
 
-    language = serializers.SlugRelatedField(slug_field='name', read_only=True)
+    language = LanguageSlugRelatedField(slug_field='name', read_only=True)
     activity_status = serializers.SerializerMethodField('get_activity_status_display')
 
     class Meta(WordSuperShortSerializer.Meta):
@@ -739,12 +742,12 @@ class WordShortCreateSerializer(
     """
 
     id = serializers.IntegerField(required=False)
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
     )
-    types = serializers.SlugRelatedField(
+    types = TypeSlugRelatedField(
         slug_field='name',
         queryset=WordType.objects.all(),
         many=True,
@@ -1185,7 +1188,7 @@ class WordSerializer(WordShortCreateSerializer):
     """
 
     id = serializers.IntegerField(required=False)
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
@@ -1195,7 +1198,7 @@ class WordSerializer(WordShortCreateSerializer):
         serializer_class=UserListSerializer,
         many=False,
     )
-    types = serializers.SlugRelatedField(
+    types = TypeSlugRelatedField(
         slug_field='name',
         queryset=WordType.objects.order_by('name'),
         many=True,
@@ -1568,7 +1571,7 @@ class WordTranslationListSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
@@ -1621,7 +1624,7 @@ class WordTranslationSerializer(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=True,
     )
@@ -1655,7 +1658,7 @@ class WordTranslationCreateSerializer(
     """Serializer to create translation and add related words to it."""
 
     id = serializers.IntegerField(required=False)
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=False,
         queryset=Language.objects.all(),
@@ -1683,7 +1686,7 @@ class DefinitionListSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
@@ -1732,7 +1735,7 @@ class DefinitionSerializer(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=True,
     )
@@ -1765,7 +1768,7 @@ class DefinitionCreateSerializer(
     """Serializer to create definition and add related words to it."""
 
     id = serializers.IntegerField(required=False)
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=False,
         queryset=Language.objects.all(),
@@ -1817,7 +1820,7 @@ class UsageExampleListSerializer(serializers.ModelSerializer):
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
@@ -1868,7 +1871,7 @@ class UsageExampleSerializer(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=True,
     )
@@ -1903,7 +1906,7 @@ class UsageExampleCreateSerializer(
     """Serializer to create usage example and add related words to it."""
 
     id = serializers.IntegerField(required=False)
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=False,
         queryset=Language.objects.all(),
@@ -2041,7 +2044,7 @@ class SynonymSerializer(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=True,
     )
@@ -2117,7 +2120,7 @@ class FormGroupListSerializer(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
     )
-    language = serializers.SlugRelatedField(
+    language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=True,
@@ -2232,7 +2235,7 @@ class UserDetailsSerializer(
 ):
     """Serializer to retrieve, update user's profile data."""
 
-    native_languages = serializers.SlugRelatedField(
+    native_languages = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
         required=False,
@@ -2283,8 +2286,9 @@ class UserDetailsSerializer(
     ) -> QuerySet[Language]:
         """Raises ValidationError if amount limits for native languages exceeded."""
         if len(languages) > AmountLimits.Languages.MAX_NATIVE_LANGUAGES_AMOUNT:
-            raise serializers.ValidationError(
-                AmountLimits.Languages.Details.NATIVE_LANGUAGES_AMOUNT_EXCEEDED
+            raise AmountLimitExceeded(
+                detail=AmountLimits.Languages.Details.NATIVE_LANGUAGES_AMOUNT_EXCEEDED,
+                amount_limit=AmountLimits.Languages.MAX_NATIVE_LANGUAGES_AMOUNT,
             )
         return languages
 
@@ -2299,6 +2303,7 @@ class UserDetailsSerializer(
     def update(self, instance, validated_data):
         native_languages = validated_data.pop('native_languages', [])
         for language in native_languages:
+            UserNativeLanguage.objects.filter(user=instance).delete()
             UserNativeLanguage.objects.get_or_create(user=instance, language=language)
         return super().update(instance, validated_data)
 
