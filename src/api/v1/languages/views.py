@@ -102,8 +102,10 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             case 'learning_available':
                 if user.is_anonymous:
                     # Ingore learning languages for anonymous user
-                    return Language.objects.filter(learning_available=True).order_by(
-                        '-words_count', 'name'
+                    return (
+                        Language.objects.filter(learning_available=True)
+                        .annotate(words_count=Count('words'))
+                        .order_by('-words_count', 'name')
                     )
                 return (
                     Language.objects.filter(learning_available=True)
