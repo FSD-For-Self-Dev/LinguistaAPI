@@ -14,8 +14,9 @@ def compress(image: Any) -> Type[File]:
     # create a BytesIO object
     thumb_io = BytesIO()
     # save image to BytesIO object
-    img = img.convert('RGB')
-    img = img.save(thumb_io, 'JPEG', quality=100)
+    if img.mode != 'RGB':
+        img = img.convert('RGB')
+    img = img.save(thumb_io, 'JPEG', quality=70, optimize=True)
 
     # create a django-friendly Files object
     thumbnail = File(thumb_io, name=image.name)
