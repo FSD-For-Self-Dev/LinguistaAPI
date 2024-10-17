@@ -22,6 +22,7 @@ from .constants import (
 
 
 def user_profile_images_path(user, filename) -> str:
+    filename = filename.split('/')[-1]
     return f'users/profile-images/{user.username}/{filename}'
 
 
@@ -87,7 +88,7 @@ class User(AbstractUser, CreatedModel, ModifiedModel):
         """Compress profile image file before saving it."""
         if self.image:
             self.image = compress(self.image)
-        return super().save(*args, **kwargs)
+        return super(User, self).save(*args, **kwargs)
 
     def words_in_vocabulary(self) -> int:
         """Returns words in user's vocabulary amount."""

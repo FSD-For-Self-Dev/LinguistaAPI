@@ -154,7 +154,7 @@ class LanguageCoverImage(CreatedModel, ModifiedModel):
         """Compress the image file before saving it."""
         if self.image:
             self.image = compress(self.image)
-        return super().save(*args, **kwargs)
+        return super(LanguageCoverImage, self).save(*args, **kwargs)
 
 
 class UserLearningLanguage(

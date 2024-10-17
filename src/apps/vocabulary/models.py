@@ -584,7 +584,7 @@ class ImageAssociation(
         """Compress the image file before saving it."""
         if self.image:
             self.image = compress(self.image)
-        return super().save(*args, **kwargs)
+        return super(ImageAssociation, self).save(*args, **kwargs)
 
 
 class QuoteAssociation(
