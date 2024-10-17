@@ -54,8 +54,8 @@ class Command(BaseCommand):
                         cnt += 1
 
                         try:
-                            flag_icon_url = self.flag_icons_path + isocode + '.svg'
-                            flag_icon = ImageFile(open(flag_icon_url, 'rb'))
+                            flag_icon_path = self.flag_icons_path + isocode + '.svg'
+                            flag_icon = ImageFile(open(flag_icon_path, 'rb'))
                             flag_icon.name = isocode + '.svg'
                             lang.flag_icon = flag_icon
                         except FileNotFoundError:
