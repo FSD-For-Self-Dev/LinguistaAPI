@@ -48,7 +48,7 @@ backward_button = InlineKeyboardButton(text='Назад', callback_data='backwar
 
 
 def get_page_num_button(page_num: int, pages_total_amount: int) -> InlineKeyboardButton:
-    """..."""
+    """Returns button to choose page."""
     return InlineKeyboardButton(
         text=f'{page_num}/{pages_total_amount}', callback_data='choose_page'
     )
