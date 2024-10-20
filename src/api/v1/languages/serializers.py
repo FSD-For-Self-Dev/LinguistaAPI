@@ -34,6 +34,7 @@ class LanguageSerializer(serializers.ModelSerializer):
             'id',
             'name',
             'name_local',
+            'isocode',
             'flag_icon',
         )
         read_only_fields = fields
@@ -123,7 +124,7 @@ class LearningLanguageListSerailizer(
         return obj.user.words.filter(language=obj.language, activity_status='M').count()
 
 
-class LearningLanguageSerailizer(
+class LearningLanguageSerializer(
     AlreadyExistSerializerHandler,
     LearningLanguageListSerailizer,
 ):

@@ -4,14 +4,15 @@ from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 vocabulary_kb = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text='Просмотр словаря')],
-        [KeyboardButton(text='Поиск по словарю, сортировка, фильтры')],
-        [KeyboardButton(text='Просмотр профиля слова')],
-        [KeyboardButton(text='Добавление одного слова')],
-        [KeyboardButton(text='Добавление нескольких слов')],
-        [KeyboardButton(text='Добавление слов в избранное, удаление из избранного')],
-        [KeyboardButton(text='Просмотр избранных слов')],
-        [KeyboardButton(text='Добавление дополнений к слову')],
+        [
+            KeyboardButton(text='Поиск'),
+            KeyboardButton(text='Сортировка'),
+            KeyboardButton(text='Фильтры'),
+        ],
+        [KeyboardButton(text='Добавить новое слово')],
+        [KeyboardButton(text='Добавить несколько новых слов')],
+        [KeyboardButton(text='Избранное')],
+        [KeyboardButton(text='Вернуться в меню')],
     ],
     resize_keyboard=True,
     one_time_keyboard=True,

@@ -34,6 +34,21 @@ cancel_kb = ReplyKeyboardMarkup(
     resize_keyboard=True,
     one_time_keyboard=True,
 )
+return_kb = ReplyKeyboardMarkup(
+    keyboard=[[KeyboardButton(text='Вернуться назад')]],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+)
 
 cancel_button = InlineKeyboardButton(text='Отмена', callback_data='cancel')
 cancel_inline_kb = InlineKeyboardMarkup(inline_keyboard=[[cancel_button]])
+
+forward_button = InlineKeyboardButton(text='Вперед', callback_data='forward')
+backward_button = InlineKeyboardButton(text='Назад', callback_data='backward')
+
+
+def get_page_num_button(page_num: int, pages_total_amount: int) -> InlineKeyboardButton:
+    """..."""
+    return InlineKeyboardButton(
+        text=f'{page_num}/{pages_total_amount}', callback_data='choose_page'
+    )

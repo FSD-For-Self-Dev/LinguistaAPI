@@ -21,5 +21,6 @@ INTERFACE_LANGUAGES_URL = API_URL + os.getenv('INTERFACE_LANGUAGES_URL')
 
 # vocabulary
 VOCABULARY_URL = API_URL + os.getenv('VOCABULARY_URL')
+TYPES_URL = API_URL + os.getenv('TYPES_URL')
 
 # collections

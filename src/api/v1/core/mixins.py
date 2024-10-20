@@ -209,7 +209,7 @@ class ActionsWithRelatedObjectsMixin:
             page or objs, many=True, context={'request': request}
         ).data
 
-        if page:
+        if page is not None:
             logger.debug('Returning paginated response data')
             return paginator.get_paginated_response(_objs_serializer_data).data
 

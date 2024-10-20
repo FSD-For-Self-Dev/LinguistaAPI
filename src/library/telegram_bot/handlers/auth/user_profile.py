@@ -55,7 +55,7 @@ router = Router()
 
 @router.message(F.text == 'Профиль')
 async def get_user_profile(message: Message, state: FSMContext) -> None:
-    """Return user profile data."""
+    """Sends user profile data."""
     state_data = await state.get_data()
     token = state_data.get('token')
     headers = get_authentication_headers(token=token)
@@ -76,7 +76,7 @@ async def get_user_profile(message: Message, state: FSMContext) -> None:
 
 @router.message(F.text == 'Редактировать профиль')
 async def update_user_profile(message: Message, state: FSMContext) -> None:
-    """Set state, send options to choose."""
+    """Sets state, sends options to choose."""
     await state.set_state(UserProfileUpdate.options)
     await state.update_data(previous_state_handler=get_user_profile)
 
@@ -88,7 +88,7 @@ async def update_user_profile(message: Message, state: FSMContext) -> None:
 
 @router.message(F.text == 'Обновить фото профиля')
 async def update_profile_image(message: Message, state: FSMContext) -> None:
-    """Set state, wait for image file from user."""
+    """Sets state that awaits image file."""
     await state.set_state(UserProfileUpdate.profile_image)
     await state.update_data(previous_state_handler=update_user_profile)
 
@@ -100,7 +100,7 @@ async def update_profile_image(message: Message, state: FSMContext) -> None:
 
 @router.message(UserProfileUpdate.profile_image)
 async def update_profile_image_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve, download profile image file, update state data, send request to api."""
+    """Accepts profile image file, calls download, updates state data, makes request to API, sends user profile updated data."""
 
     if not message.photo:
         await message.answer(
@@ -150,7 +150,7 @@ async def update_profile_image_proceed(message: Message, state: FSMContext) -> N
 
 @router.message(F.text == 'Изменить имя')
 async def update_first_name(message: Message, state: FSMContext) -> None:
-    """Set state, wait for message from user."""
+    """Sets state that awaits first_name."""
     await state.set_state(UserProfileUpdate.first_name)
     await state.update_data(previous_state_handler=update_user_profile)
 
@@ -164,7 +164,7 @@ async def update_first_name(message: Message, state: FSMContext) -> None:
 
 @router.message(UserProfileUpdate.first_name)
 async def update_first_name_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve first name, update state data, send request to api."""
+    """Accepts first name value, updates state data, makes request to API, sends user profile updated data."""
     state_data = await state.get_data()
     token = state_data.get('token')
     headers = get_authentication_headers(token=token)
@@ -198,7 +198,7 @@ async def update_first_name_proceed(message: Message, state: FSMContext) -> None
 
 @router.message(F.text == 'Изменить родные языки')
 async def update_native_languages(message: Message, state: FSMContext) -> None:
-    """Set state, wait for message from user."""
+    """Sets state that awaits native languages."""
     await state.set_state(UserProfileUpdate.native_languages)
     await state.update_data(previous_state_handler=update_user_profile)
 
@@ -213,7 +213,7 @@ async def update_native_languages(message: Message, state: FSMContext) -> None:
 
 @router.message(UserProfileUpdate.native_languages)
 async def native_languages_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve languages, update state data, send request to api."""
+    """Accepts native languages value, updates state data, makes request to api, sends user profile updated data."""
     state_data = await state.get_data()
     token = state_data.get('token')
     headers = get_authentication_headers(token=token)
@@ -266,7 +266,7 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
 
 @router.message(F.text == 'Добавить изучаемый язык')
 async def add_learning_language(message: Message, state: FSMContext) -> None:
-    """Set state, wait for message from user or button callback."""
+    """Sets state that awaits learning language name in message or button callback."""
     await state.set_state(AddLearningLanguage.language)
     await state.update_data(previous_state_handler=get_user_profile)
 
@@ -288,8 +288,10 @@ async def add_learning_language(message: Message, state: FSMContext) -> None:
                     ]
                 case HTTPStatus.UNAUTHORIZED:
                     await send_unauthorized_response(message, state)
+                    return None
                 case _:
                     await send_error_message(message, state, response)
+                    return None
 
     # generate inline keyboard
     keyboard_builder = InlineKeyboardBuilder()
@@ -366,8 +368,10 @@ async def add_learning_language_query(
 
 
 @router.callback_query(F.data.startswith('add_language'))
-async def process_callback(callback_query: CallbackQuery, state: FSMContext) -> None:
-    """Recieve language from button callback."""
+async def add_learning_language_callback(
+    callback_query: CallbackQuery, state: FSMContext
+) -> None:
+    """Accepts learning language from button callback."""
     language_name = callback_query.data.split('_')[-1]
     await callback_query.answer(f'Выбран язык: {language_name}')
     await add_learning_language_query(callback_query.message, state, language_name)
@@ -375,14 +379,14 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext) -> 
 
 @router.message(AddLearningLanguage.language)
 async def add_learning_language_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve language from message text."""
+    """Accepts learning language name from message text."""
     language_name = message.text
     await add_learning_language_query(message, state, language_name)
 
 
 @router.message(F.text == 'Выйти из аккаунта')
 async def logout(message: Message, state: FSMContext) -> None:
-    """Clear state, send logout api request."""
+    """Clears state, makes logout API request, sends initial keyboard."""
     state_data = await state.get_data()
     token = state_data.get('token')
     headers = get_authentication_headers(token=token)

@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 
 from keyboards.core import cancel_inline_kb, main_kb
 from states.auth import Authorization, Authorized
-
 from handlers.urls import LOG_IN_URL
 from handlers.utils import (
     send_error_message,
@@ -36,7 +35,7 @@ router = Router()
 
 @router.message(F.text == 'Войти в аккаунт')
 async def login(message: Message, state: FSMContext) -> None:
-    """User authorization start, switch to username input."""
+    """User authorization start, sets state that awaits username."""
     await state.set_state(Authorization.username)
     await message.answer(
         'Введите свой логин или адрес электронной почты.',
@@ -46,7 +45,7 @@ async def login(message: Message, state: FSMContext) -> None:
 
 @router.message(Authorization.username)
 async def login_username_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve username, update state data and switch to password input."""
+    """Accepts username, updates state data, sets state that awaits password."""
     # check if email or username was passed
     email_pattern = r'.+@((\w+\-+)|(\w+\.))*\w{1,63}\.[a-zA-Z]{2,6}'
     email_passed = True if re.fullmatch(email_pattern, message.text) else False
@@ -67,7 +66,7 @@ async def login_username_proceed(message: Message, state: FSMContext) -> None:
 
 @router.message(Authorization.password)
 async def login_password_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve password, send login request to API, update state with token."""
+    """Accepts password, makes login request to API, updates state with token."""
     await state.update_data(password=message.text)
 
     data = await state.get_data()

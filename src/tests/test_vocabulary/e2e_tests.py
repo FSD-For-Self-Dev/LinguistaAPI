@@ -412,7 +412,7 @@ class TestVocabularyEndpoints:
             'note': word.note,
             'favorite': True,
             'types': [word_type.name for word_type in word_types],
-            'tags': [{'name': word_tag.name} for word_tag in word_tags],
+            'tags': [{'name': word_tag.name.lower()} for word_tag in word_tags],
         }
         expected_data = {
             'language': word.language.name,
@@ -421,7 +421,7 @@ class TestVocabularyEndpoints:
             'note': word.note,
             'favorite': True,
             'types': [word_type.name for word_type in word_types],
-            'tags': [{'name': word_tag.name} for word_tag in word_tags],
+            'tags': [{'name': word_tag.name.lower()} for word_tag in word_tags],
         }
 
         response = auth_api_client(user).post(
@@ -2915,21 +2915,6 @@ class TestLanguagesEndpoints:
         )
         assert len(response.data['results']) == len(objs) - 1
 
-    def test_list_interface_available(self, auth_api_client, user, languages):
-        objs = languages(
-            name=False, extra_data={'interface_available': True}, _quantity=2
-        )
-        languages(user, data=False, _quantity=3)
-
-        response = auth_api_client(user).get(f'{self.endpoint}interface/')
-
-        assert response.status_code == 200
-        assert response.data['count'] == len(objs), (
-            f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются правильные данные. '
-            f'Значение параметра `count` неправильное'
-        )
-        assert len(response.data['results']) == len(objs)
-
     def test_list_native(self, auth_api_client, user, native_languages):
         """
         По запросу списка родных языков пользователя возвращается список родных языков
@@ -2940,6 +2925,34 @@ class TestLanguagesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}native/',
         )
+
+        assert response.status_code == 200
+        assert response.data['count'] == len(objs), (
+            f'Проверьте, что при GET запросе `{self.endpoint}` возвращаются правильные данные. '
+            f'Значение параметра `count` неправильное'
+        )
+        assert len(response.data['results']) == len(objs)
+
+
+@pytest.mark.global_languages
+class TestGlobalLanguagesEndpoints:
+    endpoint = '/api/global-languages/'
+
+    def test_list(self, auth_api_client, user, languages):
+        objs = languages(user, data=False, _quantity=2)
+
+        response = auth_api_client(user).get(self.endpoint)
+
+        assert response.status_code == 200
+        assert len(response.data) == len(objs)
+
+    def test_list_interface_available(self, auth_api_client, user, languages):
+        objs = languages(
+            name=False, extra_data={'interface_available': True}, _quantity=2
+        )
+        languages(user, data=False, _quantity=3)
+
+        response = auth_api_client(user).get(f'{self.endpoint}interface/')
 
         assert response.status_code == 200
         assert response.data['count'] == len(objs), (

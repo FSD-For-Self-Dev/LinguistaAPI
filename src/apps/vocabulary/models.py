@@ -247,7 +247,6 @@ class WordTag(
     name = models.CharField(
         _('Tag name'),
         max_length=VocabularyLengthLimits.MAX_TAG_LENGTH,
-        unique=True,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_TAG_LENGTH),
             CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
@@ -262,9 +261,17 @@ class WordTag(
         db_table_comment = _('Word or phrase tags')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
+        constraints = [
+            models.UniqueConstraint(Lower('name'), 'author', name='unique_tag_name')
+        ]
 
     def __str__(self) -> str:
         return f'{self.name} (by {self.author})'
+
+    def save(self, *args, **kwargs) -> None:
+        """Reduce name to lowercase before instance save."""
+        self.name = self.name.lower()
+        return super().save(*args, **kwargs)
 
 
 class FormGroup(
@@ -334,7 +341,7 @@ class FormGroup(
         return f'{self.name}'
 
     def save(self, *args, **kwargs) -> None:
-        """Capitalizes name text before instance save."""
+        """Capitalizes name before instance save."""
         self.name = self.name.capitalize()
         super().save(*args, **kwargs)
 

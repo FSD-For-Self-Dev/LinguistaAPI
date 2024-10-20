@@ -10,7 +10,7 @@ from aiogram.fsm.context import FSMContext
 import aiohttp.client_reqrep
 from dotenv import load_dotenv
 
-from keyboards.core import initial_kb
+from keyboards.core import initial_kb, return_kb
 from keyboards.user_profile import profile_kb
 
 
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 def get_authentication_headers(
     token_auth=True, content_type='json', *args, **kwargs
 ) -> dict | None:
-    """Return dict of request headers."""
+    """Returns dict of request headers."""
     if token_auth:
         token = kwargs.get('token', '')
         if token:
@@ -42,7 +42,7 @@ def get_authentication_headers(
 
 
 async def cancel(message: Message, state: FSMContext) -> None:
-    """Clear state and return to initial state"""
+    """Clears state and returns to initial state"""
     await state.clear()
     await message.answer(
         'Операция отменена. Зарегистрируйтесь или войдите для продолжения.',
@@ -53,12 +53,12 @@ async def cancel(message: Message, state: FSMContext) -> None:
 async def send_error_message(
     message: Message, state: FSMContext, response: aiohttp.client_reqrep.ClientResponse
 ) -> None:
-    """Send error message when some unexpected error occured."""
+    """Sends error message when some unexpected error occured."""
     await state.clear()
     response_data = await response.json()
     await message.answer(
         f'Кажется, что-то пошло не так. Код ответа: {response.status} 👾',
-        reply_markup=initial_kb,
+        reply_markup=return_kb,
     )
     logger.debug(
         f'During login API returned {response.status} status response: {response_data}'
@@ -66,7 +66,7 @@ async def send_error_message(
 
 
 async def send_unauthorized_response(message: Message, state: FSMContext) -> None:
-    """Send unauthorized error message."""
+    """Sends unauthorized error message."""
     await state.clear()
     await message.answer(
         'Зарегистрируйтесь или войдите для продолжения.',
@@ -77,7 +77,7 @@ async def send_unauthorized_response(message: Message, state: FSMContext) -> Non
 async def send_validation_errors(
     message: Message, state: FSMContext, response: aiohttp.client_reqrep.ClientResponse
 ) -> None:
-    """Send validation errors messages."""
+    """Send svalidation errors messages."""
     response_data: dict = await response.json()
     detail_messages = list(itertools.chain.from_iterable(response_data.values()))
     await message.answer('\n'.join(detail_messages))
@@ -91,7 +91,7 @@ async def send_user_profile_answer(
     *args,
     **kwargs,
 ) -> None:
-    """Send user profile info."""
+    """Sends user profile info."""
     username = response_data['username']
     first_name = response_data['first_name'] or '<i>Не заполнено</i>'
     words_count = response_data['words_count']
@@ -157,7 +157,7 @@ async def send_user_profile_answer(
         )
 
 
-def api_request_logging(url, data=None, headers=None, method='get'):
+def api_request_logging(url, data=None, headers=None, method='get') -> None:
     logger.debug(
         f'Sending request to API url: {url} (method: {method}, headers: {headers}, data: {data})'
     )

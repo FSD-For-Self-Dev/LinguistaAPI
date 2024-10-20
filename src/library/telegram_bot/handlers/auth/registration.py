@@ -35,7 +35,7 @@ router = Router()
 
 @router.message(F.text == 'Зарегистрироваться')
 async def sign_up(message: Message, state: FSMContext) -> None:
-    """Sign up process start, switch to username input."""
+    """Sign up process start, sets state that awaits username."""
     await state.set_state(Registration.username)
     await message.answer(
         'Введите уникальный логин для своего аккаунта.',
@@ -45,7 +45,7 @@ async def sign_up(message: Message, state: FSMContext) -> None:
 
 @router.message(Registration.username)
 async def sign_up_username_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve username, update state data and switch to email input."""
+    """Accepts username, updates state data, sets state that awaits email."""
     await state.update_data(username=message.text)
     await state.set_state(Registration.email)
     await message.answer(
@@ -56,7 +56,7 @@ async def sign_up_username_proceed(message: Message, state: FSMContext) -> None:
 
 @router.message(Registration.email)
 async def sign_up_email_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve email, update state data and switch to password1 input."""
+    """Accepts email, updates state data, sets state that awaits password1."""
     await state.update_data(email=message.text)
     await state.set_state(Registration.password1)
     await message.answer(
@@ -67,7 +67,7 @@ async def sign_up_email_proceed(message: Message, state: FSMContext) -> None:
 
 @router.message(Registration.password1)
 async def sign_up_password1_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve password1, update state data and switch to password2 input."""
+    """Accepts password1, updates state data, sets state that awaits password2."""
     await state.update_data(password1=message.text)
     await state.set_state(Registration.password2)
     await message.answer(
@@ -78,7 +78,7 @@ async def sign_up_password1_proceed(message: Message, state: FSMContext) -> None
 
 @router.message(Registration.password2)
 async def sign_up_password2_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve password2, send sign up request to API, call login if no email confirmation needed."""
+    """Accepts password2, makes sign up request to API, calls login if no email confirmation needed."""
     await state.update_data(password2=message.text)
 
     data = await state.get_data()

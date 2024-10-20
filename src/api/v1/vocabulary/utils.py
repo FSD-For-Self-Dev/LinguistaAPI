@@ -2,13 +2,11 @@
 
 import logging
 
-from django.db.models import Count, Model
-from django.db.models.query import QuerySet
 from django.http import HttpRequest
 
 from rest_framework.serializers import Serializer
 
-from apps.vocabulary.models import DefaultWordCards, Word
+from apps.vocabulary.models import DefaultWordCards
 
 from .serializers import (
     WordStandartCardSerializer,
@@ -53,36 +51,3 @@ def get_word_cards_type(request: HttpRequest) -> Serializer:
         )
 
     return WORD_CARD_TYPES.get(user_default_type)
-
-
-def annotate_words_with_counters(
-    words: QuerySet[Word] | None = None,
-    instance: Model | None = None,
-    words_related_name: str = '',
-    ordering: list[str] = [],
-) -> QuerySet[Word]:
-    """
-    Annotates words with some related objects amount to use in filters, sorting.
-
-    Args:
-        words (QuerySet): words queryset to be annotated.
-        instance (Model subclass): instance to obtain words from if words not passed.
-        words_related_name (str): related name to obtain words by if words not passed.
-        ordering (list[str]): list of fields to be sorted words by.
-    """
-    if words is None:
-        return (
-            instance.__getattribute__(words_related_name)
-            .annotate(
-                translations_count=Count('translations', distinct=True),
-                examples_count=Count('examples', distinct=True),
-                collections_count=Count('collections', distinct=True),
-            )
-            .order_by(*ordering)
-        )
-
-    return words.annotate(
-        translations_count=Count('translations', distinct=True),
-        examples_count=Count('examples', distinct=True),
-        collections_count=Count('collections', distinct=True),
-    ).order_by(*ordering)

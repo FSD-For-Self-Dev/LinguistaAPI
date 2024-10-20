@@ -60,7 +60,7 @@ from ..users.serializers import UserListSerializer
 from ..languages.serializers import (
     LanguageSerializer,
     LearningLanguageListSerailizer,
-    LearningLanguageSerailizer,
+    LearningLanguageSerializer,
 )
 
 User = get_user_model()
@@ -592,13 +592,15 @@ class WordShortCardSerializer(
 ):
     """Serializer to list words with minimum details."""
 
-    language = LanguageSlugRelatedField(slug_field='name', read_only=True)
+    language = serializers.SlugRelatedField(slug_field='name', read_only=True)
+    tags = serializers.SlugRelatedField(slug_field='name', read_only=True, many=True)
     activity_status = serializers.SerializerMethodField('get_activity_status_display')
 
     class Meta(WordSuperShortSerializer.Meta):
         favorite_model = FavoriteWord
         favorite_model_field = 'word'
         fields = WordSuperShortSerializer.Meta.fields + (
+            'tags',
             'favorite',
             'is_problematic',
             'activity_status',
@@ -2469,7 +2471,7 @@ class CollectionListSerializer(CollectionShortSerializer):
         ).data
 
 
-class LearningLanguageWithLastWordsSerailizer(LearningLanguageSerailizer):
+class LearningLanguageWithLastWordsSerailizer(LearningLanguageSerializer):
     """Serializer to list all user's learning languages with last 10 words."""
 
     last_10_words = serializers.SerializerMethodField('get_last_10_words')

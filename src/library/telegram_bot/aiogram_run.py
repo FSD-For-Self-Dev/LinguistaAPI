@@ -11,6 +11,7 @@ from handlers.auth import (
     authentication,
     registration,
 )
+from handlers.vocabulary import vocabulary
 from handlers import core
 from dotenv import load_dotenv
 
@@ -33,6 +34,7 @@ async def main():
         user_profile.router,
         registration.router,
         authentication.router,
+        vocabulary.router,
         core.router,
     )
 
