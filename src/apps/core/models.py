@@ -46,7 +46,7 @@ class GetObjectBySlugModelMixin:
             try:
                 value = (
                     kwargs.get(field[0]).__getattribute__(field[1])
-                    if type(field) is tuple
+                    if isinstance(field, tuple)
                     else kwargs.get(field)
                 )
                 _slugify_data.append(value)

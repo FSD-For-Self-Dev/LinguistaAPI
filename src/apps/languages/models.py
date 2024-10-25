@@ -109,6 +109,7 @@ class Language(WordsCountMixin, models.Model):
         verbose_name_plural = _('Languages')
         db_table_comment = _('Languages')
         ordering = ('-sorting', 'name', 'isocode')
+        get_latest_by = ('name',)
 
     def __str__(self) -> str:
         return f'{self.name} ({self.name_local})'
