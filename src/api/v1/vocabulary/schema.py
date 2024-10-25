@@ -240,7 +240,15 @@ data = {
             'description': 'Возвращает обновленный словарь пользователя. ',
             'request': MultipleWordsSerializer,
             'responses': {
-                status.HTTP_201_CREATED: WordStandartCardSerializer,
+                status.HTTP_201_CREATED: inline_serializer(
+                    name='paginated_words',
+                    fields={
+                        'count': IntegerField(),
+                        'next': CharField(),
+                        'previous': CharField(),
+                        'results': WordStandartCardSerializer(many=True),
+                    },
+                ),
                 status.HTTP_400_BAD_REQUEST: get_validation_error_response(
                     examples=word_validation_errors_examples,
                 ),
