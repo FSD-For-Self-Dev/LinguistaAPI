@@ -65,11 +65,14 @@ async def get_user_profile(message: Message, state: FSMContext) -> None:
         async with session.get(url=USER_PROFILE_URL, headers=headers) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await state.set_state(user_profile_retrieve)
                     await send_user_profile_answer(
                         session, message, state, response_data, headers=headers
                     )
+                case HTTPStatus.UNAUTHORIZED:
+                    await send_unauthorized_response(message, state)
+                    return None
                 case _:
                     await send_error_message(message, state, response)
 
@@ -134,7 +137,7 @@ async def update_profile_image_proceed(message: Message, state: FSMContext) -> N
         ) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await message.answer(emojize('Фото профиля обновлено :sparkles:'))
                     await state.set_state(user_profile_retrieve)
                     await send_user_profile_answer(
@@ -182,7 +185,7 @@ async def update_first_name_proceed(message: Message, state: FSMContext) -> None
         ) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await message.answer(emojize('Имя обновлено :sparkles:'))
                     await state.set_state(user_profile_retrieve)
                     await send_user_profile_answer(
@@ -231,7 +234,7 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
             case _:
                 split_languages = languages.split(symb)
 
-    # convert to api expected type
+    # convert to api expected type if no split symbols were found
     if not split_languages:
         split_languages = [languages]
 
@@ -246,7 +249,7 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
         ) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await message.answer(emojize('Родные языки обновлены :sparkles:'))
                     await state.set_state(user_profile_retrieve)
                     await send_user_profile_answer(
@@ -257,7 +260,7 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
                 case HTTPStatus.BAD_REQUEST:
                     await send_validation_errors(message, state, response)
                 case HTTPStatus.CONFLICT:
-                    # response_data = await response.json()
+                    # response_data: dict = await response.json()
                     # detail_message = response_data.get('detail')  # use error this when multilanguages will be provided (interface language switch)
                     await message.answer('Количество родных языков превышено.')
                 case _:
@@ -282,7 +285,7 @@ async def add_learning_language(message: Message, state: FSMContext) -> None:
         ) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     available_languages_names = [
                         language['name'] for language in response_data['results']
                     ]
@@ -334,7 +337,7 @@ async def add_learning_language_query(
         ) as response:
             match response.status:
                 case HTTPStatus.CREATED:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await message.answer(
                         emojize('Язык добавлен в изучаемые :sparkles:')
                     )
@@ -344,7 +347,7 @@ async def add_learning_language_query(
                     ) as response:
                         match response.status:
                             case HTTPStatus.OK:
-                                response_data = await response.json()
+                                response_data: dict = await response.json()
                                 await state.set_state(user_profile_retrieve)
                                 await send_user_profile_answer(
                                     session,
@@ -360,7 +363,7 @@ async def add_learning_language_query(
                 case HTTPStatus.BAD_REQUEST:
                     await send_validation_errors(message, state, response)
                 case HTTPStatus.CONFLICT:
-                    # response_data = await response.json()
+                    # response_data: dict = await response.json()
                     # detail_message = response_data.get('detail')  # use error this when multilanguages will be provided (interface language switch)
                     await message.answer('Количество изучаемых языков превышено.')
                 case _:

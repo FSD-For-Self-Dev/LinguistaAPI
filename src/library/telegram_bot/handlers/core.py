@@ -47,7 +47,9 @@ async def return_to_main(message: Message, state: FSMContext) -> None:
 
 @router.message(F.text == 'Вернуться назад')
 @router.message(F.text == 'Отмена')
+@router.message(F.text == 'Отменить')
 @router.callback_query(F.data == 'cancel')
+@router.callback_query(F.data == 'return')
 async def return_to_previous_state(
     message: Message | CallbackQuery, state: FSMContext
 ) -> None:
@@ -55,8 +57,15 @@ async def return_to_previous_state(
     state_data = await state.get_data()
     previous_state_handler = state_data.get('previous_state_handler')
 
-    if type(message) is CallbackQuery:
-        await message.answer('Отмена')
+    if isinstance(message, CallbackQuery):
+        match message.data:
+            case 'cancel':
+                await message.answer('Отмена')
+            case 'return':
+                await message.answer('Вернуться назад')
+            case _:
+                await message.answer('Отмена')
+
         message = message.message
 
     if previous_state_handler:

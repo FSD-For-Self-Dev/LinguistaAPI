@@ -30,7 +30,7 @@ main_kb = ReplyKeyboardMarkup(
 )
 
 cancel_kb = ReplyKeyboardMarkup(
-    keyboard=[[KeyboardButton(text='Отмена')]],
+    keyboard=[[KeyboardButton(text='Отменить')]],
     resize_keyboard=True,
     one_time_keyboard=True,
 )
@@ -40,8 +40,11 @@ return_kb = ReplyKeyboardMarkup(
     one_time_keyboard=True,
 )
 
-cancel_button = InlineKeyboardButton(text='Отмена', callback_data='cancel')
+cancel_button = InlineKeyboardButton(text='Отменить', callback_data='cancel')
 cancel_inline_kb = InlineKeyboardMarkup(inline_keyboard=[[cancel_button]])
+
+return_button = InlineKeyboardButton(text='Вернуться назад', callback_data='return')
+return_inline_kb = InlineKeyboardMarkup(inline_keyboard=[[return_button]])
 
 forward_button = InlineKeyboardButton(text='Вперед', callback_data='forward')
 backward_button = InlineKeyboardButton(text='Назад', callback_data='backward')

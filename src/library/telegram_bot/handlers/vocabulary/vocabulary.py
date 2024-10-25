@@ -26,6 +26,7 @@ from keyboards.core import (
 )
 from keyboards.vocabulary import vocabulary_kb
 from states.vocabulary import Vocabulary
+from states.core import User
 from handlers.urls import VOCABULARY_URL, LEARNING_LANGUAGES_URL, TYPES_URL
 from handlers.utils import (
     send_error_message,
@@ -39,6 +40,7 @@ from .constants import (
     ordering_type_pretty,
     words_filtering_pretty,
     activity_status_filter,
+    LEARNING_LANGUAGES_MARKUP_SIZE,
 )
 
 
@@ -52,12 +54,44 @@ logger = logging.getLogger(__name__)
 
 router = Router()
 
-VOCABULARY_WORDS_PER_PAGE = 12
+VOCABULARY_WORDS_PER_PAGE = 3  # 12
 VOCABULARY_WORDS_MARKUP_SIZE = 3
 VOCABULARY_TYPES_MARKUP_SIZE = 3
 VOCABULARY_ACTIVITY_STATUS_MARKUP_SIZE = 3
 
-LEARNING_LANGUAGES_MARKUP_SIZE = 3
+
+async def save_learning_languages_to_state(
+    message: Message, state: FSMContext, headers: dict
+) -> dict:
+    """Makes API request to get leraning languages, saves response data to state data, returns dictionary."""
+    url = LEARNING_LANGUAGES_URL + '?no_words'
+    async with aiohttp.ClientSession() as session:
+        api_request_logging(url, headers=headers, method='get')
+        async with session.get(url=url, headers=headers) as response:
+            match response.status:
+                case HTTPStatus.OK:
+                    await state.set_state(User.learning_languages_info)
+                    response_data: dict = await response.json()
+
+                    learning_languages_info = {}
+                    for language in response_data['results']:
+                        learning_languages_info[language['language']['name']] = {
+                            'words_count': language['words_count'],
+                        }
+
+                    await state.update_data(
+                        learning_languages_info=learning_languages_info
+                    )
+
+                    return learning_languages_info
+
+                case HTTPStatus.UNAUTHORIZED:
+                    await send_unauthorized_response(message, state)
+                    return None
+
+                case _:
+                    await send_error_message(message, state, response)
+                    return None
 
 
 @router.message(F.text == 'Словарь')
@@ -65,55 +99,37 @@ async def vocabulary_choose_language(message: Message, state: FSMContext) -> Non
     """Sends user learning languages to choose."""
     await state.set_state(Vocabulary.language_choose)
 
-    url = LEARNING_LANGUAGES_URL + '?no_words'
     state_data = await state.get_data()
     token = state_data.get('token')
     headers = get_authentication_headers(token=token)
 
-    # get user learning languages from API
-    async with aiohttp.ClientSession() as session:
-        api_request_logging(LEARNING_LANGUAGES_URL, headers=headers, method='get')
-        async with session.get(url=url, headers=headers) as response:
-            match response.status:
-                case HTTPStatus.OK:
-                    response_data = await response.json()
-                    results_count = response_data['count']
-                    results = response_data['results']
+    # get user learning languages from API if no learning languages info in state_data
+    learning_languages_info: dict | None = await save_learning_languages_to_state(
+        message, state, headers
+    )
 
-                    if results_count == 0:
-                        await vocabulary_choose_language_callback(message, state)
-                        return None
+    if learning_languages_info is None:
+        return None
 
-                    if results_count == 1:
-                        await vocabulary_choose_language_callback(
-                            message, state, language_name=results[0]['language']['name']
-                        )
-                        return None
+    if len(learning_languages_info) == 0:
+        await vocabulary_choose_language_callback(message, state)
+        return None
 
-                    learning_languages_info = [
-                        (
-                            language['language']['name'],
-                            language['language']['isocode'],
-                            language['words_count'],
-                        )
-                        for language in response_data['results']
-                    ]
-                case HTTPStatus.UNAUTHORIZED:
-                    await send_unauthorized_response(message, state)
-                    return None
-                case _:
-                    await send_error_message(message, state, response)
-                    return None
+    if len(learning_languages_info) == 1:
+        await vocabulary_choose_language_callback(
+            message, state, language_name=list(learning_languages_info.keys())[0]
+        )
+        return None
 
     # generate inline keyboard
     keyboard_builder = InlineKeyboardBuilder()
     keyboard_builder.add(
         *[
             InlineKeyboardButton(
-                text=f'{language_name} ({words_count})',
+                text=f'{language_name} {language_data["words_count"]}',
                 callback_data=f'filter_by_language_{language_name}',
             )
-            for language_name, _, words_count in learning_languages_info
+            for language_name, language_data in learning_languages_info.items()
         ]
     )
     keyboard_builder.adjust(LEARNING_LANGUAGES_MARKUP_SIZE)
@@ -123,9 +139,7 @@ async def vocabulary_choose_language(message: Message, state: FSMContext) -> Non
     markup = InlineKeyboardMarkup(inline_keyboard=keyboard_builder.export())
 
     await message.answer(
-        (
-            'Выберите язык, словарь которого хотите открыть (в скобочках указано кол-во слов): '
-        ),
+        ('Выберите язык, словарь которого хотите открыть: '),
         reply_markup=markup,
     )
 
@@ -133,18 +147,20 @@ async def vocabulary_choose_language(message: Message, state: FSMContext) -> Non
 def generate_vocabulary_markup(
     state_data: dict, response_data_results: dict
 ) -> InlineKeyboardMarkup:
-    """Generates markup that contain paginated user words."""
+    """Returns markup that contains paginated user words."""
     pages_total_amount = state_data.get('pages_total_amount')
     page_num = state_data.get('page_num')
 
     keyboard_builder = InlineKeyboardBuilder()
     for word_info in response_data_results:
         word_slug = word_info['slug']
+        word_text = word_info['text']
         keyboard_builder.add(
             InlineKeyboardButton(
-                text=word_info['text'], callback_data=f'word_profile_{word_slug}'
+                text=word_text, callback_data=f'word_profile__{word_text}__{word_slug}'
             )
         )
+
     keyboard_builder.adjust(VOCABULARY_WORDS_MARKUP_SIZE)
 
     if pages_total_amount and pages_total_amount > 1:
@@ -170,7 +186,10 @@ async def send_vocabulary_answer(
         language_name = response_data['language']['name']
         language_name_local = response_data['language']['name_local']
 
-        photo_id = state_data.get('photo_id')
+        learning_languages_info = state_data.get('learning_languages_info')[
+            language_name
+        ]
+        cover_id = learning_languages_info['cover_id']
 
         markup = generate_vocabulary_markup(state_data, results)
 
@@ -184,7 +203,7 @@ async def send_vocabulary_answer(
 
         await message.bot.send_photo(
             message.chat.id,
-            photo=photo_id,
+            photo=cover_id,
             caption=answer_text,
             reply_markup=markup,
         )
@@ -213,7 +232,7 @@ async def vocabulary_choose_language_callback(
     token = state_data.get('token')
     headers = get_authentication_headers(token=token)
 
-    if type(callback_query) is CallbackQuery:
+    if isinstance(callback_query, CallbackQuery):
         message: Message = callback_query.message
 
         language_name = callback_query.data.split('_')[-1]
@@ -235,6 +254,7 @@ async def vocabulary_choose_language_callback(
     url = (
         LEARNING_LANGUAGES_URL
         + language_name
+        + '/'
         + '?'
         + f'limit={VOCABULARY_WORDS_PER_PAGE}'
         if language_name
@@ -247,13 +267,14 @@ async def vocabulary_choose_language_callback(
         async with session.get(url=url, headers=headers) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
-                    await state.update_data(page_num=1)
+                    response_data: dict = await response.json()
 
                     try:
                         results_count = response_data['words']['count']
                     except KeyError:
                         results_count = response_data['count']
+
+                    # set_pages_total_amount
                     pages_total_amount = math.ceil(
                         results_count / VOCABULARY_WORDS_PER_PAGE
                     )
@@ -265,18 +286,6 @@ async def vocabulary_choose_language_callback(
                         results = response_data['words']['results']
                         language_name = response_data['language']['name']
                         language_name_local = response_data['language']['name_local']
-
-                        cover_url = response_data['cover']
-                        # get cover image file from url
-                        async with session.get(
-                            url=cover_url, headers=headers
-                        ) as image_response:
-                            profile_image = await image_response.content.read()
-                            profile_image_filename = cover_url.split('/')[-1]
-
-                        markup = generate_vocabulary_markup(
-                            await state.get_data(), results
-                        )
 
                         if results_count == 0:
                             answer_text = (
@@ -290,23 +299,61 @@ async def vocabulary_choose_language_callback(
                                 f'Изучаемый язык: {language_name} ({language_name_local}) \n'
                                 f'Мощность словаря: {results_count} 🔥 \n\n'
                             )
+
                         await state.update_data(answer_text=answer_text)
 
-                        # send image file with text
-                        msg = await message.answer_photo(
-                            photo=BufferedInputFile(
-                                file=profile_image, filename=profile_image_filename
-                            ),
-                            caption=answer_text,
-                            reply_markup=markup,
+                        markup = generate_vocabulary_markup(
+                            await state.get_data(), results
                         )
 
-                        await state.update_data(photo_id=msg.photo[0].file_id)
+                        learning_languages_info: dict = state_data.get(
+                            'learning_languages_info'
+                        )[language_name]
+                        cover_id = learning_languages_info.get('cover_id', None)
+
+                        if cover_id is not None:
+                            # send image file with text through file id
+                            await message.bot.send_photo(
+                                message.chat.id,
+                                photo=cover_id,
+                                caption=answer_text,
+                                reply_markup=markup,
+                            )
+                        else:
+                            cover_url = response_data['cover']
+                            # get cover image file from url
+                            async with session.get(
+                                url=cover_url, headers=headers
+                            ) as image_response:
+                                cover_image = await image_response.content.read()
+                                cover_image_filename = cover_url.split('/')[-1]
+
+                            # send image file with text
+                            msg = await message.answer_photo(
+                                photo=BufferedInputFile(
+                                    file=cover_image, filename=cover_image_filename
+                                ),
+                                caption=answer_text,
+                                reply_markup=markup,
+                            )
+
+                            learning_languages_info = state_data.get(
+                                'learning_languages_info'
+                            )
+                            learning_languages_info[language_name][
+                                'cover_id'
+                            ] = msg.photo[0].file_id
+
+                            await state.update_data(
+                                learning_languages_info=learning_languages_info
+                            )
 
                     except KeyError:
                         results = response_data['results']
 
-                        markup = generate_vocabulary_markup(state_data, results)
+                        markup = generate_vocabulary_markup(
+                            await state.get_data(), results
+                        )
 
                         if results_count == 0:
                             answer_text = (
@@ -339,7 +386,12 @@ async def forward_callback(callback_query: CallbackQuery, state: FSMContext) -> 
     state_data = await state.get_data()
     token = state_data.get('token')
     headers = get_authentication_headers(token=token)
-    page_num = state_data.get('page_num') + 1
+    page_num = state_data.get('page_num')
+    if page_num is None:
+        page_num = 1
+    else:
+        page_num += 1
+
     url = state_data.get('url')
     if '?' in url:
         url += '&' + f'page={page_num}'
@@ -353,7 +405,7 @@ async def forward_callback(callback_query: CallbackQuery, state: FSMContext) -> 
         async with session.get(url=url, headers=headers) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await send_vocabulary_answer(
                         callback_query.message, state, response_data
                     )
@@ -372,7 +424,12 @@ async def backward_callback(callback_query: CallbackQuery, state: FSMContext) ->
     state_data = await state.get_data()
     token = state_data.get('token')
     headers = get_authentication_headers(token=token)
-    page_num = state_data.get('page_num') - 1
+    page_num = state_data.get('page_num')
+    if page_num is None:
+        page_num = 1
+    else:
+        page_num -= 1
+
     url = state_data.get('url')
     if '?' in url:
         url += '&' + f'page={page_num}'
@@ -386,7 +443,7 @@ async def backward_callback(callback_query: CallbackQuery, state: FSMContext) ->
         async with session.get(url=url, headers=headers) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await send_vocabulary_answer(
                         callback_query.message, state, response_data
                     )
@@ -453,7 +510,7 @@ async def vocabulary_choose_page_proceed(message: Message, state: FSMContext) ->
         async with session.get(url=url, headers=headers) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await send_vocabulary_answer(message, state, response_data)
                     await state.set_state(Vocabulary.retrieve)
                 case HTTPStatus.UNAUTHORIZED:
@@ -495,7 +552,7 @@ async def vocabulary_search_proceed(message: Message, state: FSMContext) -> None
         async with session.get(url=url, headers=headers) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
 
                     await state.update_data(page_num=1)
 
@@ -617,7 +674,7 @@ async def vocabulary_ordering_callback_proceed(
         async with session.get(url=url, headers=headers) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
 
                     await state.update_data(page_num=1)
 
@@ -794,7 +851,7 @@ async def vocabulary_filtering_field_callback(
                 async with session.get(url=TYPES_URL, headers=headers) as response:
                     match response.status:
                         case HTTPStatus.OK:
-                            response_data = await response.json()
+                            response_data: dict = await response.json()
                             types_info = [
                                 (
                                     wordtype['name'],
@@ -1015,7 +1072,7 @@ async def vocabulary_filtering_proceed(
         async with session.get(url=url, headers=headers) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
 
                     await state.update_data(page_num=1)
 
