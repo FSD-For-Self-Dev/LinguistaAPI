@@ -951,6 +951,7 @@ class WordViewSet(
             request,
             objs_related_name='image_associations',
             response_objs_name='images',
+            ordering=['wordimageassociations__created'],
         )
 
     @extend_schema(operation_id='word_images_upload', methods=('post',))

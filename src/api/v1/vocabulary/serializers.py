@@ -93,7 +93,13 @@ class NativeLanguageDefault:
     def __call__(self, serializer_field: Field) -> QuerySet[Language] | Language:
         request_user = serializer_field.context['request'].user
         try:
-            return request_user.native_languages.latest()
+            return (
+                request_user.native_languages_detail.order_by(
+                    '-created', 'language__name'
+                )
+                .last()
+                .language
+            )
         except KeyError:
             return Language.objects.none()
 
@@ -629,7 +635,9 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
     def get_last_image(self, obj: Word) -> str | None:
         """Returns last added image association."""
         try:
-            latest_image_association = obj.image_associations.latest()
+            latest_image_association = obj.image_associations.order_by(
+                '-wordimageassociations__created'
+            ).first()
 
             try:
                 url = latest_image_association.image.url
@@ -1288,6 +1296,7 @@ class WordSerializer(WordShortCreateSerializer):
             'similars',
             'collections_count',
             'collections',
+            'last_exercise_date',
             'created',
             'modified',
         )
@@ -1306,6 +1315,7 @@ class WordSerializer(WordShortCreateSerializer):
             'similars_count',
             'collections_count',
             'activity_status',
+            'last_exercise_date',
             'created',
             'modified',
         )
@@ -2304,8 +2314,8 @@ class UserDetailsSerializer(
 
     def update(self, instance, validated_data):
         native_languages = validated_data.pop('native_languages', [])
+        UserNativeLanguage.objects.filter(user=instance).delete()
         for language in native_languages:
-            UserNativeLanguage.objects.filter(user=instance).delete()
             UserNativeLanguage.objects.get_or_create(user=instance, language=language)
         return super().update(instance, validated_data)
 

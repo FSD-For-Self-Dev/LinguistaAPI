@@ -61,9 +61,9 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     pagination_class = None
     filter_backends = (filters.OrderingFilter,)
     ordering = (
+        '-words_count',
         '-modified',
         '-created',
-        '-words_count',
         'language__name',
     )
 

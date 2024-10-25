@@ -78,6 +78,7 @@ class ActionsWithRelatedObjectsMixin:
         response_extra_data: dict = {},
         response_objs_name: str = '',
         search_fields: list[str] = [],
+        ordering: list[str] = [],
         *args,
         **kwargs,
     ) -> HttpResponse:
@@ -117,11 +118,13 @@ class ActionsWithRelatedObjectsMixin:
                 ]
                 search_term = request.query_params.get('search', '')
                 queries = [Q(**{orm_lookup: search_term}) for orm_lookup in orm_lookups]
-                objs = instance.__getattribute__(objs_related_name).filter(
-                    (reduce(operator.or_, queries))
+                objs = (
+                    instance.__getattribute__(objs_related_name)
+                    .filter((reduce(operator.or_, queries)))
+                    .order_by(*ordering)
                 )
             else:
-                objs = instance.__getattribute__(objs_related_name).all()
+                objs = instance.__getattribute__(objs_related_name).order_by(*ordering)
 
         logger.debug(f'Obtained objects: {objs}')
 
