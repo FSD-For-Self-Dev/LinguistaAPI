@@ -26,19 +26,20 @@ from states.user_profile import (
     AddLearningLanguage,
     user_profile_retrieve,
 )
-from handlers.urls import (
+
+from ..urls import (
     AVAILABLE_LANGUAGES_URL,
     LEARNING_LANGUAGES_URL,
     USER_PROFILE_URL,
     LOG_OUT_URL,
 )
-from handlers.utils import (
-    get_authentication_headers,
-    send_user_profile_answer,
-    send_error_message,
+from ..utils import (
     api_request_logging,
-    send_unauthorized_response,
+    get_authentication_headers,
+    send_error_message,
     send_validation_errors,
+    send_user_profile_answer,
+    send_unauthorized_response,
 )
 
 

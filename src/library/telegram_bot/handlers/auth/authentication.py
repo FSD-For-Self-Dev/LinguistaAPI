@@ -14,10 +14,11 @@ from dotenv import load_dotenv
 
 from keyboards.core import cancel_inline_kb, main_kb
 from states.auth import Authorization, Authorized
-from handlers.urls import LOG_IN_URL
-from handlers.utils import (
-    send_error_message,
+
+from ..urls import LOG_IN_URL
+from ..utils import (
     api_request_logging,
+    send_error_message,
     send_validation_errors,
 )
 

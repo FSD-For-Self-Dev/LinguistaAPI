@@ -12,13 +12,13 @@ from dotenv import load_dotenv
 
 from keyboards.core import cancel_inline_kb, initial_kb
 from states.auth import Registration
-from handlers.urls import SIGN_UP_URL
-from handlers.utils import (
+
+from ..urls import SIGN_UP_URL
+from ..utils import (
     api_request_logging,
     send_error_message,
     send_validation_errors,
 )
-
 from .authentication import login_password_proceed
 
 

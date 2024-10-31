@@ -50,8 +50,41 @@ forward_button = InlineKeyboardButton(text='Вперед', callback_data='forwar
 backward_button = InlineKeyboardButton(text='Назад', callback_data='backward')
 
 
-def get_page_num_button(page_num: int, pages_total_amount: int) -> InlineKeyboardButton:
+def get_page_num_button(
+    page_num: int, pages_total_amount: int, callback_data: str = 'choose_page'
+) -> InlineKeyboardButton:
     """Returns button to choose page."""
     return InlineKeyboardButton(
-        text=f'{page_num}/{pages_total_amount}', callback_data='choose_page'
+        text=f'{page_num}/{pages_total_amount}', callback_data=callback_data
     )
+
+
+def get_forward_button(callback_data: str = 'forward') -> InlineKeyboardButton:
+    """Returns button to get next page."""
+    return InlineKeyboardButton(text='Вперед', callback_data=callback_data)
+
+
+def get_backward_button(callback_data: str = 'backward') -> InlineKeyboardButton:
+    """Returns button to get previous page."""
+    return InlineKeyboardButton(text='Назад', callback_data=callback_data)
+
+
+nested_object_already_exist_inlin_kb = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [
+            InlineKeyboardButton(
+                text='Обновить',
+                callback_data='word_create_existing_nested__update',
+            ),
+        ],
+        [
+            InlineKeyboardButton(
+                text='Взять из словаря',
+                callback_data='word_create_existing_nested__get',
+            ),
+        ],
+        [
+            cancel_button,
+        ],
+    ]
+)

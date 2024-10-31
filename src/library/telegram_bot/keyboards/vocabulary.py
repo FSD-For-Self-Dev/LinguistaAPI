@@ -32,19 +32,30 @@ word_profile_kb = ReplyKeyboardMarkup(
     input_field_placeholder='Выберите пункт меню',
 )
 
-collection_kb = ReplyKeyboardMarkup(
+collections_kb = ReplyKeyboardMarkup(
     keyboard=[
-        [KeyboardButton(text='Список коллекций')],
-        [KeyboardButton(text='Просмотр коллекции')],
-        [KeyboardButton(text='Поиск, сортировка, фильтры')],
-        [KeyboardButton(text='Создание коллекции')],
-        [KeyboardButton(text='Добавление слов в коллекцию')],
         [
-            KeyboardButton(
-                text='Добавление коллекции в избранное, удаление из избранного'
-            )
+            KeyboardButton(text='Поиск'),
+            KeyboardButton(text='Сортировка'),
+            KeyboardButton(text='Фильтры'),
         ],
-        [KeyboardButton(text='Просмотр избранных коллекций')],
+        [KeyboardButton(text='Создать коллекцию')],
+        [KeyboardButton(text='Избранное')],
+        [KeyboardButton(text='Вернуться в меню')],
+    ],
+    resize_keyboard=True,
+    one_time_keyboard=True,
+    input_field_placeholder='Выберите пункт меню',
+)
+
+collection_profile_kb = ReplyKeyboardMarkup(
+    keyboard=[
+        [KeyboardButton(text='Редактировать')],
+        [KeyboardButton(text='Добавить слова')],
+        # [KeyboardButton(text='Тренировать')],
+        # [KeyboardButton(text='Поделиться')],
+        [KeyboardButton(text='Удалить')],
+        [KeyboardButton(text='Вернуться назад')],
     ],
     resize_keyboard=True,
     one_time_keyboard=True,

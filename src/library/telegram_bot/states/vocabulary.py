@@ -7,9 +7,9 @@ from .core import PreviousState
 
 class Vocabulary(PreviousState):
     language_choose = State()
-    words_count = State()
-    retrieve = State()
+    list_retrieve = State()
     page_num = State()
+    page_num_global = State()
     pages_total_amount = State()
     page_choose = State()
     photo_id = State()
@@ -20,7 +20,11 @@ class Vocabulary(PreviousState):
     filter_field = State()
     counters_filter_value = State()
     date_filter_value = State()
-    answer_text = State()
+    vocabulary_answer_text = State()
+    vocabulary_send_request = State()
+    vocabulary_paginated = State()
+    vocabulary_words_list = State()
+    vocabulary_words_count = State()
 
 
 class WordProfile(PreviousState):
@@ -54,8 +58,50 @@ class WordCreate(PreviousState):
     forms = State()
     similars = State()
 
-    word_existing_id = State()
+    existing_word_id = State()
+    new_word_text = State()
+    existing_word_data = State()
 
     update = State()
 
     several_words = State()
+    several_words_paginated = State()
+    word_edit_index = State()
+    language_multiple = State()
+    add_to_collections = State()
+    page_choose = State()
+    collections_page_choose = State()
+
+    word_create_handler = State()
+
+    request_data = State()
+
+
+class Collections(PreviousState):
+    collections_send_request = State()
+    collections_paginated = State()
+    collections_count = State()
+    collections_list = State()
+    list_retrieve = State()
+    retrieve = State()
+    search = State()
+    ordering = State()
+    filtering = State()
+    date_filter_value = State()
+    language_filter_value = State()
+    cb_collection_title = State()
+    cb_collection_slug = State()
+    new_words_language = State()
+    new_words = State()
+
+
+class CollectionUpdate(PreviousState):
+    title = State()
+    description = State()
+
+
+class CollectionCreate(PreviousState):
+    title = State()
+    description = State()
+    words_language = State()
+    words = State()

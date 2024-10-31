@@ -3,6 +3,10 @@
 from aiogram.fsm.state import State, StatesGroup
 
 
+class Core(StatesGroup):
+    choose_page_num = State()
+
+
 class PreviousState(StatesGroup):
     previous_state_handler = State()
 

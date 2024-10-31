@@ -26,3 +26,4 @@ VOCABULARY_URL = API_URL + os.getenv('VOCABULARY_URL')
 TYPES_URL = API_URL + os.getenv('TYPES_URL')
 
 # collections
+COLLECTIONS_URL = API_URL + os.getenv('COLLECTIONS_URL')
