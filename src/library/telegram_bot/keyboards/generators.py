@@ -289,7 +289,7 @@ async def generate_additions_list_markup(
             )
             keyboard_builder.adjust(ADDITIONALS_MARKUP_SIZE)
 
-        case 'image_associations':
+        case 'image_associations' | 'images':
             pass
 
         case _:

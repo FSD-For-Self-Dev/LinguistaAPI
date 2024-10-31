@@ -275,7 +275,7 @@ async def fill_word_state_data_with_response_data(
                     for data in word_profile_response_data[field]
                 ]
 
-            case 'image_associations':
+            case 'image_associations' | 'images':
                 # get image file from url
                 async with aiohttp.ClientSession() as session:
                     field_data = []
@@ -421,9 +421,12 @@ async def additions_list_callback(
     additions_data = state_data.get(additions_field)
     additions_count = state_data.get(f'{additions_field}_count')
 
-    if additions_field == 'image_associations':
-        # send media group (from image_associations [0]), save media group id to state (fix needed)
-        pass
+    if additions_field == 'images':
+        # send media group from buffered image files in state data
+        images_group = []
+        for image_info in additions_data:
+            images_group.append(InputMediaPhoto(media=image_info[0]))
+        await message.answer_media_group(images_group)
 
     answer_text = f'{additions_field_pretty}: {additions_count}'
     markup = await generate_additions_list_markup(additions_field, additions_data)
@@ -648,7 +651,7 @@ async def word_create_text_proceed(message: Message | CallbackQuery, state: FSMC
             callback_data='word_customizing__definitions',
         ),
         InlineKeyboardButton(
-            text=f'Картинки-ассоциации {state_data.get("image_associations_count")}',
+            text=f'Картинки-ассоциации {state_data.get("images_count")}',
             callback_data='word_customizing__image_associations',
         ),
         InlineKeyboardButton(

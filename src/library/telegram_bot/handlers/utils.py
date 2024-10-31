@@ -1153,7 +1153,7 @@ async def send_word_profile_answer(
     markup = await generate_word_profile_markup(response_data)
 
     try:
-        images_data = state_data.get('images')
+        images_data = state_data.get('images_ids')
         images_data = images_data if images_data else {}
         word_slug = state_data.get('word_slug')
         image_id = images_data[word_slug]
@@ -1167,7 +1167,7 @@ async def send_word_profile_answer(
 
     except KeyError:
         try:
-            last_image_url = response_data['images'][0]
+            last_image_url = response_data['images'][-1]
             # get image file from url
             async with session.get(
                 url=last_image_url, headers=headers
@@ -1182,11 +1182,11 @@ async def send_word_profile_answer(
                 reply_markup=markup,
             )
 
-            images_data = state_data.get('images')
+            images_data = state_data.get('images_ids')
             images_data = images_data if images_data else {}
             word_slug = state_data.get('word_slug')
             images_data[word_slug] = msg.photo[-1].file_id
-            await state.update_data(images=images_data)
+            await state.update_data(images_ids=images_data)
 
         except IndexError:
             # send only text
