@@ -187,12 +187,10 @@ async def vocabulary_choose_language_callback(
                     await state.update_data(
                         pages_total_amount=pages_total_amount,
                         page_num=1,
-                        page_num_global=1,
                     )
 
                     try:
                         # getting words from learning language profile response
-                        results = response_data['words']['results']
                         language_name = response_data['language']['name']
                         language_name_local = response_data['language']['name_local']
 
@@ -213,7 +211,10 @@ async def vocabulary_choose_language_callback(
 
                         # saving words to state by pages
                         vocabulary_paginated = await save_paginated_words_to_state(
-                            state, results, results_count, language_name=language_name
+                            state,
+                            response_data['words'],
+                            results_count,
+                            language_name=language_name,
                         )
                         markup = await generate_vocabulary_markup(
                             state, vocabulary_paginated
@@ -264,10 +265,11 @@ async def vocabulary_choose_language_callback(
 
                     except KeyError:
                         # getting words from vocabulary response
-                        results = response_data['results']
-
                         vocabulary_paginated = await save_paginated_words_to_state(
-                            state, results, results_count, language_name=language_name
+                            state,
+                            response_data,
+                            results_count,
+                            language_name=language_name,
                         )
                         markup = await generate_vocabulary_markup(
                             state, vocabulary_paginated

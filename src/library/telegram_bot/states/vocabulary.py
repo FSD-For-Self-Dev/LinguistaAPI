@@ -9,7 +9,6 @@ class Vocabulary(PreviousState):
     language_choose = State()
     list_retrieve = State()
     page_num = State()
-    page_num_global = State()
     pages_total_amount = State()
     page_choose = State()
     photo_id = State()

@@ -67,11 +67,11 @@ async def collections_list(message: Message | CallbackQuery, state: FSMContext) 
 
     if isinstance(message, CallbackQuery):
         message = message.message
-
-    await message.answer(
-        'Открываю коллекции...',
-        reply_markup=collections_kb,
-    )
+    else:
+        await message.answer(
+            'Открываю коллекции...',
+            reply_markup=collections_kb,
+        )
 
     state_data = await state.get_data()
     token = state_data.get('token')

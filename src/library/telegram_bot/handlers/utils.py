@@ -466,7 +466,7 @@ async def filter_by_counter(
 
 
 async def save_paginated_words_to_state(
-    state: FSMContext, words: list[dict], words_count: int, language_name: str = ''
+    state: FSMContext, words: dict, words_count: int, language_name: str = ''
 ) -> dict:
     """Updates state data with paginated words list."""
     state_data = await state.get_data()
@@ -486,7 +486,8 @@ async def save_paginated_words_to_state(
         else {}
     )
     words_info_list = [
-        {'text': word_info['text'], 'slug': word_info['slug']} for word_info in words
+        {'text': word_info['text'], 'slug': word_info['slug']}
+        for word_info in words['results']
     ]
     words_paginated = paginate_values_list(words_info_list, VOCABULARY_WORDS_PER_PAGE)
 
@@ -504,29 +505,39 @@ async def save_paginated_words_to_state(
         vocabulary_words_list=vocabulary_words_list,
         vocabulary_words_count=vocabulary_words_count,
         vocabulary_send_request=False,
+        next_page_url=words['next'],
     )
     return words_paginated
 
 
 async def save_paginated_collections_to_state(
     state: FSMContext,
-    collections: list[dict],
+    collections: dict | list,
     collections_count: int,
     collections_send_request: bool = False,
 ) -> dict:
     """Updates state data with paginated collections list."""
+    try:
+        collections_list = collections['results']
+        next_page_url = collections['next']
+    except KeyError:
+        collections_list = collections
+        next_page_url = None
+
     collections_info_list = [
         {'title': collection_info['title'], 'slug': collection_info['slug']}
-        for collection_info in collections
+        for collection_info in collections_list
     ]
     collections_paginated = paginate_values_list(
         collections_info_list, COLLECTIONS_PER_PAGE
     )
+
     await state.update_data(
         collections_paginated=collections_paginated,
         collections_count=collections_count,
         collections_list=collections_info_list,
         collections_send_request=collections_send_request,
+        next_page_url=next_page_url,
     )
     return collections_paginated
 
@@ -1011,7 +1022,6 @@ async def send_vocabulary_answer(
 
     try:
         results_count = response_data['words']['count']
-        results = response_data['words']['results']
         language_name = response_data['language']['name']
         language_name_local = response_data['language']['name_local']
 
@@ -1025,7 +1035,7 @@ async def send_vocabulary_answer(
 
         # saving words to state by pages
         vocabulary_paginated = await save_paginated_words_to_state(
-            state, results, results_count, language_name=language_name
+            state, response_data['words'], results_count, language_name=language_name
         )
         markup = await generate_vocabulary_markup(state, vocabulary_paginated)
 
@@ -1041,7 +1051,6 @@ async def send_vocabulary_answer(
 
     except KeyError:
         results_count = response_data['count']
-        results = response_data['results']
 
         answer_text = state_data.get(
             'vocabulary_answer_text',
@@ -1051,7 +1060,7 @@ async def send_vocabulary_answer(
         # saving words to state by pages
         language_name = state_data.get('language_choose')
         vocabulary_paginated = await save_paginated_words_to_state(
-            state, results, results_count, language_name=language_name
+            state, response_data, results_count, language_name=language_name
         )
         markup = await generate_vocabulary_markup(state, vocabulary_paginated)
 
@@ -1066,18 +1075,55 @@ async def send_vocabulary_answer_from_state_data(
     answer_text = state_data.get('vocabulary_answer_text')
     language_name = state_data.get('language_choose')
     try:
-        vocabulary_paginated = state_data.get('vocabulary_paginated')[language_name]
-        vocabulary_words_count = state_data.get('vocabulary_words_count')[language_name]
+        vocabulary_paginated: dict[int, list] = state_data.get('vocabulary_paginated')[
+            language_name
+        ]
+        vocabulary_words_count: int = state_data.get('vocabulary_words_count')[
+            language_name
+        ]
+        vocabulary_words_list: list = state_data.get('vocabulary_words_list')[
+            language_name
+        ]
     except KeyError:
-        vocabulary_paginated = state_data.get('vocabulary_paginated')
-        vocabulary_words_count = state_data.get('vocabulary_words_count')
+        vocabulary_paginated: dict[int, list] = state_data.get('vocabulary_paginated')
+        vocabulary_words_count: int = state_data.get('vocabulary_words_count')
+        vocabulary_words_list: list = state_data.get('vocabulary_words_list')
 
     pages_total_amount = math.ceil(vocabulary_words_count / VOCABULARY_WORDS_PER_PAGE)
     await state.update_data(pages_total_amount=pages_total_amount)
 
     markup = await generate_vocabulary_markup(state, vocabulary_paginated)
 
-    # if markup is None:  # make request to next page_num_global, save results to state, call generate_vocabulary_markup again (fix needed)
+    if markup is None:
+        next_page_url = state_data.get('next_page_url')
+        token = state_data.get('token')
+        headers = get_authentication_headers(token=token)
+        async with aiohttp.ClientSession() as session:
+            api_request_logging(next_page_url, headers=headers, method='get')
+            async with session.get(url=next_page_url, headers=headers) as response:
+                match response.status:
+                    case HTTPStatus.OK:
+                        response_data: dict = await response.json()
+
+                        try:
+                            results_count = response_data['words']['count']
+                            next_words = response_data['words']
+                        except KeyError:
+                            results_count = response_data['count']
+                            next_words = response_data
+
+                        next_words['results'] = (
+                            vocabulary_words_list + next_words['results']
+                        )
+                        vocabulary_paginated = await save_paginated_words_to_state(
+                            state,
+                            next_words,
+                            results_count,
+                            language_name=language_name,
+                        )
+                        markup = await generate_vocabulary_markup(
+                            state, vocabulary_paginated
+                        )
 
     if language_name:
         cover_id = state_data.get('learning_languages_info')[language_name]['cover_id']
@@ -1105,7 +1151,30 @@ async def send_collections_answer_from_state_data(
 
     markup = await generate_collections_markup(state, collections_paginated, **kwargs)
 
-    # if markup is None:  # make request to next page_num_global, save results to state, call generate_vocabulary_markup again
+    if markup is None:
+        next_page_url = state_data.get('next_page_url')
+        token = state_data.get('token')
+        headers = get_authentication_headers(token=token)
+        async with aiohttp.ClientSession() as session:
+            api_request_logging(next_page_url, headers=headers, method='get')
+            async with session.get(url=next_page_url, headers=headers) as response:
+                match response.status:
+                    case HTTPStatus.OK:
+                        response_data: dict = await response.json()
+                        results_count = response_data['count']
+                        next_collections = response_data
+                        collections_list = state_data.get('collections_list')
+                        next_collections['results'] = (
+                            collections_list + next_collections['results']
+                        )
+                        collections_paginated = (
+                            await save_paginated_collections_to_state(
+                                state, next_collections, results_count
+                            )
+                        )
+                        markup = await generate_collections_markup(
+                            state, collections_paginated, **kwargs
+                        )
 
     await message.answer(answer_text, reply_markup=markup)
 
@@ -1115,16 +1184,13 @@ async def send_collections_answer(
 ) -> None:
     """Sends user collections data from API response data."""
     results_count = response_data['count']
-    results = response_data['results']
 
     # set pages_total_amount value
     pages_total_amount = math.ceil(results_count / COLLECTIONS_PER_PAGE)
-    await state.update_data(
-        pages_total_amount=pages_total_amount, page_num=1, page_num_global=1
-    )
+    await state.update_data(pages_total_amount=pages_total_amount, page_num=1)
 
     collections_paginated = await save_paginated_collections_to_state(
-        state, results, results_count
+        state, response_data, results_count
     )
     markup = await generate_collections_markup(state, collections_paginated, **kwargs)
 
@@ -1250,7 +1316,6 @@ async def send_collection_profile_answer(
     await state.update_data(
         pages_total_amount=len(words_paginated),
         page_num=1,
-        page_num_global=1,
         vocabulary_paginated=words_paginated,
         vocabulary_words_list=words,
         vocabulary_words_count=len(words),

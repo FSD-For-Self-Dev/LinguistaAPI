@@ -499,7 +499,6 @@ async def additions_profile_callback(
                     await state.update_data(
                         pages_total_amount=len(words_paginated),
                         page_num=1,
-                        page_num_global=1,
                         vocabulary_paginated=words_paginated,
                         vocabulary_words_list=words,
                         vocabulary_words_count=len(words),
@@ -1719,7 +1718,6 @@ async def word_create_multiple_choose_collections_callback(
                     case HTTPStatus.OK:
                         response_data: dict = await response.json()
                         results_count = response_data['count']
-                        results = response_data['results']
 
                         # set pages_total_amount value
                         pages_total_amount = math.ceil(
@@ -1731,7 +1729,7 @@ async def word_create_multiple_choose_collections_callback(
 
                         collections_paginated = (
                             await save_paginated_collections_to_state(
-                                state, results, results_count
+                                state, response_data, results_count
                             )
                         )
                         markup = await generate_collections_markup(

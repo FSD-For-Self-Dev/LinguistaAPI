@@ -46,9 +46,8 @@ async def generate_vocabulary_markup(
     pages_total_amount = state_data.get('pages_total_amount')
     page_num = state_data.get('page_num')
 
-    try:
-        page: list = words_paginated.get(page_num, [])
-    except KeyError:
+    page: list = words_paginated.get(page_num, [])
+    if not page:
         return None
 
     keyboard_builder = InlineKeyboardBuilder()
@@ -377,9 +376,9 @@ async def generate_collections_markup(
     state_data = await state.get_data()
     pages_total_amount = state_data.get('pages_total_amount')
     page_num = state_data.get('page_num')
-    try:
-        page: list = collections_paginated.get(page_num, [])
-    except KeyError:
+
+    page: list = collections_paginated.get(page_num, [])
+    if not page:
         return None
 
     keyboard_builder = InlineKeyboardBuilder()
