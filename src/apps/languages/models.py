@@ -157,6 +157,10 @@ class LanguageCoverImage(CreatedModel, ModifiedModel):
             self.image = compress(self.image)
         return super(LanguageCoverImage, self).save(*args, **kwargs)
 
+    def image_size(self) -> int:
+        """Returns image size."""
+        return f'{round(self.image.size / 1024, 3)} KB'
+
 
 class UserLearningLanguage(
     GetObjectBySlugModelMixin,
