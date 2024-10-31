@@ -503,7 +503,7 @@ word_validation_errors_examples = [
 
 
 word_types_amount_limit_example = OpenApiExample(
-    name='word_types',
+    name='word_types_amount',
     description='Превышено ограничение количества типов слова.',
     value={
         'exception_code': 'amount_limit_exceeded',
@@ -517,7 +517,7 @@ word_already_exists_conflict_example = OpenApiExample(
     name='word_already_exist',
     description='Слово с переданными данными уже существует в словаре пользователя.',
     value={
-        'exception_code': 'already_exist',
+        'exception_code': 'word_already_exist',
         'detail': 'Такое слово уже есть в вашем словаре. Обновить его?',
         'existing_object': {
             'id': 159786489333265405032252898597390240393,
@@ -561,6 +561,10 @@ word_already_exists_conflict_example = OpenApiExample(
             'collections': [],
             'created': '2024-09-11 14:03',
             'modified': '2024-09-11 14:03',
+        },
+        'new_object': {
+            'language': 'English',
+            'text': 'Text',
         },
     },
 )

@@ -5,6 +5,7 @@ from collections import OrderedDict
 
 from django.contrib.auth import get_user_model
 from django.db.models import Count, Model
+from django.db import transaction
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import QuerySet
 
@@ -55,7 +56,7 @@ from ..core.serializers_mixins import (
     UpdateSerializerMixin,
     HybridImageSerializerMixin,
 )
-from ..core.exceptions import AmountLimitExceeded
+from ..core.exceptions import AmountLimitExceeded, ObjectAlreadyExist
 from ..users.serializers import UserListSerializer
 from ..languages.serializers import (
     LanguageSerializer,
@@ -93,13 +94,17 @@ class NativeLanguageDefault:
     def __call__(self, serializer_field: Field) -> QuerySet[Language] | Language:
         request_user = serializer_field.context['request'].user
         try:
-            return (
+            native_language: UserNativeLanguage = (
                 request_user.native_languages_detail.order_by(
                     '-created', 'language__name'
-                )
-                .last()
-                .language
+                ).last()
             )
+            if native_language is None:
+                raise serializers.ValidationError(
+                    code='empty_native_language',
+                    detail=ExceptionDetails.Languages.EMPTY_NATIVE_LANGUAGE,
+                )
+            return native_language.language
         except KeyError:
             return Language.objects.none()
 
@@ -816,6 +821,11 @@ class WordShortCreateSerializer(
         many=True,
         write_only=True,
     )
+    collections_count = KwargsMethodField(
+        'get_objs_count',
+        objs_related_name='collections',
+    )
+    collections = CollectionShortSerializer(many=True, required=False)
     activity_status = serializers.SerializerMethodField('get_activity_status_display')
     activity_progress = serializers.SerializerMethodField('get_activity_progress')
 
@@ -862,6 +872,8 @@ class WordShortCreateSerializer(
             'quote_associations',
             'associations_count',
             'associations',
+            'collections_count',
+            'collections',
             'created',
             'modified',
         )
@@ -875,6 +887,7 @@ class WordShortCreateSerializer(
             'images',
             'associations_count',
             'associations',
+            'collections_count',
             'created',
             'modified',
         )
@@ -889,6 +902,7 @@ class WordShortCreateSerializer(
             'form_groups': 'form_groups',
             'image_associations': 'image_associations',
             'quote_associations': 'quote_associations',
+            'collections': 'collections',
         }
         # Limits for related objects amount
         amount_limits_check = {
@@ -1040,9 +1054,37 @@ class WordSelfRelatedSerializer(NestedSerializerMixin, serializers.ModelSerializ
         """
         Passing `parent_first` argument with False value to create related objects
         before instance.
-        Used in NestedSerializerMixin.
+        Use within NestedSerializerMixin.
+        Catches ObjectAlreadyExist.
         """
-        return super().create(validated_data, parent_first)
+        try:
+            return super().create(validated_data, parent_first)
+        except ObjectAlreadyExist as exception:
+            model_name = self.Meta.model.__name__.lower()
+            raise ObjectAlreadyExist(
+                detail=exception.detail,
+                code=f'{model_name}_{exception.code}',
+                existing_object=exception.existing_object,
+                new_object_data=exception.new_object_data,
+                serializer_class=exception.serializer_class,
+                conflict_object_index=exception.conflict_object_index,
+            )
+
+    def update(self, instance: Model, validated_data: OrderedDict) -> Model:
+        """Catches ObjectAlreadyExist."""
+        try:
+            return super().update(instance, validated_data)
+        except ObjectAlreadyExist as exception:
+            model_name = self.Meta.model.__name__.lower()
+            raise ObjectAlreadyExist(
+                detail=exception.detail,
+                code=f'{model_name}_{exception.code}',
+                existing_object=exception.existing_object,
+                new_object_data=exception.new_object_data,
+                serializer_class=exception.serializer_class,
+                conflict_object_index=exception.conflict_object_index,
+                self_related=True,
+            )
 
     def fail(self, key: str, *args, **kwargs) -> None:
         """A helper method that simply raises a validation error."""
@@ -1260,7 +1302,7 @@ class WordSerializer(WordShortCreateSerializer):
     already_exist_detail = ExceptionDetails.Vocabulary.WORD_ALREADY_EXIST
 
     class Meta(WordShortCreateSerializer.Meta):
-        list_serializer_class = serializers.ListSerializer
+        list_serializer_class = ListUpdateSerializer
         fields = (
             'id',
             'slug',
@@ -1328,9 +1370,9 @@ class WordSerializer(WordShortCreateSerializer):
             'translations': 'translations',
             'tags': 'tags',
             'form_groups': 'form_groups',
-            'collections': 'collections',
             'image_associations': 'image_associations',
             'quote_associations': 'quote_associations',
+            'collections': 'collections',
         }
         # Limits for related objects amount
         amount_limits_check = {
@@ -1393,6 +1435,7 @@ class MultipleWordsSerializer(serializers.Serializer):
     words = WordSerializer(many=True, required=True)
     collections = CollectionShortSerializer(many=True, required=False)
 
+    @transaction.atomic
     def create(self, validated_data: OrderedDict) -> dict:
         """
         Creates passed words and collections, if some have already been created,
@@ -1400,17 +1443,30 @@ class MultipleWordsSerializer(serializers.Serializer):
         Adds given words to given collections.
         Returns created words and collections they were added to.
         """
-        _new_words = WordSerializer(many=True, context=self.context).create(
-            validated_data['words']
-        )
-        _collections = CollectionShortSerializer(
-            many=True, context=self.context
-        ).create(validated_data.get('collections', []))
+        # set context, initial data to nested serializers, get created objects
+        objs = []
+        for field_nested, serializer in self.get_fields().items():
+            serializer.context['request'] = self.context['request']
+            serializer.initial_data = self.initial_data[field_nested]
+            try:
+                objs.append(serializer.create(validated_data.get(field_nested, [])))
+            except ObjectAlreadyExist as exception:
+                raise ObjectAlreadyExist(
+                    detail=exception.detail,
+                    code=exception.code,
+                    existing_object=exception.existing_object,
+                    new_object_data=exception.new_object_data,
+                    serializer_class=exception.serializer_class,
+                    conflict_object_index=exception.conflict_object_index,
+                    conflict_field=field_nested,
+                )
+
+        _words, _collections = objs
 
         for collection in _collections:
-            collection.words.add(*_new_words)
+            collection.words.add(*_words)
 
-        return {'words': _new_words, 'collections': _collections}
+        return {'words': _words, 'collections': _collections}
 
 
 class OtherWordsSerializerMixin:
@@ -1489,6 +1545,7 @@ class AddSelfRelatedWordsThroughDefaultsMixin(NestedSerializerMixin):
 
         serializer = self.get_fields()['from_word']
         self.set_child_context(serializer, 'request', self.context.get('request', None))
+        self.set_child_initial_data(serializer, validated_data)
         from_word = serializer.create(from_word_data)
 
         to_word.__getattribute__(words_related_name).add(
@@ -2162,7 +2219,7 @@ class FormGroupListSerializer(
         return self.validate_language_is_learning(language)
 
 
-class CollectionSerializer(CollectionShortSerializer):
+class CollectionSerializer(NestedSerializerMixin, CollectionShortSerializer):
     """Serializer to retrieve collection with all related words."""
 
     author = ReadableHiddenField(
@@ -2173,6 +2230,7 @@ class CollectionSerializer(CollectionShortSerializer):
     words_languages = serializers.SerializerMethodField('get_words_languages')
     words_images = serializers.SerializerMethodField('get_words_images')
     words_images_count = serializers.SerializerMethodField('get_words_images_count')
+    words = WordShortCreateSerializer(many=True, write_only=True, required=False)
 
     class Meta(CollectionShortSerializer.Meta):
         fields = (
@@ -2186,6 +2244,7 @@ class CollectionSerializer(CollectionShortSerializer):
             'words_count',
             'words_images_count',
             'words_images',
+            'words',
             'created',
             'modified',
         )
@@ -2201,6 +2260,9 @@ class CollectionSerializer(CollectionShortSerializer):
             'created',
             'modified',
         )
+        objs_related_names = {
+            'words': 'words',
+        }
 
     @extend_schema_field({'type': 'object'})
     def get_words_languages(self, obj: Collection) -> QuerySet[Word]:

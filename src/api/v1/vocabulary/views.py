@@ -1786,8 +1786,8 @@ class CollectionViewSet(
     )
     filterset_class = CollectionFilter
     ordering = ('-modified', '-created')
-    ordering_fields = ('created', 'title')
-    search_fields = ('title',)
+    ordering_fields = ('created', 'title', 'words_count')
+    search_fields = ('title', 'description', 'words__text')
 
     def get_queryset(self) -> QuerySet[Collection]:
         """Returns all user's collections or favorites only."""

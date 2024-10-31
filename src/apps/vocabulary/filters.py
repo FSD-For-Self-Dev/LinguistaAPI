@@ -7,29 +7,6 @@ from django.db.models.query import QuerySet
 from .models import Collection, Word
 
 
-class CollectionFilter(df.FilterSet):
-    """Filters for collections."""
-
-    words_count__gt = df.NumberFilter(field_name='words_count', lookup_expr='gt')
-    words_count__lt = df.NumberFilter(field_name='words_count', lookup_expr='lt')
-
-    class Meta:
-        model = Collection
-        fields = {
-            'created': [
-                'exact',
-                'gt',
-                'lt',
-                'year',
-                'year__gt',
-                'year__lt',
-                'month',
-                'month__gt',
-                'month__lt',
-            ],
-        }
-
-
 class CustomFilterList(df.Filter):
     """Filtering by multiple comma-separated values."""
 
@@ -48,6 +25,30 @@ class CustomFilterListLowerCase(df.Filter):
             values = [v.lower() for v in value.split(',')]
             return qs.filter(**{'%s__%s' % (self.field_name, self.lookup_expr): values})
         return qs
+
+
+class CollectionFilter(df.FilterSet):
+    """Filters for collections."""
+
+    language = CustomFilterList(field_name='words__language__isocode', lookup_expr='in')
+    words_count__gt = df.NumberFilter(field_name='words_count', lookup_expr='gt')
+    words_count__lt = df.NumberFilter(field_name='words_count', lookup_expr='lt')
+
+    class Meta:
+        model = Collection
+        fields = {
+            'created': [
+                'exact',
+                'gt',
+                'lt',
+                'year',
+                'year__gt',
+                'year__lt',
+                'month',
+                'month__gt',
+                'month__lt',
+            ],
+        }
 
 
 class WordFilter(df.FilterSet):

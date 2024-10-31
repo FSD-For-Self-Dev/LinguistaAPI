@@ -176,9 +176,13 @@ data = {
                 status.HTTP_200_OK: inline_serializer(
                     name='paginated_words',
                     fields={
-                        'count': IntegerField(),
-                        'next': CharField(),
-                        'previous': CharField(),
+                        'count': IntegerField(default=123),
+                        'next': CharField(
+                            default='http://api.example.org/accounts/?page=4'
+                        ),
+                        'previous': CharField(
+                            default='http://api.example.org/accounts/?page=2'
+                        ),
                         'results': WordStandartCardSerializer(many=True),
                     },
                 ),
@@ -243,9 +247,13 @@ data = {
                 status.HTTP_201_CREATED: inline_serializer(
                     name='paginated_words',
                     fields={
-                        'count': IntegerField(),
-                        'next': CharField(),
-                        'previous': CharField(),
+                        'count': IntegerField(default=123),
+                        'next': CharField(
+                            default='http://api.example.org/accounts/?page=4'
+                        ),
+                        'previous': CharField(
+                            default='http://api.example.org/accounts/?page=2'
+                        ),
                         'results': WordStandartCardSerializer(many=True),
                     },
                 ),
@@ -1042,7 +1050,19 @@ data = {
             ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: WordStandartCardSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='paginated_favorite_words',
+                    fields={
+                        'count': IntegerField(default=123),
+                        'next': CharField(
+                            default='http://api.example.org/accounts/?page=4'
+                        ),
+                        'previous': CharField(
+                            default='http://api.example.org/accounts/?page=2'
+                        ),
+                        'results': WordStandartCardSerializer(many=True),
+                    },
+                ),
             },
         },
         'word_favorite_create': {
@@ -1430,7 +1450,7 @@ data = {
             },
         },
         'collection_create': {
-            'summary': 'Добавление новой коллекции',
+            'summary': 'Создание новой коллекции',
             'request': CollectionSerializer,
             'responses': {
                 status.HTTP_201_CREATED: CollectionSerializer,
@@ -1459,7 +1479,7 @@ data = {
         },
         'words_add_to_collection': {
             'summary': 'Добавление слов в коллекцию',
-            'request': WordShortCreateSerializer,
+            'request': WordShortCreateSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: CollectionSerializer,
             },
@@ -1496,7 +1516,19 @@ data = {
             'summary': 'Просмотр списка избранных коллекций',
             'request': None,
             'responses': {
-                status.HTTP_200_OK: CollectionShortSerializer,
+                status.HTTP_200_OK: inline_serializer(
+                    name='paginated_collections',
+                    fields={
+                        'count': IntegerField(default=123),
+                        'next': CharField(
+                            default='http://api.example.org/accounts/?page=4'
+                        ),
+                        'previous': CharField(
+                            default='http://api.example.org/accounts/?page=2'
+                        ),
+                        'results': CollectionShortSerializer(many=True),
+                    },
+                ),
             },
         },
         'collection_favorite_create': {

@@ -1,6 +1,6 @@
 """Core exceptions."""
 
-from typing import Any, Type, Callable
+from typing import Type, Callable
 
 from django.utils.translation import gettext as _
 from django.http import HttpRequest, HttpResponse
@@ -55,12 +55,17 @@ class ObjectAlreadyExist(APIException):
         detail: str | None = None,
         code: str | None = None,
         existing_object: Type[Model] | None = None,
+        new_object_data: dict | None = None,
         serializer_class: Serializer | None = None,
-        passed_data: dict[str, Any] | None = None,
+        conflict_object_index: int | None = None,
+        conflict_field: str | None = None,
     ) -> None:
+        self.code = code or self.default_code
         self.existing_object = existing_object
+        self.new_object_data = new_object_data
         self.serializer_class = serializer_class
-        self.passed_data = passed_data
+        self.conflict_object_index = conflict_object_index
+        self.conflict_field = conflict_field
         super().__init__(detail, code)
 
     def get_detail_response(
@@ -73,40 +78,42 @@ class ObjectAlreadyExist(APIException):
         """
         try:
             if existing_obj_representation:
-                return Response(
-                    {
-                        'exception_code': self.default_code,
-                        'detail': self.detail,
-                        'existing_object': existing_obj_representation(
-                            self.existing_object
-                        ),
-                    },
-                    status=self.status_code,
-                )
-            if self.serializer_class:
-                return Response(
-                    {
-                        'exception_code': self.default_code,
-                        'detail': self.detail,
-                        'existing_object': self.serializer_class(
-                            self.existing_object, context={'request': request}
-                        ).data,
-                    },
-                    status=self.status_code,
-                )
+                response_data = {
+                    'exception_code': self.code,
+                    'detail': self.detail,
+                    'existing_object': existing_obj_representation(
+                        self.existing_object
+                    ),
+                }
+
+            elif self.serializer_class:
+                response_data = {
+                    'exception_code': self.code,
+                    'detail': self.detail,
+                    'existing_object': self.serializer_class(
+                        self.existing_object, context={'request': request}
+                    ).data,
+                    'new_object': self.new_object_data,
+                }
+
             else:
-                return Response(
-                    {
-                        'exception_code': self.default_code,
-                        'detail': self.detail,
-                    },
-                    status=self.status_code,
-                )
+                response_data = {
+                    'exception_code': self.code,
+                    'detail': self.detail,
+                }
+
+            if self.conflict_object_index is not None:
+                response_data['conflict_object_index'] = self.conflict_object_index
+
+            if self.conflict_field is not None:
+                response_data['conflict_field'] = self.conflict_field
+
+            return Response(response_data, status=self.status_code)
 
         except Exception:
             return Response(
                 {
-                    'exception_code': self.default_code,
+                    'exception_code': self.code,
                     'detail': self.detail,
                 },
                 status=self.status_code,

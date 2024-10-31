@@ -30,6 +30,10 @@ from apps.core.constants import (
     REGEX_COLLECTIONS_TITLE_MASK_DETAIL,
     REGEX_FORM_GROUP_NAME_MASK,
     REGEX_FORM_GROUP_NAME_MASK_DETAIL,
+    REGEX_DEFINITIONS_TEXT_MASK,
+    REGEX_DEFINITIONS_TEXT_MASK_DETAIL,
+    REGEX_EXAMPLES_TEXT_MASK,
+    REGEX_EXAMPLES_TEXT_MASK_DETAIL,
 )
 from apps.core.validators import CustomRegexValidator
 from utils.fillers import slug_filler
@@ -385,7 +389,7 @@ class WordTranslation(
         null=True,
     )
 
-    slugify_fields = ('text', ('author', 'username'))
+    slugify_fields = ('text', ('author', 'username'), ('language', 'name'))
 
     class Meta:
         verbose_name = _('Translation')
@@ -395,7 +399,10 @@ class WordTranslation(
         get_latest_by = ('created', 'modified')
         constraints = [
             models.UniqueConstraint(
-                Lower('text'), 'author', name='unique_word_translation_in_user_voc'
+                Lower('text'),
+                'author',
+                'language',
+                name='unique_word_translation_in_user_voc',
             )
         ]
 
@@ -424,7 +431,10 @@ class Definition(
         help_text=_('A definition of a word or phrase'),
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_DEFINITION_LENGTH),
-            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(
+                regex=REGEX_DEFINITIONS_TEXT_MASK,
+                message=REGEX_DEFINITIONS_TEXT_MASK_DETAIL,
+            ),
         ),
     )
     language = models.ForeignKey(
@@ -498,7 +508,9 @@ class UsageExample(
         help_text=_('An usage example of a word or phrase'),
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_EXAMPLE_LENGTH),
-            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(
+                regex=REGEX_EXAMPLES_TEXT_MASK, message=REGEX_EXAMPLES_TEXT_MASK_DETAIL
+            ),
         ),
     )
     language = models.ForeignKey(

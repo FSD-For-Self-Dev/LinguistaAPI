@@ -22,7 +22,7 @@ from apps.vocabulary.models import (
     ImageAssociation,
     QuoteAssociation,
 )
-from apps.languages.models import Language, UserLearningLanguage
+from apps.languages.models import Language, UserLearningLanguage, UserNativeLanguage
 from apps.core.constants import AmountLimits
 
 logger = logging.getLogger(__name__)
@@ -181,10 +181,10 @@ class TestVocabularyEndpoints:
     @pytest.mark.parametrize(
         'search_field, search_attr, related_model',
         [
-            ('translations', 'text', WordTranslation),
-            ('tags', 'name', WordTag),
-            ('definitions', 'text', Definition),
-            ('definitions', 'translation', Definition),
+            ('translations', ('text', 'language'), WordTranslation),
+            ('tags', ('name',), WordTag),
+            ('definitions', ('text',), Definition),
+            ('definitions', ('translation',), Definition),
         ],
     )
     def test_search_by_related_attr(
@@ -196,12 +196,12 @@ class TestVocabularyEndpoints:
         """
         word = baker.make(Word, author=user)
         baker.make(Word, author=user, _quantity=10)
-        obj = baker.make(related_model, _fill_optional=[search_attr])
+        obj = baker.make(related_model, _fill_optional=[*search_attr])
         word.__getattribute__(search_field).add(obj)
 
         response = auth_api_client(user).get(
             self.endpoint,
-            {'search': obj.__getattribute__(search_attr)},
+            {'search': obj.__getattribute__(search_attr[0])},
             format='json',
         )
 
@@ -223,7 +223,7 @@ class TestVocabularyEndpoints:
         self, auth_api_client, user, filter_field, related_model
     ):
         """Фильтрация слов работает по кол-ву переводов, примеров."""
-        obj = baker.make(related_model)
+        obj = baker.make(related_model, _fill_optional=['language'])
         word = baker.make(Word, author=user)
         word.__getattribute__(filter_field).add(obj)
         baker.make(Word, author=user, _quantity=10)
@@ -602,7 +602,7 @@ class TestVocabularyEndpoints:
         """
         language = learning_language(user)
         word = baker.make(Word, author=user, language=language)
-        obj = baker.make(related_model, author=user, _quantity=1)
+        obj = baker.make(related_model, author=user, _quantity=1, _fill_optional=True)
         _, related_objs_source, _ = request.getfixturevalue(fixture_name)(
             user, data=True, make=True, language=language, word=word
         )
@@ -651,19 +651,23 @@ class TestVocabularyEndpoints:
             'language' in response.data
         ), 'В ответе с кодом 400 должно возвращаться поле `language`.'
 
-    def test_word_validate_translations_language(
-        self, auth_api_client, user, learning_language
-    ):
+    def test_word_validate_translations_language(self, auth_api_client, user):
         """Язык перевода должен быть из изучаемых или родных языков пользователя"""
-        language = learning_language(user)
-        word = baker.make(Word, author=user, language=language)
-        translation = baker.make(WordTranslation, author=user)
+        language = baker.make(Language, name='Russian')
+        UserLearningLanguage.objects.create(user=user, language=language)
+        word = baker.prepare(Word, author=user, language=language)
+        other_language = baker.make(Language, name='Japanese')
+        other_language2 = baker.make(Language)
+        other_language3 = baker.make(Language)
+        UserNativeLanguage.objects.create(user=user, language=other_language2)
+        UserNativeLanguage.objects.create(user=user, language=other_language3)
+        translation = baker.make(WordTranslation, author=user, language=other_language)
         source_json = {
             'language': word.language.name,
             'text': word.text,
             'translations': [
                 {
-                    'language': getattr(translation.language, 'name', None),
+                    'language': other_language.name,
                     'text': translation.text,
                 }
             ],
@@ -894,7 +898,9 @@ class TestVocabularyEndpoints:
         """
         language = learning_language(user)
         word = baker.make(Word, author=user, language=language)
-        old_objs = baker.make(related_model, author=user, _quantity=2)
+        old_objs = baker.make(
+            related_model, author=user, _quantity=2, _fill_optional=True
+        )
         word.__getattribute__(objs_related_name).set(old_objs)
         _, new_objs_source_data, new_objs_expected_data = request.getfixturevalue(
             fixture_name
@@ -1000,9 +1006,6 @@ class TestVocabularyEndpoints:
         assert (
             'detail' in response.data
         ), 'В ответе с кодом 409 должен возвращаться параметр `detail`.'
-        assert (
-            'obj_lookup' in response.data['detail']
-        ), 'В ответе с кодом 409 должен возвращаться параметр `obj_lookup`'
 
     def test_word_partial_update_not_auth(self, api_client):
         """
@@ -1033,7 +1036,7 @@ class TestVocabularyEndpoints:
         Слово успешно удаляется при запросе от автора.
         Связанные объекты также удалются, если не используются в других словах.
         """
-        objs = baker.make(related_model, author=user, _quantity=2)
+        objs = baker.make(related_model, author=user, _quantity=2, _fill_optional=True)
         word = baker.make(Word, author=user)
         word.__getattribute__(objs_related_name).set(objs)
         other_word = baker.make(Word, author=user)
@@ -1219,7 +1222,7 @@ class TestVocabularyEndpoints:
         Список дополнений слова успешно возвращается при запросе от автора слова.
         """
         word = baker.make(Word, author=user)
-        objs = baker.make(related_model, author=user, _quantity=2)
+        objs = baker.make(related_model, author=user, _quantity=2, _fill_optional=True)
         word.__getattribute__(objs_related_name).set(objs)
 
         response = auth_api_client(user).get(

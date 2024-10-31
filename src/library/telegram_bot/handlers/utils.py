@@ -89,7 +89,7 @@ def chunks(lst, n):
 
 
 def paginate_values_list(lst, n) -> dict:
-    """..."""
+    """Returns dictionary with pages numbers, pages values."""
     lst_chunks = list(chunks(lst, n))
     return {
         page_num + 1: page_values for page_num, page_values in enumerate(lst_chunks)
@@ -105,7 +105,7 @@ def api_request_logging(url, data=None, headers=None, method='get') -> None:
 def generate_validation_errors_answer_text(
     invalid_fields_data: dict, fields_pretty, answer_text: str = ''
 ):
-    """..."""
+    """Returns validation errors response answer text."""
     try:
         for invalid_field, messages in invalid_fields_data.items():
             answer_text += f'{fields_pretty[invalid_field][0]}: \n'
@@ -199,7 +199,7 @@ def generate_word_profile_answer_text(state_data: dict, response_data: dict) -> 
 def generate_word_create_request_data(
     word_data: dict, word_text: str | None = None, word_language: str | None = None
 ) -> dict:
-    """..."""
+    """Returns word create request data generated from state data."""
     word_language = (
         word_data.get('language') if word_language is None else word_language
     )
@@ -307,7 +307,7 @@ def generate_word_create_request_data(
 
 
 async def get_next_page(state: FSMContext) -> None:
-    """..."""
+    """Updates state data with next page number."""
     state_data = await state.get_data()
     page_num = state_data.get('page_num')
     pages_total_amount = state_data.get('pages_total_amount')
@@ -321,7 +321,7 @@ async def get_next_page(state: FSMContext) -> None:
 
 
 async def get_previous_page(state: FSMContext) -> None:
-    """..."""
+    """Updates state data with previous page number."""
     state_data = await state.get_data()
     page_num = state_data.get('page_num')
     pages_total_amount = state_data.get('pages_total_amount')
@@ -337,7 +337,7 @@ async def get_previous_page(state: FSMContext) -> None:
 
 
 async def choose_page(message: Message, state: FSMContext) -> None:
-    """..."""
+    """Validates passed page number, updates state data with passed page number."""
     state_data = await state.get_data()
     pages_total_amount = state_data.get('pages_total_amount')
 
@@ -364,7 +364,7 @@ async def choose_page(message: Message, state: FSMContext) -> None:
 async def filter_by_date(
     message: Message, state: FSMContext, filter_handler: Callable
 ) -> None:
-    """..."""
+    """Updates state data with valid date filter value."""
     state_data = await state.get_data()
     filter_field = state_data.get('filter_field')
 
@@ -417,7 +417,7 @@ async def filter_by_date(
 async def filter_by_counter(
     message: Message, state: FSMContext, filter_handler: Callable
 ) -> None:
-    """..."""
+    """Updates state data with valid counter filter value."""
     state_data = await state.get_data()
     filter_field = state_data.get('filter_field')
 
@@ -468,7 +468,7 @@ async def filter_by_counter(
 async def save_paginated_words_to_state(
     state: FSMContext, words: list[dict], words_count: int, language_name: str = ''
 ) -> dict:
-    """..."""
+    """Updates state data with paginated words list."""
     state_data = await state.get_data()
     vocabulary_paginated = (
         state_data.get('vocabulary_paginated')
@@ -514,7 +514,7 @@ async def save_paginated_collections_to_state(
     collections_count: int,
     collections_send_request: bool = False,
 ) -> dict:
-    """..."""
+    """Updates state data with paginated collections list."""
     collections_info_list = [
         {'title': collection_info['title'], 'slug': collection_info['slug']}
         for collection_info in collections

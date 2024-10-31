@@ -26,6 +26,18 @@ REGEX_FORM_GROUP_NAME_MASK_DETAIL = _(
     'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
 )
 
+REGEX_EXAMPLES_TEXT_MASK = r"^([\p{L}-!?.,:/&'`’() \d]*)$"
+REGEX_EXAMPLES_TEXT_MASK_DETAIL = _(
+    'Acceptable characters: Letters from any language, Digits '
+    'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
+)
+
+REGEX_DEFINITIONS_TEXT_MASK = r"^([\p{L}-!?.,:/&'`’() \d]*)$"
+REGEX_DEFINITIONS_TEXT_MASK_DETAIL = _(
+    'Acceptable characters: Letters from any language, Digits '
+    'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
+)
+
 REGEX_HEXCOLOR_MASK = r'^#[\w]+$'
 REGEX_HEXCOLOR_MASK_DETAIL = 'Color must be in hex format.'
 
@@ -87,6 +99,9 @@ class ExceptionDetails:
             'Language must be in your learning or native languages.'
         )
         LANGUAGE_MUST_BE_NATIVE = _('Language must be in your native languages.')
+        EMPTY_NATIVE_LANGUAGE = _(
+            'Add native languages to your profile to create translations.'
+        )
 
     class Exercises:
         """Exercises app exception details."""
