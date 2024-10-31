@@ -22,9 +22,8 @@ from dotenv import load_dotenv
 from keyboards.core import initial_kb, cancel_button, cancel_inline_kb
 from keyboards.user_profile import profile_update_kb
 from states.user_profile import (
-    UserProfileUpdate,
+    UserProfile,
     AddLearningLanguage,
-    user_profile_retrieve,
 )
 
 from ..urls import (
@@ -67,7 +66,7 @@ async def get_user_profile(message: Message, state: FSMContext) -> None:
             match response.status:
                 case HTTPStatus.OK:
                     response_data: dict = await response.json()
-                    await state.set_state(user_profile_retrieve)
+                    await state.set_state(UserProfile.retrieve)
                     await send_user_profile_answer(
                         session, message, state, response_data, headers=headers
                     )
@@ -81,7 +80,7 @@ async def get_user_profile(message: Message, state: FSMContext) -> None:
 @router.message(F.text == 'Редактировать профиль')
 async def update_user_profile(message: Message, state: FSMContext) -> None:
     """Sets state, sends options to choose."""
-    await state.set_state(UserProfileUpdate.options)
+    await state.set_state(UserProfile.update_options)
     await state.update_data(previous_state_handler=get_user_profile)
 
     await message.answer(
@@ -93,7 +92,7 @@ async def update_user_profile(message: Message, state: FSMContext) -> None:
 @router.message(F.text == 'Обновить фото профиля')
 async def update_profile_image(message: Message, state: FSMContext) -> None:
     """Sets state that awaits image file."""
-    await state.set_state(UserProfileUpdate.profile_image)
+    await state.set_state(UserProfile.profile_image_update)
     await state.update_data(previous_state_handler=update_user_profile)
 
     await message.answer(
@@ -102,7 +101,7 @@ async def update_profile_image(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(UserProfileUpdate.profile_image)
+@router.message(UserProfile.profile_image_update)
 async def update_profile_image_proceed(message: Message, state: FSMContext) -> None:
     """Accepts profile image file, calls download, updates state data, makes request to API, sends user profile updated data."""
 
@@ -140,7 +139,7 @@ async def update_profile_image_proceed(message: Message, state: FSMContext) -> N
                 case HTTPStatus.OK:
                     response_data: dict = await response.json()
                     await message.answer(emojize('Фото профиля обновлено :sparkles:'))
-                    await state.set_state(user_profile_retrieve)
+                    await state.set_state(UserProfile.retrieve)
                     await send_user_profile_answer(
                         session, message, state, response_data, headers=headers
                     )
@@ -155,7 +154,7 @@ async def update_profile_image_proceed(message: Message, state: FSMContext) -> N
 @router.message(F.text == 'Изменить имя')
 async def update_first_name(message: Message, state: FSMContext) -> None:
     """Sets state that awaits first_name."""
-    await state.set_state(UserProfileUpdate.first_name)
+    await state.set_state(UserProfile.first_name_update)
     await state.update_data(previous_state_handler=update_user_profile)
 
     await message.answer(
@@ -166,7 +165,7 @@ async def update_first_name(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(UserProfileUpdate.first_name)
+@router.message(UserProfile.first_name_update)
 async def update_first_name_proceed(message: Message, state: FSMContext) -> None:
     """Accepts first name value, updates state data, makes request to API, sends user profile updated data."""
     state_data = await state.get_data()
@@ -188,7 +187,7 @@ async def update_first_name_proceed(message: Message, state: FSMContext) -> None
                 case HTTPStatus.OK:
                     response_data: dict = await response.json()
                     await message.answer(emojize('Имя обновлено :sparkles:'))
-                    await state.set_state(user_profile_retrieve)
+                    await state.set_state(UserProfile.retrieve)
                     await send_user_profile_answer(
                         session, message, state, response_data, headers=headers
                     )
@@ -203,7 +202,7 @@ async def update_first_name_proceed(message: Message, state: FSMContext) -> None
 @router.message(F.text == 'Изменить родные языки')
 async def update_native_languages(message: Message, state: FSMContext) -> None:
     """Sets state that awaits native languages."""
-    await state.set_state(UserProfileUpdate.native_languages)
+    await state.set_state(UserProfile.native_languages_update)
     await state.update_data(previous_state_handler=update_user_profile)
 
     await message.answer(
@@ -215,7 +214,7 @@ async def update_native_languages(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(UserProfileUpdate.native_languages)
+@router.message(UserProfile.native_languages_update)
 async def native_languages_proceed(message: Message, state: FSMContext) -> None:
     """Accepts native languages value, updates state data, makes request to api, sends user profile updated data."""
     state_data = await state.get_data()
@@ -252,7 +251,7 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
                 case HTTPStatus.OK:
                     response_data: dict = await response.json()
                     await message.answer(emojize('Родные языки обновлены :sparkles:'))
-                    await state.set_state(user_profile_retrieve)
+                    await state.set_state(UserProfile.retrieve)
                     await send_user_profile_answer(
                         session, message, state, response_data, headers=headers
                     )
@@ -349,7 +348,7 @@ async def add_learning_language_query(
                         match response.status:
                             case HTTPStatus.OK:
                                 response_data: dict = await response.json()
-                                await state.set_state(user_profile_retrieve)
+                                await state.set_state(UserProfile.retrieve)
                                 await send_user_profile_answer(
                                     session,
                                     message,

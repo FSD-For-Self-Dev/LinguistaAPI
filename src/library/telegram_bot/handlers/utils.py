@@ -31,7 +31,7 @@ from keyboards.generators import (
     generate_word_profile_markup,
     generate_collections_markup,
 )
-from states.core import User
+from states.user_profile import UserProfile
 
 from .urls import (
     LEARNING_LANGUAGES_URL,
@@ -520,7 +520,7 @@ async def save_paginated_collections_to_state(
     try:
         collections_list = collections['results']
         next_page_url = collections['next']
-    except KeyError:
+    except TypeError:
         collections_list = collections
         next_page_url = None
 
@@ -551,7 +551,7 @@ async def save_learning_languages_to_state(
     async with session.get(url=url, headers=headers) as response:
         match response.status:
             case HTTPStatus.OK:
-                await state.set_state(User.learning_languages_info)
+                await state.set_state(UserProfile.learning_languages_info)
                 response_data: dict = await response.json()
 
                 learning_languages_info = {}
