@@ -58,7 +58,7 @@ async def get_user_profile(message: Message, state: FSMContext) -> None:
     """Sends user profile data."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     async with aiohttp.ClientSession() as session:
         api_request_logging(USER_PROFILE_URL, headers=headers)
@@ -123,7 +123,7 @@ async def update_profile_image_proceed(message: Message, state: FSMContext) -> N
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     encoded_image = base64.b64encode(file_in_io.getvalue()).decode('utf-8')
     request_data = {'image': encoded_image}
@@ -170,7 +170,7 @@ async def update_first_name_proceed(message: Message, state: FSMContext) -> None
     """Accepts first name value, updates state data, makes request to API, sends user profile updated data."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     await state.update_data(first_name=message.text)
 
@@ -219,7 +219,7 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
     """Accepts native languages value, updates state data, makes request to api, sends user profile updated data."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     languages = message.text
     await state.update_data(native_languages=languages)
@@ -275,7 +275,7 @@ async def add_learning_language(message: Message, state: FSMContext) -> None:
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     # get available languages from API
     async with aiohttp.ClientSession() as session:
@@ -322,7 +322,7 @@ async def add_learning_language_query(
     """Update state data, send request to api."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     await state.update_data(language=language_name)
 
@@ -392,7 +392,7 @@ async def logout(message: Message, state: FSMContext) -> None:
     """Clears state, makes logout API request, sends initial keyboard."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     await state.clear()
 

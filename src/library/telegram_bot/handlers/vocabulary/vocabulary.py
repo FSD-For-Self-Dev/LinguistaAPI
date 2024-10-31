@@ -79,7 +79,7 @@ async def vocabulary_choose_language(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     # get user learning languages from API if no learning languages info in state_data
     async with aiohttp.ClientSession() as session:
@@ -134,7 +134,7 @@ async def vocabulary_choose_language_callback(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     if isinstance(callback_query, CallbackQuery):
         message: Message = callback_query.message
@@ -426,7 +426,7 @@ async def vocabulary_search_proceed(message: Message, state: FSMContext) -> None
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = state_data.get('url')
     if '?' in url:
@@ -546,7 +546,7 @@ async def vocabulary_ordering_callback_proceed(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = state_data.get('url')
     if '?' in url:
@@ -729,7 +729,7 @@ async def vocabulary_filtering_field_callback(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
     filtering = state_data.get('filtering') or {}
 
     message = callback_query.message
@@ -940,7 +940,7 @@ async def vocabulary_filtering_proceed(
     await state.update_data(filtering=filtering)
 
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = state_data.get('url')
     if '?' in url:
@@ -1062,7 +1062,7 @@ async def vocabulary_favorites(message: Message, state: FSMContext) -> None:
     """Sends user favorite words from API response data."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = VOCABULARY_URL + 'favorites/'
 

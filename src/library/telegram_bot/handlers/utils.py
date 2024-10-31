@@ -55,7 +55,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-def get_authentication_headers(
+async def get_authentication_headers(
     token_auth=True, content_type='json', *args, **kwargs
 ) -> dict | None:
     """Returns dict of request headers."""
@@ -88,7 +88,7 @@ def chunks(lst, n):
         yield lst[i : i + n]
 
 
-def paginate_values_list(lst, n) -> dict:
+async def paginate_values_list(lst, n) -> dict:
     """Returns dictionary with pages numbers, pages values."""
     lst_chunks = list(chunks(lst, n))
     return {
@@ -102,7 +102,7 @@ def api_request_logging(url, data=None, headers=None, method='get') -> None:
     )
 
 
-def generate_validation_errors_answer_text(
+async def generate_validation_errors_answer_text(
     invalid_fields_data: dict, fields_pretty, answer_text: str = ''
 ):
     """Returns validation errors response answer text."""
@@ -133,7 +133,9 @@ def generate_validation_errors_answer_text(
     return answer_text
 
 
-def generate_word_profile_answer_text(state_data: dict, response_data: dict) -> str:
+async def generate_word_profile_answer_text(
+    state_data: dict, response_data: dict
+) -> str:
     """Returns word profile text info."""
     language_name = response_data['language']
     activity_status = response_data['activity_status']
@@ -196,7 +198,7 @@ def generate_word_profile_answer_text(state_data: dict, response_data: dict) -> 
     return answer_text
 
 
-def generate_word_create_request_data(
+async def generate_word_create_request_data(
     word_data: dict, word_text: str | None = None, word_language: str | None = None
 ) -> dict:
     """Returns word create request data generated from state data."""
@@ -489,7 +491,9 @@ async def save_paginated_words_to_state(
         {'text': word_info['text'], 'slug': word_info['slug']}
         for word_info in words['results']
     ]
-    words_paginated = paginate_values_list(words_info_list, VOCABULARY_WORDS_PER_PAGE)
+    words_paginated = await paginate_values_list(
+        words_info_list, VOCABULARY_WORDS_PER_PAGE
+    )
 
     try:
         vocabulary_paginated[language_name] = words_paginated
@@ -528,7 +532,7 @@ async def save_paginated_collections_to_state(
         {'title': collection_info['title'], 'slug': collection_info['slug']}
         for collection_info in collections_list
     ]
-    collections_paginated = paginate_values_list(
+    collections_paginated = await paginate_values_list(
         collections_info_list, COLLECTIONS_PER_PAGE
     )
 
@@ -669,7 +673,7 @@ async def send_validation_errors(
     response_data: dict = await response.json()
     all_fields_pretty = fields_pretty | additions_pretty
 
-    answer_text = generate_validation_errors_answer_text(
+    answer_text = await generate_validation_errors_answer_text(
         response_data,
         all_fields_pretty,
         answer_text='🚫 Присутствуют ошибки в переданных данных: \n\n',
@@ -1097,7 +1101,7 @@ async def send_vocabulary_answer_from_state_data(
     if markup is None:
         next_page_url = state_data.get('next_page_url')
         token = state_data.get('token')
-        headers = get_authentication_headers(token=token)
+        headers = await get_authentication_headers(token=token)
         async with aiohttp.ClientSession() as session:
             api_request_logging(next_page_url, headers=headers, method='get')
             async with session.get(url=next_page_url, headers=headers) as response:
@@ -1154,7 +1158,7 @@ async def send_collections_answer_from_state_data(
     if markup is None:
         next_page_url = state_data.get('next_page_url')
         token = state_data.get('token')
-        headers = get_authentication_headers(token=token)
+        headers = await get_authentication_headers(token=token)
         async with aiohttp.ClientSession() as session:
             api_request_logging(next_page_url, headers=headers, method='get')
             async with session.get(url=next_page_url, headers=headers) as response:
@@ -1213,7 +1217,7 @@ async def send_word_profile_answer(
 ) -> None:
     """Sends word profile from API response data."""
     # generate answer text
-    answer_text = generate_word_profile_answer_text(state_data, response_data)
+    answer_text = await generate_word_profile_answer_text(state_data, response_data)
 
     # generate markup
     markup = await generate_word_profile_markup(response_data)
@@ -1312,7 +1316,7 @@ async def send_collection_profile_answer(
         {'text': word_info['text'], 'slug': word_info['slug']}
         for word_info in words_results
     ]
-    words_paginated = paginate_values_list(words, VOCABULARY_WORDS_PER_PAGE)
+    words_paginated = await paginate_values_list(words, VOCABULARY_WORDS_PER_PAGE)
     await state.update_data(
         pages_total_amount=len(words_paginated),
         page_num=1,

@@ -90,7 +90,7 @@ async def word_profile_callback(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     if isinstance(callback_query, CallbackQuery):
         message: Message = callback_query.message
@@ -163,7 +163,7 @@ async def word_favorite_callback(
     state_data = await state.get_data()
     word_slug = state_data.get('word_slug')
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = VOCABULARY_URL + word_slug + '/' + 'favorite/'
     await state.update_data(url=url)
@@ -208,7 +208,7 @@ async def problematic_toggle_callback(
     state_data = await state.get_data()
     word_slug = state_data.get('word_slug')
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = VOCABULARY_URL + word_slug + '/' + 'problematic-toggle/'
     await state.update_data(url=url)
@@ -325,7 +325,7 @@ async def word_update(message: Message, state: FSMContext) -> None:
     state_data = await state.get_data()
     profile_response_data = state_data.get('response_data')
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     async with aiohttp.ClientSession() as session:
         await save_native_languages_to_state(message, state, session, headers)
@@ -372,7 +372,7 @@ async def word_delete_callback(
     """Makes API request to delete word from user vocabulary."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
     url = state_data.get('url')
 
     await callback_query.answer('Удаление')
@@ -451,7 +451,7 @@ async def additions_profile_callback(
     addition_slug = word_profile_response_data[additions_field][addition_index]['slug']
 
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
     url = API_URL + additions_field + '/' + addition_slug + '/'
     await state.update_data(url=url)
 
@@ -493,7 +493,7 @@ async def additions_profile_callback(
                         {'text': word_info['text'], 'slug': word_info['slug']}
                         for word_info in response_data['words']['results']
                     ]
-                    words_paginated = paginate_values_list(
+                    words_paginated = await paginate_values_list(
                         words, VOCABULARY_WORDS_PER_PAGE
                     )
                     await state.update_data(
@@ -569,7 +569,7 @@ async def word_create(message: Message, state: FSMContext) -> None:
         )
 
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     async with aiohttp.ClientSession() as session:
         await save_native_languages_to_state(message, state, session, headers)
@@ -1086,12 +1086,12 @@ async def word_create_save_callback(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     await callback_query.answer('Сохранение...')
 
     if not request_data:
-        request_data = generate_word_create_request_data(state_data)
+        request_data = await generate_word_create_request_data(state_data)
         await state.update_data(request_data=request_data)
 
     url = (
@@ -1320,7 +1320,7 @@ async def word_create_multiple(message: Message, state: FSMContext) -> None:
         )
 
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     async with aiohttp.ClientSession() as session:
         await save_native_languages_to_state(message, state, session, headers)
@@ -1425,7 +1425,7 @@ async def word_create_multiple_words_proceed(
                     several_words[word][f'{additions_field}_count'] = 0
 
         # update state data
-        several_words_paginated = paginate_values_list(
+        several_words_paginated = await paginate_values_list(
             list(several_words), VOCABULARY_WORDS_PER_PAGE
         )
         await state.update_data(
@@ -1518,7 +1518,7 @@ async def word_create_multiple_return_callback(
         several_words_updated[word_info[0]] = word_info[1]
 
     # paginate words
-    several_words_paginated = paginate_values_list(
+    several_words_paginated = await paginate_values_list(
         list(several_words_updated), VOCABULARY_WORDS_PER_PAGE
     )
 
@@ -1539,7 +1539,7 @@ async def word_create_multiple_delete_callback(
     word_text = state_data.get('text')
     several_words: dict = state_data.get('several_words')
     several_words.pop(word_text)
-    several_words_paginated = paginate_values_list(
+    several_words_paginated = await paginate_values_list(
         list(several_words), VOCABULARY_WORDS_PER_PAGE
     )
     await callback_query.answer('Удаление')
@@ -1561,7 +1561,7 @@ async def word_create_multiple_save_callback(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
     several_words: dict = state_data.get('several_words')
     language_name = state_data.get('language')
 
@@ -1575,7 +1575,7 @@ async def word_create_multiple_save_callback(
         request_data = {'words': [], 'collections': collections}
         for word_text, word_data in several_words.items():
             request_data['words'].append(
-                generate_word_create_request_data(
+                await generate_word_create_request_data(
                     word_data, word_text=word_text, word_language=language_name
                 )
             )
@@ -1647,7 +1647,7 @@ async def word_create_multiple_save_callback(
                             f'Присутствуют ошибки в переданных данных: \n\n'
                         )
                         all_fields_pretty = fields_pretty | additions_pretty
-                        answer_text = generate_validation_errors_answer_text(
+                        answer_text = await generate_validation_errors_answer_text(
                             detail_messages, all_fields_pretty, answer_text=answer_text
                         )
                         answer_text += '\n'
@@ -1708,7 +1708,7 @@ async def word_create_multiple_choose_collections_callback(
 
     else:
         token = state_data.get('token')
-        headers = get_authentication_headers(token=token)
+        headers = await get_authentication_headers(token=token)
         url = COLLECTIONS_URL
 
         async with aiohttp.ClientSession() as session:

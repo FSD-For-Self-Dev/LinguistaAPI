@@ -75,7 +75,7 @@ async def collections_list(message: Message | CallbackQuery, state: FSMContext) 
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     collections_send_request = state_data.get('collections_send_request')
 
@@ -125,7 +125,7 @@ async def collections_favorites(message: Message, state: FSMContext) -> None:
     )
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = COLLECTIONS_URL + 'favorites/'
 
@@ -181,7 +181,7 @@ async def collections_search_proceed(message: Message, state: FSMContext) -> Non
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = state_data.get('url')
     if '?' in url:
@@ -294,7 +294,7 @@ async def collections_ordering_callback_proceed(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = state_data.get('url')
     if '?' in url:
@@ -372,7 +372,7 @@ async def collections_filtering_field_callback(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
     filtering = state_data.get('filtering') or {}
 
     message = callback_query.message
@@ -441,7 +441,7 @@ async def collections_filtering_proceed(
     await state.update_data(filtering=filtering)
 
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = state_data.get('url')
     if '?' in url:
@@ -554,7 +554,7 @@ async def collection_profile_callback(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     if isinstance(callback_query, CallbackQuery):
         message: Message = callback_query.message
@@ -605,7 +605,7 @@ async def collection_add_words(message: Message, state: FSMContext) -> None:
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     # generate inline keyboard
     async with aiohttp.ClientSession() as session:
@@ -683,7 +683,7 @@ async def collection_add_words_proceed(message: Message, state: FSMContext):
 
     # sending request to API
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
     url = state_data.get('url') + 'add-words/'
     request_data = [{'language': language_name, 'text': word} for word in new_words]
 
@@ -780,7 +780,7 @@ async def collection_update_proceed(
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
     url = state_data.get('url')
 
     async with aiohttp.ClientSession() as session:
@@ -855,7 +855,7 @@ async def collection_delete_callback(
     """Makes API request to delete collection."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
     url = state_data.get('url')
 
     await callback_query.answer('Удаление')
@@ -896,7 +896,7 @@ async def collection_favorite_callback(
     state_data = await state.get_data()
     collection_slug = state_data.get('collection_slug')
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     url = COLLECTIONS_URL + collection_slug + '/' + 'favorite/'
 
@@ -934,7 +934,7 @@ async def collection_create(message: Message, state: FSMContext) -> None:
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     async with aiohttp.ClientSession() as session:
         await save_learning_languages_to_state(message, state, session, headers)
@@ -1064,7 +1064,7 @@ async def collection_create_proceed(
     # sending request to API
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
     url = COLLECTIONS_URL
     request_data = {
         'title': state_data.get('title'),
