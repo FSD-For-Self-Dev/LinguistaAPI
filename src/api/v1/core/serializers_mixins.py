@@ -555,7 +555,7 @@ class FavoriteSerializerMixin(serializers.ModelSerializer):
                 **{self.Meta.favorite_model_field: instance},
                 user=self.context['request'].user,
             )
-        if not favorite and current_favorite:
+        if favorite is False and current_favorite:
             current_favorite.delete()
         return instance
 
