@@ -115,9 +115,10 @@ async def update_profile_image_proceed(message: Message, state: FSMContext) -> N
         )
         return None
 
-    await state.update_data(profile_image=message.photo)
-
     image_file_id = message.photo[-1].file_id
+    await state.update_data(
+        profile_image=message.photo[-1], user_profile_image_id=image_file_id
+    )
     file_in_io = io.BytesIO()
     await message.bot.download(file=image_file_id, destination=file_in_io)
 

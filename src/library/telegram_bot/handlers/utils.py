@@ -994,7 +994,16 @@ async def send_user_profile_answer(
         )
     )
 
-    if profile_image_url:
+    state_data = await state.get_data()
+    user_profile_image_id = state_data.get('user_profile_image_id')
+    if user_profile_image_id:
+        # send image through saved id
+        await message.answer_photo(
+            photo=user_profile_image_id,
+            caption=answer_text,
+            reply_markup=profile_kb,
+        )
+    elif profile_image_url:
         # get image file from url
         headers = kwargs.get('headers', {})
         async with session.get(
@@ -1003,13 +1012,15 @@ async def send_user_profile_answer(
             profile_image = await image_response.content.read()
             profile_image_filename = profile_image_url.split('/')[-1]
         # send image file with text
-        await message.answer_photo(
+        msg = await message.answer_photo(
             photo=BufferedInputFile(
                 file=profile_image, filename=profile_image_filename
             ),
             caption=answer_text,
             reply_markup=profile_kb,
         )
+        # save image id to state
+        await state.update_data(user_profile_image_id=msg.photo[-1].file_id)
     # send only text
     else:
         await message.answer(
