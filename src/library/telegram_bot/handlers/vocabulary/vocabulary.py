@@ -302,6 +302,9 @@ async def vocabulary_choose_language_callback(
                     await send_error_message(message, state, response)
 
 
+# --- Pagination ---
+
+
 @router.callback_query(F.data.startswith('forward__vocabulary'))
 async def vocabulary_forward_callback(
     callback_query: CallbackQuery, state: FSMContext
@@ -406,6 +409,9 @@ async def vocabulary_choose_page_proceed(message: Message, state: FSMContext) ->
     await message.delete()
 
 
+#  --- Search ---
+
+
 @router.message(F.text == 'Поиск', Vocabulary.list_retrieve)
 async def vocabulary_search(message: Message, state: FSMContext) -> None:
     """Sets state that awaits search value from user."""
@@ -464,6 +470,9 @@ async def vocabulary_search_proceed(message: Message, state: FSMContext) -> None
 
                 case _:
                     await send_error_message(message, state, response)
+
+
+# --- Ordering ---
 
 
 @router.message(F.text == 'Сортировка', Vocabulary.list_retrieve)
@@ -667,6 +676,9 @@ async def vocabulary_counters_ordering_callback(
         'Выберите сортировку из предложенных ниже:',
         reply_markup=markup,
     )
+
+
+# --- Filters ---
 
 
 @router.message(F.text == 'Фильтры', Vocabulary.list_retrieve)
@@ -1055,6 +1067,9 @@ async def vocabulary_date_filter_proceed(
 ) -> None:
     """Accepts date filter value, calls vocabulary filtering proceed."""
     await filter_by_date(message, state, filter_handler=vocabulary_filtering_proceed)
+
+
+# --- Favorites ---
 
 
 @router.message(F.text == 'Избранное', Vocabulary.list_retrieve)

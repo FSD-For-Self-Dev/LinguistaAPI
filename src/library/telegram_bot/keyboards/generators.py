@@ -259,7 +259,7 @@ async def generate_additions_list_markup(
                 *[
                     InlineKeyboardButton(
                         text=word,
-                        callback_data=f'word_profile__{word_index}',
+                        callback_data=f'wp_word_profile__{word_index}',
                     )
                     for word_index, word in enumerate(additions_data)
                 ]

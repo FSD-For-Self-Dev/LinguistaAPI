@@ -566,8 +566,10 @@ async def collection_profile_callback(
         collection_slug = collection_info['slug']
 
         await callback_query.answer(f'Выбрана коллекция: {collection_title}')
-        await state.update_data(collection_slug=collection_slug)
-        await state.update_data(collection_title=collection_title)
+        await state.update_data(
+            collection_slug=collection_slug,
+            collection_title=collection_title,
+        )
 
     else:
         message: Message = callback_query

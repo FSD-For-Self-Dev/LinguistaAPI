@@ -81,6 +81,7 @@ router = Router()
 
 
 @router.callback_query(F.data.startswith('word_profile'))
+@router.callback_query(F.data.startswith('wp_word_profile'))
 async def word_profile_callback(
     callback_query: CallbackQuery | Message, state: FSMContext, *args, **kwargs
 ) -> None:
@@ -102,14 +103,23 @@ async def word_profile_callback(
             ]
         except TypeError:
             vocabulary_words_list: list = state_data.get('vocabulary_words_list')
+
         word_index = int(callback_query.data.split('__')[-1])
-        word_info = vocabulary_words_list[word_index]
+        if callback_query.data.startswith('wp_word_profile'):
+            # retrieve word from synonyms, antonyms, forms, similars list
+            await state.update_data(previous_state_handler=additions_list_callback)
+            additions_field = state_data.get('additions_field')
+            word_info = state_data.get(f'{additions_field}_list')[word_index]
+        else:
+            word_info = vocabulary_words_list[word_index]
         word_text = word_info['text']
         word_slug = word_info['slug']
 
         await callback_query.answer(f'Выбрано слово: {word_text}')
-        await state.update_data(word_slug=word_slug)
-        await state.update_data(word_text=word_text)
+        await state.update_data(
+            word_slug=word_slug,
+            word_text=word_text,
+        )
 
     else:
         message: Message = callback_query
@@ -252,6 +262,17 @@ async def fill_word_state_data_with_response_data(
                     data['from_word']['text']
                     for data in word_profile_response_data[field]
                 ]
+                await state.update_data(
+                    {
+                        f'{field}_list': [
+                            {
+                                'text': data['from_word']['text'],
+                                'slug': data['from_word']['slug'],
+                            }
+                            for data in word_profile_response_data[field]
+                        ]
+                    }
+                )
 
             case 'form_groups' | 'tags':
                 field_data = [
