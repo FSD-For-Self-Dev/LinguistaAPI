@@ -29,7 +29,7 @@ from utils.getters import get_admin_user
 from apps.core.constants import (
     AmountLimits,
 )
-from apps.vocabulary.filters import CollectionFilter, WordFilter
+from apps.vocabulary.filters import CollectionFilter, WordFilter, WordCounters
 from apps.vocabulary.models import (
     Collection,
     FormGroup,
@@ -55,7 +55,7 @@ from ..core.mixins import (
     FavoriteMixin,
 )
 from ..core.exceptions import ObjectAlreadyExist
-from .utils import get_word_cards_type, annotate_words_with_counters
+from .utils import get_word_cards_type
 from .serializers import (
     WordStandartCardSerializer,
     WordShortCreateSerializer,
@@ -134,22 +134,22 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
 
         # Obtaining words from instance if words not passed,
         # annotate words with counters
-        _words = (
-            annotate_words_with_counters(
-                instance=instance,
-                words_related_name=words_related_name,
-                ordering=default_order,
+        if words is None:
+            words = (
+                instance.__getattribute__(words_related_name)
+                .annotate(**WordCounters.all)
+                .order_by(*default_order)
             )
-            if words is None
-            else annotate_words_with_counters(words, ordering=default_order)
-        )
-        logger.debug(f'Obtained words: {_words}')
+        else:
+            words.annotate(**WordCounters.all).order_by(*default_order)
+
+        logger.debug(f'Obtained words: {words}')
 
         words_serializer_class = get_word_cards_type(request)
         logger.debug(f'Serializer used for words: {words_serializer_class}')
 
         words_data = self.get_filtered_paginated_objs(
-            request, _words, WordViewSet, words_serializer_class
+            request, words, WordViewSet, words_serializer_class
         )
 
         return Response(
@@ -185,10 +185,10 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
         logger.debug('Performing instance save')
         instance = serializer.save()
 
-        _words = annotate_words_with_counters(
-            instance=instance,
-            words_related_name=words_related_name,
-            ordering=default_order,
+        _words = (
+            instance.__getattribute__(words_related_name)
+            .annotate(**WordCounters.all)
+            .order_by(*default_order)
         )
         logger.debug(f'Obtained words: {_words}')
 
@@ -233,10 +233,10 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
         logger.debug('Performing update')
         self.perform_update(serializer)
 
-        _words = annotate_words_with_counters(
-            instance=instance,
-            words_related_name=words_related_name,
-            ordering=default_order,
+        _words = (
+            instance.__getattribute__(words_related_name)
+            .annotate(**WordCounters.all)
+            .order_by(*default_order)
         )
         logger.debug(f'Obtained words: {_words}')
 
@@ -279,10 +279,10 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
             instance=instance,
         ).data
 
-        _words = annotate_words_with_counters(
-            instance=instance,
-            words_related_name=words_related_name,
-            ordering=default_order,
+        _words = (
+            instance.__getattribute__(words_related_name)
+            .annotate(**WordCounters.all)
+            .order_by(*default_order)
         )
         logger.debug(f'Obtained words: {_words}')
 
@@ -334,10 +334,9 @@ class WordViewSet(
     ordering = ('-modified', '-created')
     ordering_fields = (
         'text',
-        'translations_count',
         'last_exercise_date',
         'created',
-    )
+    ) + tuple(WordCounters.all.keys())
     search_fields = (
         'text',
         'translations__text',
@@ -360,9 +359,7 @@ class WordViewSet(
                 case _:
                     # Annotate words with some related objects amount to use in
                     # filters, sorting
-                    return annotate_words_with_counters(
-                        instance=user, words_related_name='words'
-                    )
+                    return user.words.annotate(**WordCounters.all)
         else:
             match self.action:
                 case 'share':
@@ -954,6 +951,7 @@ class WordViewSet(
             request,
             objs_related_name='image_associations',
             response_objs_name='images',
+            ordering=['wordimageassociations__created'],
         )
 
     @extend_schema(operation_id='word_images_upload', methods=('post',))
@@ -1788,8 +1786,8 @@ class CollectionViewSet(
     )
     filterset_class = CollectionFilter
     ordering = ('-modified', '-created')
-    ordering_fields = ('created', 'title')
-    search_fields = ('title',)
+    ordering_fields = ('created', 'title', 'words_count')
+    search_fields = ('title', 'description', 'words__text')
 
     def get_queryset(self) -> QuerySet[Collection]:
         """Returns all user's collections or favorites only."""

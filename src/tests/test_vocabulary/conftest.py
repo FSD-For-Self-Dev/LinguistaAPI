@@ -177,7 +177,7 @@ def word_tags(request):
                 WordTag, author=user, _quantity=_quantity, _fill_optional=True
             )
         if data:
-            source = [{'name': obj.name} for obj in objs]
+            source = [{'name': obj.name.lower()} for obj in objs]
             expected = source
             return (objs, source, expected)
         return objs

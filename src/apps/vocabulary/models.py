@@ -26,6 +26,14 @@ from apps.core.constants import (
     REGEX_TEXT_MASK,
     REGEX_HEXCOLOR_MASK,
     REGEX_HEXCOLOR_MASK_DETAIL,
+    REGEX_COLLECTIONS_TITLE_MASK,
+    REGEX_COLLECTIONS_TITLE_MASK_DETAIL,
+    REGEX_FORM_GROUP_NAME_MASK,
+    REGEX_FORM_GROUP_NAME_MASK_DETAIL,
+    REGEX_DEFINITIONS_TEXT_MASK,
+    REGEX_DEFINITIONS_TEXT_MASK_DETAIL,
+    REGEX_EXAMPLES_TEXT_MASK,
+    REGEX_EXAMPLES_TEXT_MASK_DETAIL,
 )
 from apps.core.validators import CustomRegexValidator
 from utils.fillers import slug_filler
@@ -247,7 +255,6 @@ class WordTag(
     name = models.CharField(
         _('Tag name'),
         max_length=VocabularyLengthLimits.MAX_TAG_LENGTH,
-        unique=True,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_TAG_LENGTH),
             CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
@@ -262,9 +269,17 @@ class WordTag(
         db_table_comment = _('Word or phrase tags')
         ordering = ('-created', '-modified')
         get_latest_by = ('created', 'modified')
+        constraints = [
+            models.UniqueConstraint(Lower('name'), 'author', name='unique_tag_name')
+        ]
 
     def __str__(self) -> str:
         return f'{self.name} (by {self.author})'
+
+    def save(self, *args, **kwargs) -> None:
+        """Reduce name to lowercase before instance save."""
+        self.name = self.name.lower()
+        return super().save(*args, **kwargs)
 
 
 class FormGroup(
@@ -288,7 +303,10 @@ class FormGroup(
         blank=False,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_FORMSGROUP_NAME_LENGTH),
-            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(
+                regex=REGEX_FORM_GROUP_NAME_MASK,
+                message=REGEX_FORM_GROUP_NAME_MASK_DETAIL,
+            ),
         ),
     )
     language = models.ForeignKey(
@@ -334,7 +352,7 @@ class FormGroup(
         return f'{self.name}'
 
     def save(self, *args, **kwargs) -> None:
-        """Capitalizes name text before instance save."""
+        """Capitalizes name before instance save."""
         self.name = self.name.capitalize()
         super().save(*args, **kwargs)
 
@@ -371,7 +389,7 @@ class WordTranslation(
         null=True,
     )
 
-    slugify_fields = ('text', ('author', 'username'))
+    slugify_fields = ('text', ('author', 'username'), ('language', 'name'))
 
     class Meta:
         verbose_name = _('Translation')
@@ -381,7 +399,10 @@ class WordTranslation(
         get_latest_by = ('created', 'modified')
         constraints = [
             models.UniqueConstraint(
-                Lower('text'), 'author', name='unique_word_translation_in_user_voc'
+                Lower('text'),
+                'author',
+                'language',
+                name='unique_word_translation_in_user_voc',
             )
         ]
 
@@ -410,7 +431,10 @@ class Definition(
         help_text=_('A definition of a word or phrase'),
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_DEFINITION_LENGTH),
-            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(
+                regex=REGEX_DEFINITIONS_TEXT_MASK,
+                message=REGEX_DEFINITIONS_TEXT_MASK_DETAIL,
+            ),
         ),
     )
     language = models.ForeignKey(
@@ -484,7 +508,9 @@ class UsageExample(
         help_text=_('An usage example of a word or phrase'),
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_EXAMPLE_LENGTH),
-            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(
+                regex=REGEX_EXAMPLES_TEXT_MASK, message=REGEX_EXAMPLES_TEXT_MASK_DETAIL
+            ),
         ),
     )
     language = models.ForeignKey(
@@ -655,7 +681,10 @@ class Collection(
         max_length=VocabularyLengthLimits.MAX_COLLECTION_TITLE_LENGTH,
         validators=(
             MinLengthValidator(VocabularyLengthLimits.MIN_COLLECTION_TITLE_LENGTH),
-            CustomRegexValidator(regex=REGEX_TEXT_MASK, message=REGEX_TEXT_MASK_DETAIL),
+            CustomRegexValidator(
+                regex=REGEX_COLLECTIONS_TITLE_MASK,
+                message=REGEX_COLLECTIONS_TITLE_MASK_DETAIL,
+            ),
         ),
     )
     description = models.CharField(
@@ -768,8 +797,7 @@ class WordTranslations(GetObjectModelMixin, WordRelatedModel):
 
     def __str__(self) -> str:
         return _(
-            f'`{self.word}` ({self.word.language.name}) is translated as '
-            f'`{self.translation}` ({self.translation.language.name}) '
+            f'`{self.word}` is translated as `{self.translation}` '
             f'(translation was added at {self.created:%Y-%m-%d})'
         )
 

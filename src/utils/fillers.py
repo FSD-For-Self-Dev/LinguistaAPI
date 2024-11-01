@@ -9,7 +9,7 @@ def slug_filler(sender, instance, *args, **kwargs) -> None:
     slugify_data = [
         (
             instance.__getattribute__(field[0]).__getattribute__(field[1])
-            if type(field) is tuple
+            if isinstance(field, tuple)
             else instance.__getattribute__(field)
         )
         for field in sender.slugify_fields

@@ -46,10 +46,24 @@ class GetObjectBySlugModelMixin:
             try:
                 value = (
                     kwargs.get(field[0]).__getattribute__(field[1])
-                    if type(field) is tuple
+                    if isinstance(field, tuple)
                     else kwargs.get(field)
                 )
                 _slugify_data.append(value)
+            except AttributeError:
+                instance: Type[models.Model] = kwargs.get('instance', None)
+                if instance:
+                    value = (
+                        instance.__getattribute__(field[0]).__getattribute__(field[1])
+                        if isinstance(field, tuple)
+                        else instance.__getattribute__(field)
+                    )
+                    _slugify_data.append(value)
+                else:
+                    raise AssertionError(
+                        f'Can not get slug from data. Make sure {field} are passed in '
+                        'data or instance.'
+                    )
             except KeyError:
                 raise AssertionError(
                     f'Can not get slug from data. Make sure {field} are passed in '
@@ -58,9 +72,11 @@ class GetObjectBySlugModelMixin:
         return cls.slugify_func(*_slugify_data)
 
     @classmethod
-    def get_object(cls, data: OrderedDict) -> Type[models.Model] | None:
+    def get_object(
+        cls, data: OrderedDict, instance: Type[models.Model] = None
+    ) -> Type[models.Model] | None:
         """Returns object gotten by slug or None if ObjectDoesNotExist is raised."""
-        slug = cls.get_slug_from_data(**data)
+        slug = cls.get_slug_from_data(**data, instance=instance)
         try:
             return cls.objects.get(slug=slug)
         except ObjectDoesNotExist:

@@ -32,7 +32,13 @@ class LanguageAdmin(TabbedTranslationAdmin):
 
 @admin.register(LanguageCoverImage)
 class LanguageCoverImageAdmin(admin.ModelAdmin):
-    pass
+    list_display = (
+        'language',
+        'image',
+        'image_size',
+    )
+    search_fields = ('language__name',)
+    ordering = ('-language__sorting', 'language__name')
 
 
 @admin.register(UserLearningLanguage)

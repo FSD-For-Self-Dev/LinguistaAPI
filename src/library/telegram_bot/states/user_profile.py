@@ -1,19 +1,17 @@
 """User profile states."""
 
-from aiogram.fsm.state import State
-
-from .core import PreviousState
+from aiogram.fsm.state import State, StatesGroup
 
 
-user_profile_retrieve = State()
+class UserProfile(StatesGroup):
+    retrieve = State()
+    update_options = State()
+    profile_image_update = State()
+    native_languages_update = State()
+    first_name_update = State()
+    learning_languages_info = State()
+    native_languages_info = State()
 
 
-class UserProfileUpdate(PreviousState):
-    options = State()
-    profile_image = State()
-    native_languages = State()
-    first_name = State()
-
-
-class AddLearningLanguage(PreviousState):
+class AddLearningLanguage(StatesGroup):
     language = State()

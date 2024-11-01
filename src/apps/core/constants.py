@@ -11,7 +11,31 @@ REGEX_TEXT_MASK = r"^(\p{L}+)([\p{L}-!?.,:/&'`’() ]*)$"
 REGEX_TEXT_MASK_DETAIL = _(
     'Acceptable characters: Letters from any language, '
     'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
-    'Make sure word begin with a letter.'
+    'Make sure text begins with a letter.'
+)
+
+REGEX_COLLECTIONS_TITLE_MASK = r"^([\p{L}-!?.,:/&'`’() \d]*)$"
+REGEX_COLLECTIONS_TITLE_MASK_DETAIL = _(
+    'Acceptable characters: Letters from any language, Digits '
+    'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
+)
+
+REGEX_FORM_GROUP_NAME_MASK = r"^([\p{L}-!?.,:/&'`’() \d]*)$"
+REGEX_FORM_GROUP_NAME_MASK_DETAIL = _(
+    'Acceptable characters: Letters from any language, Digits '
+    'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
+)
+
+REGEX_EXAMPLES_TEXT_MASK = r"^([\p{L}-!?.,:/&'`’() \d]*)$"
+REGEX_EXAMPLES_TEXT_MASK_DETAIL = _(
+    'Acceptable characters: Letters from any language, Digits '
+    'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
+)
+
+REGEX_DEFINITIONS_TEXT_MASK = r"^([\p{L}-!?.,:/&'`’() \d]*)$"
+REGEX_DEFINITIONS_TEXT_MASK_DETAIL = _(
+    'Acceptable characters: Letters from any language, Digits '
+    'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
 )
 
 REGEX_HEXCOLOR_MASK = r'^#[\w]+$'
@@ -75,6 +99,9 @@ class ExceptionDetails:
             'Language must be in your learning or native languages.'
         )
         LANGUAGE_MUST_BE_NATIVE = _('Language must be in your native languages.')
+        EMPTY_NATIVE_LANGUAGE = _(
+            'Add native languages to your profile to create translations.'
+        )
 
     class Exercises:
         """Exercises app exception details."""
@@ -162,18 +189,18 @@ class AmountLimits:
         MAX_FORM_GROUPS_AMOUNT = 4
 
         class Details:
-            TYPES_AMOUNT_EXCEEDED = _('Word types amount limit exceeded.')
-            TAGS_AMOUNT_EXCEEDED = _('Word tags amount limit exceeded.')
-            TRANSLATIONS_AMOUNT_EXCEEDED = _('Word translations amount limit exceeded.')
-            EXAMPLES_AMOUNT_EXCEEDED = _('Word examples amount limit exceeded.')
-            DEFINITIONS_AMOUNT_EXCEEDED = _('Word definitions amount limit exceeded.')
-            FORMS_AMOUNT_EXCEEDED = _('Word forms amount limit exceeded.')
-            IMAGES_AMOUNT_EXCEEDED = _('Word image-associations amount limit exceeded.')
-            QUOTES_AMOUNT_EXCEEDED = _('Word quote-associations amount limit exceeded.')
-            SYNONYMS_AMOUNT_EXCEEDED = _('Word synonyms amount limit exceeded.')
-            ANTONYMS_AMOUNT_EXCEEDED = _('Word antonyms amount limit exceeded.')
-            SIMILARS_AMOUNT_EXCEEDED = _('Similar words amount limit exceeded.')
-            FORM_GROUPS_AMOUNT_EXCEEDED = _('Word form groups amount limit exceeded.')
+            TYPES_AMOUNT_EXCEEDED = _('Word types amount limit exceeded')
+            TAGS_AMOUNT_EXCEEDED = _('Word tags amount limit exceeded')
+            TRANSLATIONS_AMOUNT_EXCEEDED = _('Word translations amount limit exceeded')
+            EXAMPLES_AMOUNT_EXCEEDED = _('Word examples amount limit exceeded')
+            DEFINITIONS_AMOUNT_EXCEEDED = _('Word definitions amount limit exceeded')
+            FORMS_AMOUNT_EXCEEDED = _('Word forms amount limit exceeded')
+            IMAGES_AMOUNT_EXCEEDED = _('Word image-associations amount limit exceeded')
+            QUOTES_AMOUNT_EXCEEDED = _('Word quote-associations amount limit exceeded')
+            SYNONYMS_AMOUNT_EXCEEDED = _('Word synonyms amount limit exceeded')
+            ANTONYMS_AMOUNT_EXCEEDED = _('Word antonyms amount limit exceeded')
+            SIMILARS_AMOUNT_EXCEEDED = _('Similar words amount limit exceeded')
+            FORM_GROUPS_AMOUNT_EXCEEDED = _('Word form groups amount limit exceeded')
 
     class Languages:
         MAX_NATIVE_LANGUAGES_AMOUNT = 2
@@ -181,10 +208,10 @@ class AmountLimits:
 
         class Details:
             LEARNING_LANGUAGES_AMOUNT_EXCEEDED = _(
-                'Learning languages amount limit exceeded.'
+                'Learning languages amount limit exceeded'
             )
             NATIVE_LANGUAGES_AMOUNT_EXCEEDED = _(
-                'Native languages amount limit exceeded.'
+                'Native languages amount limit exceeded'
             )
 
     class Exercises:
@@ -196,15 +223,15 @@ class AmountLimits:
         MIN_REPETITIONS_AMOUNT_LIMIT = 1
 
         class Details:
-            WORDS_AMOUNT_EXCEEDED = _('Words amount limit exceeded for this exercise.')
+            WORDS_AMOUNT_EXCEEDED = _('Words amount limit exceeded for this exercise')
             WORD_SETS_AMOUNT_EXCEEDED = _(
-                'Word sets amount limit exceeded for this exercise.'
+                'Word sets amount limit exceeded for this exercise'
             )
-            MAX_ANSWER_TIME_EXCEEDED = _('Maximum time limit exceeded.')
-            MIN_ANSWER_TIME_EXCEEDED = _('Minimum time limit exceeded.')
+            MAX_ANSWER_TIME_EXCEEDED = _('Maximum time limit exceeded')
+            MIN_ANSWER_TIME_EXCEEDED = _('Minimum time limit exceeded')
             MAX_REPETITIONS_LIMIT_EXCEEDED = _(
-                'Maximum repetitions amount limit exceeded.'
+                'Maximum repetitions amount limit exceeded'
             )
             MIN_REPETITIONS_LIMIT_EXCEEDED = _(
-                'Minimum repetitions amount limit exceeded.'
+                'Minimum repetitions amount limit exceeded'
             )

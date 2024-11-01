@@ -22,23 +22,23 @@ from dotenv import load_dotenv
 from keyboards.core import initial_kb, cancel_button, cancel_inline_kb
 from keyboards.user_profile import profile_update_kb
 from states.user_profile import (
-    UserProfileUpdate,
+    UserProfile,
     AddLearningLanguage,
-    user_profile_retrieve,
 )
-from handlers.urls import (
+
+from ..urls import (
     AVAILABLE_LANGUAGES_URL,
     LEARNING_LANGUAGES_URL,
     USER_PROFILE_URL,
     LOG_OUT_URL,
 )
-from handlers.utils import (
-    get_authentication_headers,
-    send_user_profile_answer,
-    send_error_message,
+from ..utils import (
     api_request_logging,
-    send_unauthorized_response,
+    get_authentication_headers,
+    send_error_message,
     send_validation_errors,
+    send_user_profile_answer,
+    send_unauthorized_response,
 )
 
 
@@ -55,29 +55,32 @@ router = Router()
 
 @router.message(F.text == 'Профиль')
 async def get_user_profile(message: Message, state: FSMContext) -> None:
-    """Return user profile data."""
+    """Sends user profile data."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     async with aiohttp.ClientSession() as session:
         api_request_logging(USER_PROFILE_URL, headers=headers)
         async with session.get(url=USER_PROFILE_URL, headers=headers) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
-                    await state.set_state(user_profile_retrieve)
+                    response_data: dict = await response.json()
+                    await state.set_state(UserProfile.retrieve)
                     await send_user_profile_answer(
                         session, message, state, response_data, headers=headers
                     )
+                case HTTPStatus.UNAUTHORIZED:
+                    await send_unauthorized_response(message, state)
+                    return None
                 case _:
                     await send_error_message(message, state, response)
 
 
 @router.message(F.text == 'Редактировать профиль')
 async def update_user_profile(message: Message, state: FSMContext) -> None:
-    """Set state, send options to choose."""
-    await state.set_state(UserProfileUpdate.options)
+    """Sets state, sends options to choose."""
+    await state.set_state(UserProfile.update_options)
     await state.update_data(previous_state_handler=get_user_profile)
 
     await message.answer(
@@ -88,8 +91,8 @@ async def update_user_profile(message: Message, state: FSMContext) -> None:
 
 @router.message(F.text == 'Обновить фото профиля')
 async def update_profile_image(message: Message, state: FSMContext) -> None:
-    """Set state, wait for image file from user."""
-    await state.set_state(UserProfileUpdate.profile_image)
+    """Sets state that awaits image file."""
+    await state.set_state(UserProfile.profile_image_update)
     await state.update_data(previous_state_handler=update_user_profile)
 
     await message.answer(
@@ -98,9 +101,9 @@ async def update_profile_image(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(UserProfileUpdate.profile_image)
+@router.message(UserProfile.profile_image_update)
 async def update_profile_image_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve, download profile image file, update state data, send request to api."""
+    """Accepts profile image file, calls download, updates state data, makes request to API, sends user profile updated data."""
 
     if not message.photo:
         await message.answer(
@@ -112,15 +115,16 @@ async def update_profile_image_proceed(message: Message, state: FSMContext) -> N
         )
         return None
 
-    await state.update_data(profile_image=message.photo)
-
     image_file_id = message.photo[-1].file_id
+    await state.update_data(
+        profile_image=message.photo[-1], user_profile_image_id=image_file_id
+    )
     file_in_io = io.BytesIO()
     await message.bot.download(file=image_file_id, destination=file_in_io)
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     encoded_image = base64.b64encode(file_in_io.getvalue()).decode('utf-8')
     request_data = {'image': encoded_image}
@@ -134,9 +138,9 @@ async def update_profile_image_proceed(message: Message, state: FSMContext) -> N
         ) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await message.answer(emojize('Фото профиля обновлено :sparkles:'))
-                    await state.set_state(user_profile_retrieve)
+                    await state.set_state(UserProfile.retrieve)
                     await send_user_profile_answer(
                         session, message, state, response_data, headers=headers
                     )
@@ -150,8 +154,8 @@ async def update_profile_image_proceed(message: Message, state: FSMContext) -> N
 
 @router.message(F.text == 'Изменить имя')
 async def update_first_name(message: Message, state: FSMContext) -> None:
-    """Set state, wait for message from user."""
-    await state.set_state(UserProfileUpdate.first_name)
+    """Sets state that awaits first_name."""
+    await state.set_state(UserProfile.first_name_update)
     await state.update_data(previous_state_handler=update_user_profile)
 
     await message.answer(
@@ -162,12 +166,12 @@ async def update_first_name(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(UserProfileUpdate.first_name)
+@router.message(UserProfile.first_name_update)
 async def update_first_name_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve first name, update state data, send request to api."""
+    """Accepts first name value, updates state data, makes request to API, sends user profile updated data."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     await state.update_data(first_name=message.text)
 
@@ -182,9 +186,9 @@ async def update_first_name_proceed(message: Message, state: FSMContext) -> None
         ) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await message.answer(emojize('Имя обновлено :sparkles:'))
-                    await state.set_state(user_profile_retrieve)
+                    await state.set_state(UserProfile.retrieve)
                     await send_user_profile_answer(
                         session, message, state, response_data, headers=headers
                     )
@@ -198,8 +202,8 @@ async def update_first_name_proceed(message: Message, state: FSMContext) -> None
 
 @router.message(F.text == 'Изменить родные языки')
 async def update_native_languages(message: Message, state: FSMContext) -> None:
-    """Set state, wait for message from user."""
-    await state.set_state(UserProfileUpdate.native_languages)
+    """Sets state that awaits native languages."""
+    await state.set_state(UserProfile.native_languages_update)
     await state.update_data(previous_state_handler=update_user_profile)
 
     await message.answer(
@@ -211,12 +215,12 @@ async def update_native_languages(message: Message, state: FSMContext) -> None:
     )
 
 
-@router.message(UserProfileUpdate.native_languages)
+@router.message(UserProfile.native_languages_update)
 async def native_languages_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve languages, update state data, send request to api."""
+    """Accepts native languages value, updates state data, makes request to api, sends user profile updated data."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     languages = message.text
     await state.update_data(native_languages=languages)
@@ -231,7 +235,7 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
             case _:
                 split_languages = languages.split(symb)
 
-    # convert to api expected type
+    # convert to api expected type if no split symbols were found
     if not split_languages:
         split_languages = [languages]
 
@@ -246,9 +250,9 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
         ) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await message.answer(emojize('Родные языки обновлены :sparkles:'))
-                    await state.set_state(user_profile_retrieve)
+                    await state.set_state(UserProfile.retrieve)
                     await send_user_profile_answer(
                         session, message, state, response_data, headers=headers
                     )
@@ -257,7 +261,7 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
                 case HTTPStatus.BAD_REQUEST:
                     await send_validation_errors(message, state, response)
                 case HTTPStatus.CONFLICT:
-                    # response_data = await response.json()
+                    # response_data: dict = await response.json()
                     # detail_message = response_data.get('detail')  # use error this when multilanguages will be provided (interface language switch)
                     await message.answer('Количество родных языков превышено.')
                 case _:
@@ -266,13 +270,13 @@ async def native_languages_proceed(message: Message, state: FSMContext) -> None:
 
 @router.message(F.text == 'Добавить изучаемый язык')
 async def add_learning_language(message: Message, state: FSMContext) -> None:
-    """Set state, wait for message from user or button callback."""
+    """Sets state that awaits learning language name in message or button callback."""
     await state.set_state(AddLearningLanguage.language)
     await state.update_data(previous_state_handler=get_user_profile)
 
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     # get available languages from API
     async with aiohttp.ClientSession() as session:
@@ -282,14 +286,16 @@ async def add_learning_language(message: Message, state: FSMContext) -> None:
         ) as response:
             match response.status:
                 case HTTPStatus.OK:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     available_languages_names = [
                         language['name'] for language in response_data['results']
                     ]
                 case HTTPStatus.UNAUTHORIZED:
                     await send_unauthorized_response(message, state)
+                    return None
                 case _:
                     await send_error_message(message, state, response)
+                    return None
 
     # generate inline keyboard
     keyboard_builder = InlineKeyboardBuilder()
@@ -317,7 +323,7 @@ async def add_learning_language_query(
     """Update state data, send request to api."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     await state.update_data(language=language_name)
 
@@ -332,7 +338,7 @@ async def add_learning_language_query(
         ) as response:
             match response.status:
                 case HTTPStatus.CREATED:
-                    response_data = await response.json()
+                    response_data: dict = await response.json()
                     await message.answer(
                         emojize('Язык добавлен в изучаемые :sparkles:')
                     )
@@ -342,8 +348,8 @@ async def add_learning_language_query(
                     ) as response:
                         match response.status:
                             case HTTPStatus.OK:
-                                response_data = await response.json()
-                                await state.set_state(user_profile_retrieve)
+                                response_data: dict = await response.json()
+                                await state.set_state(UserProfile.retrieve)
                                 await send_user_profile_answer(
                                     session,
                                     message,
@@ -358,7 +364,7 @@ async def add_learning_language_query(
                 case HTTPStatus.BAD_REQUEST:
                     await send_validation_errors(message, state, response)
                 case HTTPStatus.CONFLICT:
-                    # response_data = await response.json()
+                    # response_data: dict = await response.json()
                     # detail_message = response_data.get('detail')  # use error this when multilanguages will be provided (interface language switch)
                     await message.answer('Количество изучаемых языков превышено.')
                 case _:
@@ -366,8 +372,10 @@ async def add_learning_language_query(
 
 
 @router.callback_query(F.data.startswith('add_language'))
-async def process_callback(callback_query: CallbackQuery, state: FSMContext) -> None:
-    """Recieve language from button callback."""
+async def add_learning_language_callback(
+    callback_query: CallbackQuery, state: FSMContext
+) -> None:
+    """Accepts learning language from button callback."""
     language_name = callback_query.data.split('_')[-1]
     await callback_query.answer(f'Выбран язык: {language_name}')
     await add_learning_language_query(callback_query.message, state, language_name)
@@ -375,17 +383,17 @@ async def process_callback(callback_query: CallbackQuery, state: FSMContext) -> 
 
 @router.message(AddLearningLanguage.language)
 async def add_learning_language_proceed(message: Message, state: FSMContext) -> None:
-    """Recieve language from message text."""
+    """Accepts learning language name from message text."""
     language_name = message.text
     await add_learning_language_query(message, state, language_name)
 
 
 @router.message(F.text == 'Выйти из аккаунта')
 async def logout(message: Message, state: FSMContext) -> None:
-    """Clear state, send logout api request."""
+    """Clears state, makes logout API request, sends initial keyboard."""
     state_data = await state.get_data()
     token = state_data.get('token')
-    headers = get_authentication_headers(token=token)
+    headers = await get_authentication_headers(token=token)
 
     await state.clear()
 

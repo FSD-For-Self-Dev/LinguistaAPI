@@ -22,7 +22,7 @@ from api.v1.vocabulary.serializers import (
 )
 from api.v1.languages.serializers import (
     LanguageSerializer,
-    LearningLanguageSerailizer,
+    LearningLanguageSerializer,
     NativeLanguageSerailizer,
     LanguageCoverImageSerailizer,
 )
@@ -34,7 +34,7 @@ from ..schema.responses import (
 
 data = {
     'LanguageViewSet': {
-        'tags': ['learning_languages'],
+        'tags': ['languages'],
         'learning_languages_list': {
             'summary': 'Просмотр списка изучаемых языков пользователя',
             'description': (
@@ -85,6 +85,16 @@ data = {
                         'Пример использования: `api/languages/?search=English`.'
                     ),
                 ),
+                OpenApiParameter(
+                    'no_words',
+                    OpenApiTypes.ANY,
+                    OpenApiParameter.QUERY,
+                    description=(
+                        'Убирает `last_10_words` из тела ответа, если передан. '
+                        'Добавлен для оптимизации запросов. '
+                        'Пример использования: `api/languages/?no_words`.'
+                    ),
+                ),
             ],
         },
         'learning_language_create': {
@@ -106,7 +116,7 @@ data = {
                     ),
                 ),
             ],
-            'request': LearningLanguageSerailizer(many=True),
+            'request': LearningLanguageSerializer(many=True),
             'responses': {
                 status.HTTP_201_CREATED: OpenApiResponse(
                     description=(
@@ -205,7 +215,7 @@ data = {
                         'Возвращается информация изучаемого языка и список слов '
                         '`words` с пагинацией.'
                     ),
-                    response=LearningLanguageSerailizer,
+                    response=LearningLanguageSerializer,
                     examples=[
                         OpenApiExample(
                             name='one word',
@@ -314,7 +324,7 @@ data = {
                         'Возвращается информация изучаемого языка и список коллекций '
                         '`collections` с пагинацией.'
                     ),
-                    response=LearningLanguageSerailizer,
+                    response=LearningLanguageSerializer,
                     examples=[
                         OpenApiExample(
                             name='one collection',
@@ -409,15 +419,16 @@ data = {
                 ),
             ],
         },
-        'all_languages_global_list': {
-            'summary': 'Просмотр списка всех языков',
+        'languages_available_for_learning_list': {
+            'summary': 'Просмотр списка языков доступных для изучения',
             'description': (
-                'Возвращает список всех языков мира с сортировкой по '
-                'популярности изучения, названию.'
+                'Возвращает список языков, доступных для изучения на платформе, '
+                'которые пользователь еще не добавил в изучаемые языки. '
             ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: LanguageSerializer(many=True),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
             'parameters': [
                 OpenApiParameter(
@@ -440,16 +451,70 @@ data = {
                 ),
             ],
         },
-        'languages_available_for_learning_list': {
-            'summary': 'Просмотр списка языков доступных для изучения',
+        'language_cover_choices_retrieve': {
+            'summary': 'Просмотр доступных картинок для обложки изучаемого языка',
             'description': (
-                'Возвращает список языков, доступных для изучения на платформе, '
-                'которые пользователь еще не добавил в изучаемые языки. '
+                'Возвращает список доступных картинок для смены обложки выбранного '
+                'изучаемого языка. '
+                'Требуется авторизация.'
+            ),
+            'request': None,
+            'responses': {
+                status.HTTP_200_OK: LanguageCoverImageSerailizer(many=True),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
+        },
+        'language_cover_set': {
+            'summary': 'Обновление обложки изучаемого языка',
+            'description': (
+                'Обновляет обложку выбранного изучаемого языка картинкой с переданным '
+                'id. '
+                'Требуется авторизация.'
+            ),
+            'responses': {
+                status.HTTP_201_CREATED: OpenApiResponse(
+                    response=LearningLanguageSerializer,
+                    examples=[
+                        OpenApiExample(
+                            name='no words',
+                            value={
+                                'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
+                                'slug': 'e6EyeJGM7ggQyxhj54SMb6J8Ni3B4IZZo8',
+                                'language': {
+                                    'id': 'string',
+                                    'name': 'string',
+                                    'name_local': 'string',
+                                    'flag_icon': 'string',
+                                },
+                                'level': 'string',
+                                'cover': 'link/to/image.jpg',
+                                'cover_height': 2500,
+                                'cover_width': 2500,
+                                'words_count': 0,
+                                'inactive_words_count': 0,
+                                'active_words_count': 0,
+                                'mastered_words_count': 0,
+                                'words': [],
+                            },
+                        ),
+                    ],
+                ),
+                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
+            },
+        },
+        # other methods
+    },
+    'GlobalLanguageViewSet': {
+        'tags': ['global_languages'],
+        'all_languages_global_list': {
+            'summary': 'Просмотр списка всех языков',
+            'description': (
+                'Возвращает список всех языков мира с сортировкой по '
+                'популярности изучения, названию.'
             ),
             'request': None,
             'responses': {
                 status.HTTP_200_OK: LanguageSerializer(many=True),
-                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
             'parameters': [
                 OpenApiParameter(
@@ -503,57 +568,5 @@ data = {
                 ),
             ],
         },
-        'language_cover_choices_retrieve': {
-            'summary': 'Просмотр доступных картинок для обложки изучаемого языка',
-            'description': (
-                'Возвращает список доступных картинок для смены обложки выбранного '
-                'изучаемого языка. '
-                'Требуется авторизация.'
-            ),
-            'request': None,
-            'responses': {
-                status.HTTP_200_OK: LanguageCoverImageSerailizer(many=True),
-                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
-            },
-        },
-        'language_cover_set': {
-            'summary': 'Обновление обложки изучаемого языка',
-            'description': (
-                'Обновляет обложку выбранного изучаемого языка картинкой с переданным '
-                'id. '
-                'Требуется авторизация.'
-            ),
-            'responses': {
-                status.HTTP_201_CREATED: OpenApiResponse(
-                    response=LearningLanguageSerailizer,
-                    examples=[
-                        OpenApiExample(
-                            name='no words',
-                            value={
-                                'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
-                                'slug': 'e6EyeJGM7ggQyxhj54SMb6J8Ni3B4IZZo8',
-                                'language': {
-                                    'id': 'string',
-                                    'name': 'string',
-                                    'name_local': 'string',
-                                    'flag_icon': 'string',
-                                },
-                                'level': 'string',
-                                'cover': 'link/to/image.jpg',
-                                'cover_height': 2500,
-                                'cover_width': 2500,
-                                'words_count': 0,
-                                'inactive_words_count': 0,
-                                'active_words_count': 0,
-                                'mastered_words_count': 0,
-                                'words': [],
-                            },
-                        ),
-                    ],
-                ),
-                status.HTTP_401_UNAUTHORIZED: unauthorized_response,
-            },
-        },
-        # other methods
     },
 }

@@ -81,7 +81,7 @@ class TestExercisesEndpoints:
             extra_data={'available': True, 'name': 'translator', 'slug': 'translator'}
         )[0]
         word = baker.make(Word, author=user)
-        translation = baker.make(WordTranslation, author=user)
+        translation = baker.make(WordTranslation, author=user, _fill_optional=True)
         word.translations.add(translation)
 
         response = auth_api_client(user).get(
@@ -97,7 +97,7 @@ class TestExercisesEndpoints:
             extra_data={'available': True, 'name': 'translator', 'slug': 'translator'}
         )[0]
         word = baker.make(Word, author=user)
-        translation = baker.make(WordTranslation, author=user)
+        translation = baker.make(WordTranslation, author=user, _fill_optional=True)
         word.translations.add(translation)
         other_word = baker.make(Word, author=user)
         right_collection = baker.make(Collection, author=user)

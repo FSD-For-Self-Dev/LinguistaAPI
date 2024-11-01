@@ -11,6 +11,7 @@ from django.db.models.query import QuerySet
 from django.db.models.fields.files import ImageFieldFile
 
 from rest_framework import serializers
+from rest_framework.fields import empty
 from drf_spectacular.utils import extend_schema_field
 
 from api.v1.core.exceptions import (
@@ -34,7 +35,7 @@ class AlreadyExistSerializerHandler:
     already_exist_detail = ObjectAlreadyExist.default_detail
 
     def check_existing_obj(
-        self, data: dict | OrderedDict, *args, **kwargs
+        self: serializers.ModelSerializer, data: dict | OrderedDict, *args, **kwargs
     ) -> Type[Model] | None:
         """
         Check if object with passed data exists.
@@ -63,9 +64,12 @@ class AlreadyExistSerializerHandler:
                     return _existing_obj
 
                 logger.error('ObjectAlreadyExist exception occured.')
+                model_name = str(meta_model._meta.model_name).lower()
                 raise ObjectAlreadyExist(
+                    code=f'{model_name}_already_exist',
                     detail=self.already_exist_detail,
                     existing_object=_existing_obj,
+                    new_object_data=self.initial_data,
                     serializer_class=self.__class__,
                 )
         else:
@@ -82,7 +86,9 @@ class AlreadyExistSerializerHandler:
 
         return None
 
-    def create(self, validated_data: OrderedDict, *args, **kwargs) -> Type[Model]:
+    def create(
+        self: serializers.ModelSerializer, validated_data: OrderedDict, *args, **kwargs
+    ) -> Type[Model]:
         """
         Check if there is already existing object with same data before create.
         Returns existing object if matches data, else run create.
@@ -98,23 +104,30 @@ class AlreadyExistSerializerHandler:
         )
 
     def update(
-        self, instance: Type[Model], validated_data: OrderedDict, *args, **kwargs
+        self: serializers.ModelSerializer,
+        instance: Type[Model],
+        validated_data: OrderedDict,
+        *args,
+        **kwargs,
     ) -> Type[Model]:
         """
         Check if there is already existing object with same data
         that is not the current instance before update (avoid IntegrityError).
         If true, ObjectAlreadyExist custom exception is raised.
         """
+        logger.debug(f'Check if object with passed data exist: {validated_data}')
         meta_model = self.Meta.model
         if hasattr(meta_model, 'get_object'):
-            _existing_obj = meta_model.get_object(validated_data)
+            _existing_obj = meta_model.get_object(validated_data, instance)
             if _existing_obj and instance != _existing_obj:
-                try:
-                    obj_lookup = _existing_obj.slug
-                except AttributeError:
-                    obj_lookup = _existing_obj.id
+                logger.error('ObjectAlreadyExist exception occured.')
+                model_name = str(meta_model._meta.model_name).lower()
                 raise ObjectAlreadyExist(
-                    {'detail': self.already_exist_detail, 'obj_lookup': obj_lookup}
+                    code=f'{model_name}_already_exist',
+                    detail=self.already_exist_detail,
+                    existing_object=_existing_obj,
+                    new_object_data=self.initial_data,
+                    serializer_class=self.__class__,
                 )
         return super().update(instance, validated_data)
 
@@ -184,7 +197,8 @@ class ListUpdateSerializer(serializers.ListSerializer):
         If invalid id passed, ObjectDoesNotExist exception may be raised.
         """
         child_objects = []
-        for data in validated_data:
+        for data_index, data in enumerate(validated_data):
+            self.child.initial_data = self.initial_data[data_index]
             if data.get('id', None):
                 # perform update
                 pk = data['id']
@@ -193,10 +207,30 @@ class ListUpdateSerializer(serializers.ListSerializer):
                 if author:
                     other_args = {'author': author}
                 obj = get_object_by_pk(self.child.Meta.model, pk, other_args=other_args)
-                child_objects.append(self.child.update(obj, data))
+                try:
+                    child_objects.append(self.child.update(obj, data))
+                except ObjectAlreadyExist as exception:
+                    raise ObjectAlreadyExist(
+                        detail=exception.detail,
+                        code=exception.code,
+                        existing_object=exception.existing_object,
+                        new_object_data=exception.new_object_data,
+                        serializer_class=exception.serializer_class,
+                        conflict_object_index=data_index,
+                    )
             else:
                 # perform create
-                child_objects.append(self.child.create(data))
+                try:
+                    child_objects.append(self.child.create(data))
+                except ObjectAlreadyExist as exception:
+                    raise ObjectAlreadyExist(
+                        detail=exception.detail,
+                        code=exception.code,
+                        existing_object=exception.existing_object,
+                        new_object_data=exception.new_object_data,
+                        serializer_class=exception.serializer_class,
+                        conflict_object_index=data_index,
+                    )
         return child_objects
 
     def update(
@@ -229,7 +263,8 @@ class ListUpdateSerializer(serializers.ListSerializer):
             ).delete()
 
         child_objects = []
-        for data in validated_data:
+        for data_index, data in enumerate(validated_data):
+            self.child.initial_data = self.initial_data[data_index]
             if data.get('id', None):
                 # perform update
                 pk = data['id']
@@ -241,12 +276,44 @@ class ListUpdateSerializer(serializers.ListSerializer):
                     pk,
                     get_object_by_pk(self.child.Meta.model, pk, other_args=other_args),
                 )
-                child_objects.append(self.child.update(obj, data))
+                try:
+                    child_objects.append(self.child.update(obj, data))
+                except ObjectAlreadyExist as exception:
+                    raise ObjectAlreadyExist(
+                        detail=exception.detail,
+                        code=exception.code,
+                        existing_object=exception.existing_object,
+                        new_object_data=exception.new_object_data,
+                        serializer_class=exception.serializer_class,
+                        conflict_object_index=data_index,
+                    )
             else:
-                # perform create
-                child_objects.append(self.child.create(data))
+                # handle defaults in nested data and perform create
+                data = self.fill_default_values(data)
+                try:
+                    child_objects.append(self.child.create(data))
+                except ObjectAlreadyExist as exception:
+                    raise ObjectAlreadyExist(
+                        detail=exception.detail,
+                        code=exception.code,
+                        existing_object=exception.existing_object,
+                        new_object_data=exception.new_object_data,
+                        serializer_class=exception.serializer_class,
+                        conflict_object_index=data_index,
+                    )
 
         return child_objects
+
+    def fill_default_values(self, data: dict) -> dict:
+        """
+        Fills defauls values if nested serializer fields have defaults.
+        Calls when nested objects are creating within updating parent instance.
+        """
+        for field_name, field in self.child.fields.items():
+            field_data = data.get(field_name)
+            if field.default != empty and not field_data:
+                data[field_name] = field.default(field)
+        return data
 
 
 class NestedSerializerMixin(serializers.ModelSerializer):
@@ -262,7 +329,7 @@ class NestedSerializerMixin(serializers.ModelSerializer):
 
     def create_child_objects(
         self,
-        serializer: Type[serializers.BaseSerializer],
+        serializer: serializers.ModelSerializer | ListUpdateSerializer,
         data: OrderedDict,
         instance: Type[Model] | None = None,
     ) -> list[Type[Model]] | Type[Model]:
@@ -277,7 +344,7 @@ class NestedSerializerMixin(serializers.ModelSerializer):
     def set_child_data_to_instance(
         self,
         instance: Type[Model],
-        nested_serializers_data: dict[str, Type[serializers.BaseSerializer]],
+        nested_serializers_data: dict[str, serializers.Serializer],
     ) -> None:
         """
         For each child data initialize the child serializer, set parent data
@@ -292,6 +359,10 @@ class NestedSerializerMixin(serializers.ModelSerializer):
             self.set_child_context(
                 serializer, 'request', self.context.get('request', None)
             )
+            try:
+                self.set_child_initial_data(serializer, self.initial_data[key])
+            except KeyError:
+                pass
             _child_obj = self.create_child_objects(serializer, data, instance=instance)
             if (
                 hasattr(self.Meta, 'objs_related_names')
@@ -319,16 +390,27 @@ class NestedSerializerMixin(serializers.ModelSerializer):
             self.set_child_context(
                 serializer, 'request', self.context.get('request', None)
             )
+            try:
+                self.set_child_initial_data(serializer, self.initial_data[key])
+            except KeyError:
+                pass
             _child_obj = self.create_child_objects(serializer, data)
             validated_data[key] = _child_obj
         return validated_data
 
     @staticmethod
     def set_child_context(
-        child: type[serializers.BaseSerializer], context_attr: str, data: Any
+        child: serializers.Serializer, context_attr: str, data: Any
     ) -> None:
         """Pass context to child serializer."""
         child.context[context_attr] = data
+
+    @staticmethod
+    def set_child_initial_data(
+        child: serializers.Serializer, data: dict
+    ) -> serializers.Serializer:
+        """Pass context to child serializer."""
+        child.initial_data = data
 
     @transaction.atomic
     def create(
@@ -375,6 +457,7 @@ class NestedSerializerMixin(serializers.ModelSerializer):
             self.set_child_context(
                 serializer, 'request', self.context.get('request', None)
             )
+            self.set_child_initial_data(serializer, self.initial_data[key])
             key = serializer.source if serializer.source else key
             match serializer:
                 case ListUpdateSerializer():
@@ -472,7 +555,7 @@ class FavoriteSerializerMixin(serializers.ModelSerializer):
                 **{self.Meta.favorite_model_field: instance},
                 user=self.context['request'].user,
             )
-        if not favorite and current_favorite:
+        if favorite is False and current_favorite:
             current_favorite.delete()
         return instance
 

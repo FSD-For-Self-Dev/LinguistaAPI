@@ -109,6 +109,7 @@ class Language(WordsCountMixin, models.Model):
         verbose_name_plural = _('Languages')
         db_table_comment = _('Languages')
         ordering = ('-sorting', 'name', 'isocode')
+        get_latest_by = ('name',)
 
     def __str__(self) -> str:
         return f'{self.name} ({self.name_local})'
@@ -155,6 +156,10 @@ class LanguageCoverImage(CreatedModel, ModifiedModel):
         if self.image:
             self.image = compress(self.image)
         return super(LanguageCoverImage, self).save(*args, **kwargs)
+
+    def image_size(self) -> int:
+        """Returns image size."""
+        return f'{round(self.image.size / 1024, 3)} KB'
 
 
 class UserLearningLanguage(

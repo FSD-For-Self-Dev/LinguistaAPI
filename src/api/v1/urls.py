@@ -28,7 +28,7 @@ from .vocabulary.views import (
 )
 from .users.views import UserViewSet
 from .exercises.views import ExerciseViewSet
-from .languages.views import LanguageViewSet
+from .languages.views import LanguageViewSet, GlobalLanguageViewSet
 
 router = routers.DefaultRouter()
 
@@ -50,6 +50,7 @@ router.register('associations', AssociationViewSet, basename='associations')
 router.register('collections', CollectionViewSet, basename='collections')
 
 router.register('languages', LanguageViewSet, basename='languages')
+router.register('global-languages', GlobalLanguageViewSet, basename='global_languages')
 
 router.register('main', MainPageViewSet, basename='main')
 
