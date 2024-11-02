@@ -40,6 +40,15 @@ LOGGING = {
             'delay': True,
             'encoding': 'utf-8',
         },
+        'requests_file': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(LOGS_DIR, 'requests.log'),
+            'backupCount': 10,  # keep at most 10 log files
+            'maxBytes': 1024 * 1024 * 5,  # 5 MB
+            'formatter': 'verbose',
+            'delay': True,
+            'encoding': 'utf-8',
+        },
         'queries_file': {
             'class': 'logging.handlers.RotatingFileHandler',
             'filename': os.path.join(LOGS_DIR, 'queries.log'),
@@ -56,7 +65,7 @@ LOGGING = {
     },
     'loggers': {
         'config.middleware.request_log': {
-            'handlers': ['general_file'],
+            'handlers': ['requests_file'],
             'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
             'propagate': False,
         },
@@ -77,7 +86,7 @@ LOGGING = {
             'propagate': False,
         },
         '': {
-            'handlers': ['console'],
+            'handlers': ['console', 'general_file'],
             'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
             'propagate': False,
         },
