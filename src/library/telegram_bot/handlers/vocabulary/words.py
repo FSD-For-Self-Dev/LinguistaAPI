@@ -54,6 +54,7 @@ from ..utils import (
     paginate_values_list,
     generate_validation_errors_answer_text,
     generate_word_create_request_data,
+    save_learning_languages_to_state,
 )
 from .vocabulary import vocabulary_choose_language_callback
 from .constants import (
@@ -296,7 +297,7 @@ async def fill_word_state_data_with_response_data(
                     for data in word_profile_response_data[field]
                 ]
 
-            case 'image_associations' | 'images':
+            case 'image_associations':
                 # get image file from url
                 async with aiohttp.ClientSession() as session:
                     field_data = []
@@ -442,7 +443,7 @@ async def additions_list_callback(
     additions_data = state_data.get(additions_field)
     additions_count = state_data.get(f'{additions_field}_count')
 
-    if additions_field == 'images':
+    if additions_field == 'image_associations':
         # send media group from buffered image files in state data
         images_group = []
         for image_info in additions_data:
@@ -671,7 +672,7 @@ async def word_create_text_proceed(message: Message | CallbackQuery, state: FSMC
             callback_data='word_customizing__definitions',
         ),
         InlineKeyboardButton(
-            text=f'Картинки-ассоциации {state_data.get("images_count")}',
+            text=f'Картинки-ассоциации {state_data.get("image_associations_count")}',
             callback_data='word_customizing__image_associations',
         ),
         InlineKeyboardButton(
@@ -1156,6 +1157,11 @@ async def word_create_save_callback(
                         headers,
                     )
 
+                    # update learning languages in state info in case new language was passed within new word
+                    await save_learning_languages_to_state(
+                        callback_query.message, state, session, headers
+                    )
+
                 case HTTPStatus.UNAUTHORIZED:
                     await send_unauthorized_response(callback_query.message, state)
 
@@ -1620,7 +1626,7 @@ async def word_create_multiple_save_callback(
 
                     if request_data['collections']:
                         await message.answer(
-                            f'Слова добавлены в коллекции: {len(several_words)}'
+                            f'Слова добавлены в выбранные коллекции: {len(several_words)}'
                         )
                     else:
                         await message.answer(
@@ -1650,6 +1656,11 @@ async def word_create_multiple_save_callback(
                             response_data,
                         )
 
+                    # update learning languages in state info in case new language was passed within new word
+                    await save_learning_languages_to_state(
+                        callback_query.message, state, session, headers
+                    )
+
                 case HTTPStatus.UNAUTHORIZED:
                     await send_unauthorized_response(message, state)
 
@@ -1671,7 +1682,7 @@ async def word_create_multiple_save_callback(
                         answer_text = await generate_validation_errors_answer_text(
                             detail_messages, all_fields_pretty, answer_text=answer_text
                         )
-                        answer_text += '\n'
+                        answer_text += '\n\n'
 
                     await message.answer(answer_text)
 

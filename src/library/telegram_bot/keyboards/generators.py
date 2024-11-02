@@ -154,7 +154,7 @@ async def generate_word_profile_markup(response_data: dict) -> InlineKeyboardMar
     translations_count = response_data.get('translations_count')
     examples_count = response_data.get('examples_count')
     definitions_count = response_data.get('definitions_count')
-    image_associations_count = response_data.get('images_count')
+    image_associations_count = response_data.get('image_associations_count')
     synonyms_count = response_data.get('synonyms_count')
     antonyms_count = response_data.get('antonyms_count')
     forms_count = response_data.get('forms_count')
@@ -177,7 +177,7 @@ async def generate_word_profile_markup(response_data: dict) -> InlineKeyboardMar
         ),
         InlineKeyboardButton(
             text=f'Картинки-ассоциации {image_associations_count}',
-            callback_data='additions_list__images',
+            callback_data='additions_list__image_associations',
         ),
         InlineKeyboardButton(
             text=f'Синонимы {synonyms_count}',
@@ -288,7 +288,7 @@ async def generate_additions_list_markup(
             )
             keyboard_builder.adjust(ADDITIONALS_MARKUP_SIZE)
 
-        case 'image_associations' | 'images':
+        case 'image_associations':
             pass
 
         case _:

@@ -1141,13 +1141,18 @@ async def send_vocabulary_answer_from_state_data(
                         )
 
     if language_name:
-        cover_id = state_data.get('learning_languages_info')[language_name]['cover_id']
-        await message.bot.send_photo(
-            message.chat.id,
-            photo=cover_id,
-            caption=answer_text,
-            reply_markup=markup,
-        )
+        try:
+            cover_id = state_data.get('learning_languages_info')[language_name][
+                'cover_id'
+            ]
+            await message.bot.send_photo(
+                message.chat.id,
+                photo=cover_id,
+                caption=answer_text,
+                reply_markup=markup,
+            )
+        except KeyError:
+            await message.answer(answer_text, reply_markup=markup)
     else:
         await message.answer(answer_text, reply_markup=markup)
 

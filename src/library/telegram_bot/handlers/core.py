@@ -33,7 +33,7 @@ async def start(message: Message) -> None:
     """Sends welcome message."""
     await message.answer(
         emojize(
-            f'Привет {message.from_user.first_name}! '
+            f'Привет, {message.from_user.first_name}! '
             f'Чтобы пользоваться ботом, необходимо войти в свой аккаунт Лингвисты! 👾'
         ),
         reply_markup=initial_kb,
