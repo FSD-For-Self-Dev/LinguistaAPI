@@ -154,7 +154,7 @@ async def generate_word_profile_markup(response_data: dict) -> InlineKeyboardMar
     translations_count = response_data.get('translations_count')
     examples_count = response_data.get('examples_count')
     definitions_count = response_data.get('definitions_count')
-    image_associations_count = response_data.get('image_associations_count')
+    image_associations_count = response_data.get('images_count')
     synonyms_count = response_data.get('synonyms_count')
     antonyms_count = response_data.get('antonyms_count')
     forms_count = response_data.get('forms_count')
