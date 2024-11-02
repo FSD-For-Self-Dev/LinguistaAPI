@@ -2292,9 +2292,7 @@ class CollectionSerializer(NestedSerializerMixin, CollectionShortSerializer):
             raise AssertionError('No request was passed in context.')
 
         return map(
-            lambda data: request.build_absolute_uri(data['image'])
-            if data[0]
-            else data[1],
+            lambda data: request.build_absolute_uri(data[0]) if data[0] else data[1],
             obj.words.filter(image_associations__isnull=False)
             .order_by('-created')
             .values_list(
