@@ -89,6 +89,7 @@ jobs:
           sudo systemctl daemon-reload
           sudo systemctl restart gunicorn
           sudo systemctl reload nginx
+          sudo systemctl restart linguista_telegram_daemon
 
   send_message:
     name: Send success message
