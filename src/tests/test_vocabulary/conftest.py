@@ -140,7 +140,6 @@ def words_simple_data(request):
             expected = [
                 {
                     'text': obj.text,
-                    'language': obj.language.name,
                 }
                 for obj in objs
             ]

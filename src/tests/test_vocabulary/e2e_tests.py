@@ -2045,7 +2045,7 @@ class TestWordSynonymsEndpoints:
         word = baker.make(Word, author=user)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = words_simple_data(user, make=False, data=True)
-        expected_data[0].pop('language')
+        # expected_data[0].pop('language')
 
         response = auth_api_client(user).patch(
             f'{self.endpoint}{objs[0].slug}/',
@@ -2127,7 +2127,7 @@ class TestWordAntonymsEndpoints:
         word = baker.make(Word, author=user)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = words_simple_data(user, make=False, data=True)
-        expected_data[0].pop('language')
+        # expected_data[0].pop('language')
 
         response = auth_api_client(user).patch(
             f'{self.endpoint}{objs[0].slug}/',
@@ -2209,7 +2209,7 @@ class TestWordSimilarsEndpoints:
         word = baker.make(Word, author=user)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = words_simple_data(user, make=False, data=True)
-        expected_data[0].pop('language')
+        # expected_data[0].pop('language')
 
         response = auth_api_client(user).patch(
             f'{self.endpoint}{objs[0].slug}/',

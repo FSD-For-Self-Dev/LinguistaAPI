@@ -31,7 +31,6 @@ class LanguageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Language
         fields = (
-            'id',
             'name',
             'name_local',
             'isocode',

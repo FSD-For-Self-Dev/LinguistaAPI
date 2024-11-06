@@ -603,7 +603,6 @@ class WordShortCardSerializer(
 ):
     """Serializer to list words with minimum details."""
 
-    language = serializers.SlugRelatedField(slug_field='name', read_only=True)
     tags = serializers.SlugRelatedField(slug_field='name', read_only=True, many=True)
     activity_status = serializers.SerializerMethodField('get_activity_status_display')
 
@@ -685,6 +684,11 @@ class WordLongCardSerializer(
 ):
     """Serializer to list words with 6 last added translations."""
 
+    types = TypeSlugRelatedField(
+        slug_field='name',
+        many=True,
+        read_only=True,
+    )
     other_translations_count = serializers.SerializerMethodField(
         'get_other_translations_count'
     )
@@ -692,6 +696,7 @@ class WordLongCardSerializer(
 
     class Meta(WordShortCardSerializer.Meta):
         fields = WordShortCardSerializer.Meta.fields + (
+            'types',
             'last_6_translations',
             'other_translations_count',
             'image',
@@ -718,6 +723,11 @@ class WordStandartCardSerializer(
 ):
     """Serializer to list words in standart form with all translations."""
 
+    types = TypeSlugRelatedField(
+        slug_field='name',
+        many=True,
+        read_only=True,
+    )
     translations_count = KwargsMethodField(
         'get_objs_count',
         objs_related_name='translations',
@@ -726,6 +736,7 @@ class WordStandartCardSerializer(
 
     class Meta(WordShortCardSerializer.Meta):
         fields = WordShortCardSerializer.Meta.fields + (
+            'types',
             'translations_count',
             'translations',
             'image',
@@ -1245,6 +1256,11 @@ class WordSerializer(WordShortCreateSerializer):
         slug_field='name',
         required=True,
     )
+    language_info = LanguageSerializer(
+        many=False,
+        read_only=True,
+        source='language',
+    )
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         serializer_class=UserListSerializer,
@@ -1307,6 +1323,7 @@ class WordSerializer(WordShortCreateSerializer):
             'id',
             'slug',
             'language',
+            'language_info',
             'text',
             'note',
             'author',
@@ -1344,7 +1361,7 @@ class WordSerializer(WordShortCreateSerializer):
         )
         read_only_fields = (
             'slug',
-            'translations_count',
+            'language_info' 'translations_count',
             'examples_count',
             'definitions_count',
             'images_count',
