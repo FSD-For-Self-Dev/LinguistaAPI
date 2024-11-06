@@ -98,9 +98,20 @@ from .serializers import (
     AllAssociationsSerializer,
 )
 
+
 logger = logging.getLogger(__name__)
 
 User = get_user_model()
+
+words_list_prefetch_related = (
+    'author',
+    'language',
+    'tags',
+    'types',
+    'translations',
+    'image_associations',
+    'form_groups',
+)
 
 
 class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
@@ -137,11 +148,16 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
         if words is None:
             words = (
                 instance.__getattribute__(words_related_name)
+                .prefetch_related(*words_list_prefetch_related)
                 .annotate(**WordCounters.all)
                 .order_by(*default_order)
             )
         else:
-            words.annotate(**WordCounters.all).order_by(*default_order)
+            words = (
+                words.prefetch_related(*words_list_prefetch_related)
+                .annotate(**WordCounters.all)
+                .order_by(*default_order)
+            )
 
         logger.debug(f'Obtained words: {words}')
 
@@ -187,6 +203,7 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
 
         _words = (
             instance.__getattribute__(words_related_name)
+            .prefetch_related(*words_list_prefetch_related)
             .annotate(**WordCounters.all)
             .order_by(*default_order)
         )
@@ -235,6 +252,7 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
 
         _words = (
             instance.__getattribute__(words_related_name)
+            .prefetch_related(*words_list_prefetch_related)
             .annotate(**WordCounters.all)
             .order_by(*default_order)
         )
@@ -281,6 +299,7 @@ class ActionsWithRelatedWordsMixin(ActionsWithRelatedObjectsMixin):
 
         _words = (
             instance.__getattribute__(words_related_name)
+            .prefetch_related(*words_list_prefetch_related)
             .annotate(**WordCounters.all)
             .order_by(*default_order)
         )
@@ -353,17 +372,23 @@ class WordViewSet(
         if user.is_authenticated:
             match self.action:
                 case 'favorites':
-                    return Word.objects.filter(favorite_for__user=user).order_by(
-                        '-favorite_for__created'
+                    return (
+                        Word.objects.filter(favorite_for__user=user)
+                        .order_by('-favorite_for__created')
+                        .prefetch_related(*words_list_prefetch_related)
                     )
                 case _:
                     # Annotate words with some related objects amount to use in
                     # filters, sorting
-                    return user.words.annotate(**WordCounters.all)
+                    return user.words.prefetch_related(
+                        *words_list_prefetch_related
+                    ).annotate(**WordCounters.all)
         else:
             match self.action:
                 case 'share':
-                    return Word.objects.all()
+                    return Word.objects.all().prefetch_related(
+                        *words_list_prefetch_related
+                    )
                 case _:
                     return Word.objects.none()
 
@@ -1106,7 +1131,9 @@ class WordTranslationViewSet(
         """Returns list of all user's words translations."""
         user = self.request.user
         if user.is_authenticated:
-            return user.wordtranslations.all()
+            return user.wordtranslations.all().prefetch_related(
+                'author', 'language', 'words'
+            )
         return WordTranslation.objects.none()
 
     def get_serializer_class(self) -> Serializer:
@@ -1181,7 +1208,9 @@ class UsageExampleViewSet(
         """Returns list of all user's usage examples."""
         user = self.request.user
         if user.is_authenticated:
-            return user.usageexamples.all()
+            return user.usageexamples.all().prefetch_related(
+                'author', 'language', 'words'
+            )
         return UsageExample.objects.none()
 
     def get_serializer_class(self) -> Serializer:
@@ -1256,7 +1285,9 @@ class DefinitionViewSet(
         """Returns list of all user's definitions."""
         user = self.request.user
         if user.is_authenticated:
-            return user.definitions.all()
+            return user.definitions.all().prefetch_related(
+                'author', 'language', 'words'
+            )
         return Definition.objects.none()
 
     def get_serializer_class(self) -> Serializer:
@@ -1353,7 +1384,7 @@ class ImageViewSet(
         """Returns list of all user's image-associations."""
         user = self.request.user
         if user.is_authenticated:
-            return user.imageassociations.all()
+            return user.imageassociations.all().prefetch_related('author', 'words')
         return ImageAssociation.objects.none()
 
     def get_serializer_class(self) -> Serializer:
@@ -1419,7 +1450,7 @@ class QuoteViewSet(
         """Returns list of all user's quote-associations."""
         user = self.request.user
         if user.is_authenticated:
-            return user.quoteassociations.all()
+            return user.quoteassociations.all().prefetch_related('author', 'words')
         return QuoteAssociation.objects.none()
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
@@ -1795,14 +1826,16 @@ class CollectionViewSet(
         if user.is_authenticated:
             match self.action:
                 case 'favorites':
-                    return Collection.objects.filter(favorite_for__user=user).order_by(
-                        '-favorite_for__created'
+                    return (
+                        Collection.objects.filter(favorite_for__user=user)
+                        .order_by('-favorite_for__created')
+                        .prefetch_related('author', 'words')
                     )
                 case _:
                     # Annotate with words amount to use in filters, sorting
-                    return user.collections.annotate(
-                        words_count=Count('words', distinct=True)
-                    )
+                    return user.collections.prefetch_related(
+                        'author', 'words'
+                    ).annotate(words_count=Count('words', distinct=True))
         return Collection.objects.none()
 
     def get_serializer_class(self) -> Serializer:
@@ -1865,7 +1898,8 @@ class CollectionViewSet(
         collection_data = self.get_serializer(collection).data
 
         _objs = (
-            objs_model.objects.filter(words__in=collection.words.all())
+            objs_model.objects.prefetch_related('author', 'words')
+            .filter(words__in=collection.words.all())
             .distinct()
             .annotate(words_count=Count('words'))
         )

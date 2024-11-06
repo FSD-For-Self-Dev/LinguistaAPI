@@ -73,6 +73,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             case 'all':
                 return (
                     Language.objects.filter(Q(learning_by=user) | Q(native_for=user))
+                    .prefetch_related('user', 'language')
                     .annotate(
                         is_native=Case(
                             When(
@@ -86,7 +87,9 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                     .order_by('-is_native', '-words_count', 'name')
                 )
             case 'native':
-                return user.native_languages_detail.all()
+                return user.native_languages_detail.all().prefetch_related(
+                    'user', 'language'
+                )
             case 'learning_available':
                 if user.is_anonymous:
                     # Ingore learning languages for anonymous user
@@ -102,7 +105,9 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                     .order_by('-words_count', 'name')
                 )
             case _:
-                return user.learning_languages_detail.annotate(
+                return user.learning_languages_detail.prefetch_related(
+                    'user', 'language'
+                ).annotate(
                     words_count=Count(
                         'user__words', filter=Q(user__words__language=F('language'))
                     )
