@@ -100,7 +100,7 @@ data = {
             'request': None,
             'responses': {
                 status.HTTP_200_OK: OpenApiResponse(
-                    response=WordStandartCardSerializer,
+                    response=WordStandartCardSerializer(many=True),
                     description='Успешный ответ.',
                     examples=[
                         word_standart_cards_example,
