@@ -11,15 +11,15 @@ cd my_cloud_api
 cd LinguistaAPI/src
 ```
 
-### Создайте и активируйте виртуальное окружение
+### Создайте и активируйте виртуальное окружение poetry
 ```bash
-python3 -m venv venv
+poetry env use python
 . venv/bin/activate
 ```
 
 ### Установите зависимости
 ```bash
-python -m pip install -r requirements.txt
+poetry install
 ```
 
 ## Создайте файл .env по примеру [example.env](https://github.com/FSD-For-Self-Dev/LinguistaAPI/blob/develop/src/example.env)
@@ -34,12 +34,12 @@ poetry run python manage.py migrate
 
 ### Заполните БД тестовыми данными
 ```bash
-python manage.py loaddata test_data.json
+poetry run python manage.py loaddata test_data.json
 ```
 
 ### Соберите статические файлы
 ```bash
-python manage.py collectstatic
+poetry run python manage.py collectstatic
 ```
 
 ## Создайте администратора
@@ -50,4 +50,9 @@ poetry run python manage.py createsuperuser --username admin --password 123
 ## Запустите сервер в режиме разработчика
 ```bash
 poetry run python manage.py runserver 127.0.0.1:8000
+```
+
+## Установите хуки пре коммита
+```bash
+pre-commit install
 ```
