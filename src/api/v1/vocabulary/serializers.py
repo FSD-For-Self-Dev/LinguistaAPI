@@ -572,7 +572,7 @@ class WordSuperShortSerializer(serializers.ModelSerializer):
     """Serializer to list words with no details."""
 
     author = serializers.SlugRelatedField(slug_field='username', read_only=True)
-    language = LanguageSerializer(many=False, read_only=True)
+    language = serializers.SlugRelatedField(slug_field='name', read_only=True)
 
     class Meta:
         model = Word

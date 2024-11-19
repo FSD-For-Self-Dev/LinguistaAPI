@@ -37,7 +37,7 @@ class DatabaseQueriesLogMiddleware:
                     'total number of queries': len(connection.queries),
                 }
             )
-        except Exception as e:
-            queries_logger.error(f'Error occured during query logging: {e}')
+        except Exception:
+            pass
 
         return response

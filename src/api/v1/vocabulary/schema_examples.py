@@ -19,12 +19,7 @@ word_standart_cards_example = OpenApiExample(
         {
             'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
             'slug': 'A-FcLKEPQKGWwNcy5AcEUVoHuYQ0qW4FumUxyizq4',
-            'language': {
-                'name': 'English',
-                'name_local': 'English',
-                'isocode': 'en',
-                'flag_icon': 'http://127.0.0.1:8000/media/languages/flag_icons/en_O7nv2k8.svg',
-            },
+            'language': 'English',
             'text': 'string',
             'author': 'string',
             'created': '2024-11-06 18:26',
@@ -51,12 +46,7 @@ word_short_cards_example = OpenApiExample(
         {
             'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
             'slug': '6o4JFSVV9RPY-KHU7rYo2NeGvla56lq1G791FPMbBzNxloMW-pkqjUX5EZCEIhNHIlAUTApgWHD8iCCNJl1f4-thK1XstD',
-            'language': {
-                'name': 'English',
-                'name_local': 'English',
-                'isocode': 'en',
-                'flag_icon': 'http://127.0.0.1:8000/media/languages/flag_icons/en_O7nv2k8.svg',
-            },
+            'language': 'English',
             'text': 'string',
             'author': 'string',
             'created': '2024-11-06 18:26',
@@ -79,12 +69,7 @@ word_long_cards_example = OpenApiExample(
         {
             'id': '3fa85f64-5717-4562-b3fc-2c963f66afa6',
             'slug': '5vGbGAvkFOdhoWIsgf6v6RcOimNe',
-            'language': {
-                'name': 'English',
-                'name_local': 'English',
-                'isocode': 'en',
-                'flag_icon': 'http://127.0.0.1:8000/media/languages/flag_icons/en_O7nv2k8.svg',
-            },
+            'language': 'English',
             'text': 'string',
             'author': 'string',
             'created': '2024-11-06 18:26',

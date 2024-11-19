@@ -48,7 +48,7 @@ class RequestLogMiddleware:
 
             request_logger.info(msg=log_data)
 
-        except Exception as e:
-            request_logger.error(f'Error occured during request logging: {e}')
+        except Exception:
+            pass
 
         return response
