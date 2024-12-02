@@ -73,7 +73,6 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             case 'all':
                 return (
                     Language.objects.filter(Q(learning_by=user) | Q(native_for=user))
-                    .prefetch_related('user', 'language')
                     .annotate(
                         is_native=Case(
                             When(
