@@ -624,16 +624,14 @@ class WordShortCardSerializer(
         return obj.get_activity_status_display()
 
 
-class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
+class GetLastImageSerializerMixin(serializers.ModelSerializer):
     """
-    Custom serializer mixin to add `images` and `image` field obtained through
-    related manager to retrieve one latest image-association or full list.
+    Custom serializer mixin to add `image` field obtained through
+    related manager to retrieve one latest image-association.
     Related name for images must be `image_associations`.
     """
 
     image = serializers.SerializerMethodField('get_last_image')
-
-    images = serializers.SerializerMethodField('get_images')
 
     @extend_schema_field({'type': 'string'})
     def get_last_image(self, obj: Word) -> str | None:
@@ -661,24 +659,9 @@ class GetImageAssociationsSerializerMixin(serializers.ModelSerializer):
         except AttributeError:
             return None
 
-    @extend_schema_field({'type': 'object'})
-    def get_images(self, obj: Word) -> list[str]:
-        """Returns list of image associations urls."""
-        request = self.context.get('request', None)
-
-        if request is None:
-            raise AssertionError('No request was passed in context.')
-
-        return map(
-            lambda instance: request.build_absolute_uri(instance.image.url)
-            if instance.image
-            else instance.image_url,
-            obj.image_associations.order_by('-wordimageassociations__created'),
-        )
-
 
 class WordLongCardSerializer(
-    GetImageAssociationsSerializerMixin,
+    GetLastImageSerializerMixin,
     CountObjsSerializerMixin,
     WordShortCardSerializer,
 ):
@@ -717,7 +700,7 @@ class WordLongCardSerializer(
 
 
 class WordStandartCardSerializer(
-    GetImageAssociationsSerializerMixin,
+    GetLastImageSerializerMixin,
     CountObjsSerializerMixin,
     WordShortCardSerializer,
 ):
@@ -758,7 +741,6 @@ class WordShortCreateSerializer(
     AmountLimitsSerializerHandler,
     NestedSerializerMixin,
     CountObjsSerializerMixin,
-    GetImageAssociationsSerializerMixin,
     ActivityProgressSerializerMixin,
     serializers.ModelSerializer,
 ):
@@ -825,7 +807,6 @@ class WordShortCreateSerializer(
     image_associations = ImageInLineSerializer(
         required=False,
         many=True,
-        write_only=True,
     )
     quote_associations = QuoteInLineSerializer(
         required=False,
@@ -878,7 +859,6 @@ class WordShortCreateSerializer(
             'definitions_count',
             'definitions',
             'images_count',
-            'images',
             'image_associations',
             'quote_associations',
             'associations_count',
@@ -895,7 +875,6 @@ class WordShortCreateSerializer(
             'examples_count',
             'definitions_count',
             'images_count',
-            'images',
             'associations_count',
             'associations',
             'collections_count',
@@ -1340,7 +1319,6 @@ class WordSerializer(WordShortCreateSerializer):
             'definitions_count',
             'definitions',
             'images_count',
-            'images',
             'image_associations',
             'quote_associations',
             'associations_count',
@@ -1365,7 +1343,6 @@ class WordSerializer(WordShortCreateSerializer):
             'examples_count',
             'definitions_count',
             'images_count',
-            'images',
             'associations_count',
             'associations',
             'synonyms_count',
@@ -2121,7 +2098,7 @@ class SynonymSerializer(
     ValidateLanguageMixin,
     CountObjsSerializerMixin,
     AlreadyExistSerializerHandler,
-    GetImageAssociationsSerializerMixin,
+    GetLastImageSerializerMixin,
     serializers.ModelSerializer,
 ):
     """Serializer to retrieve synonym with all related words."""
@@ -2532,7 +2509,7 @@ class AllAssociationsSerializer(serializers.ModelSerializer):
         return result_list
 
 
-class WordTextImageSerializer(GetImageAssociationsSerializerMixin):
+class WordTextImageSerializer(GetLastImageSerializerMixin):
     """Serializer to list words within collection card."""
 
     class Meta:
