@@ -207,7 +207,7 @@ class WordTranslationInLineSerializer(
 ):
     """Serializer to list, create word translations inside word serializer."""
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
@@ -264,7 +264,7 @@ class UsageExampleInLineSerializer(
 ):
     """Serializer to list, create word usage examples inside word serializer."""
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
@@ -308,7 +308,7 @@ class DefinitionInLineSerializer(
 ):
     """Serializer to list, create word definitions inside word serializer."""
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
@@ -356,7 +356,7 @@ class CollectionShortSerializer(
     to list, create collections in shortened form.
     """
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
@@ -407,7 +407,7 @@ class FormGroupInLineSerializer(
 ):
     """Serializer to list, create word form groups inside word serializer."""
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
@@ -749,7 +749,7 @@ class WordShortCreateSerializer(
     Used within multiple words creation.
     """
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
@@ -1229,7 +1229,7 @@ class WordSerializer(WordShortCreateSerializer):
     Used within single word creation.
     """
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='name',
@@ -1720,7 +1720,7 @@ class WordTranslationCreateSerializer(
 ):
     """Serializer to create translation and add related words to it."""
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=False,
@@ -1830,7 +1830,7 @@ class DefinitionCreateSerializer(
 ):
     """Serializer to create definition and add related words to it."""
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=False,
@@ -1968,7 +1968,7 @@ class UsageExampleCreateSerializer(
 ):
     """Serializer to create usage example and add related words to it."""
 
-    id = serializers.IntegerField(required=False)
+    id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
         slug_field='name',
         read_only=False,
