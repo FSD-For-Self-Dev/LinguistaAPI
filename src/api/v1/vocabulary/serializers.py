@@ -852,6 +852,7 @@ class WordShortCreateSerializer(
             'favorite',
             'is_problematic',
             'activity_status',
+            'activity_progress',
             'translations_count',
             'translations',
             'examples_count',
@@ -871,6 +872,7 @@ class WordShortCreateSerializer(
         read_only_fields = (
             'slug',
             'activity_status',
+            'activity_progress',
             'translations_count',
             'examples_count',
             'definitions_count',
@@ -1312,6 +1314,7 @@ class WordSerializer(WordShortCreateSerializer):
             'tags',
             'form_groups',
             'activity_status',
+            'activity_progress',
             'translations_count',
             'translations',
             'examples_count',
@@ -1339,7 +1342,10 @@ class WordSerializer(WordShortCreateSerializer):
         )
         read_only_fields = (
             'slug',
-            'language_info' 'translations_count',
+            'language_info',
+            'activity_status',
+            'activity_progress',
+            'translations_count',
             'examples_count',
             'definitions_count',
             'images_count',
