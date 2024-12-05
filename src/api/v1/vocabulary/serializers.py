@@ -450,6 +450,7 @@ class FormGroupInLineSerializer(
 class ImageInLineSerializer(HybridImageSerializerMixin, CountObjsSerializerMixin):
     """Serializer to list, create word image-associations inside word serializer."""
 
+    id = serializers.CharField(required=False)
     image = HybridImageOrPrimaryKeyField(
         required=False,
         allow_empty_file=True,
@@ -629,6 +630,7 @@ class GetLastImageSerializerMixin(serializers.ModelSerializer):
     Custom serializer mixin to add `image` field obtained through
     related manager to retrieve one latest image-association.
     Related name for images must be `image_associations`.
+    Intermediate model must have `get_latest_by` Meta parameter.
     """
 
     image = serializers.SerializerMethodField('get_last_image')
@@ -637,9 +639,7 @@ class GetLastImageSerializerMixin(serializers.ModelSerializer):
     def get_last_image(self, obj: Word) -> str | None:
         """Returns last added image association."""
         try:
-            latest_image_association = obj.image_associations.order_by(
-                '-wordimageassociations__created'
-            ).first()
+            latest_image_association = obj.image_associations.latest()
 
             try:
                 url = latest_image_association.image.url
