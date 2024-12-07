@@ -230,6 +230,7 @@ data = {
                                 },
                                 'level': 'string',
                                 'cover': 'string',
+                                'cover_id': 'string',
                                 'cover_height': 0,
                                 'cover_width': 0,
                                 'words_count': 0,

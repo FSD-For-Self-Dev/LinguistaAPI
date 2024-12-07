@@ -60,6 +60,7 @@ class LearningLanguageListSerailizer(
     active_words_count = serializers.SerializerMethodField('get_active_words_count')
     mastered_words_count = serializers.SerializerMethodField('get_mastered_words_count')
     cover = serializers.ImageField(source='cover.image', read_only=True)
+    cover_id = serializers.CharField(source='cover.id', read_only=True)
     cover_height = serializers.SerializerMethodField('get_cover_height')
     cover_width = serializers.SerializerMethodField('get_cover_width')
 
@@ -70,6 +71,7 @@ class LearningLanguageListSerailizer(
             'user',
             'language',
             'cover',
+            'cover_id',
             'cover_height',
             'cover_width',
             'words_count',
@@ -80,6 +82,7 @@ class LearningLanguageListSerailizer(
         read_only_fields = (
             'id',
             'cover',
+            'cover_id',
             'cover_height',
             'cover_width',
             'words_count',
@@ -140,6 +143,7 @@ class LearningLanguageSerializer(
             'language',
             'level',
             'cover',
+            'cover_id',
             'cover_height',
             'cover_width',
             'words_count',
@@ -151,6 +155,7 @@ class LearningLanguageSerializer(
             'id',
             'slug',
             'cover',
+            'cover_id',
             'cover_height',
             'cover_width',
             'words_count',
