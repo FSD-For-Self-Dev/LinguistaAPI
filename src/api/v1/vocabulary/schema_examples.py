@@ -543,7 +543,7 @@ word_already_exists_conflict_example = OpenApiExample(
             'types': [],
             'tags': [],
             'form_groups': [],
-            'activity_status': 'Неактивное',
+            'activity_status': 'Inactive',
             'translations_count': 0,
             'translations': [],
             'examples_count': 0,

@@ -214,9 +214,9 @@ class ActivityStatusModel(models.Model):
     ACTIVE = 'A'
     MASTERED = 'M'
     ACTIVITY = [
-        (INACTIVE, _('Inactive')),
-        (ACTIVE, _('Active')),
-        (MASTERED, _('Mastered')),
+        (INACTIVE, 'Inactive'),
+        (ACTIVE, 'Active'),
+        (MASTERED, 'Mastered'),
     ]
 
     class Meta:
