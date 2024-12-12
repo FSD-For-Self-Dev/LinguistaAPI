@@ -38,6 +38,9 @@ class TestExercisesEndpoints:
         exercises(extra_data={'available': False})
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -52,16 +55,19 @@ class TestExercisesEndpoints:
         exercise = exercises(extra_data={'available': True})[0]
 
         response = auth_api_client(user).get(f'{self.endpoint}{exercise.slug}/')
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
 
     def test_list_for_anonymous(self, api_client, exercises):
         exercises(extra_data={'available': True})
         exercises(extra_data={'available': False})
 
-        response = api_client().get(
-            f'{self.endpoint}anonymous/',
-        )
+        response = api_client().get(f'{self.endpoint}anonymous/')
+        if response.status_code == 307:
+            response = api_client().get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -74,7 +80,7 @@ class TestExercisesEndpoints:
     #         f'{self.endpoint}random/'
     #     )
 
-    #     assert response.status_code == 200 or response.status_code == 301
+    #     assert response.status_code == 200
 
     def test_retrieve_available_words(self, auth_api_client, user, exercises):
         exercise = exercises(
@@ -87,9 +93,12 @@ class TestExercisesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{exercise.slug}/available-words/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert response_content['words']['count'] == 1
 
     def test_retrieve_available_collections(self, auth_api_client, user, exercises):
@@ -109,9 +118,12 @@ class TestExercisesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{exercise.slug}/available-collections/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert response_content['collections']['count'] == 2
 
     def test_retrieve_last_approach(
@@ -124,8 +136,10 @@ class TestExercisesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{exercise.slug}/last-approach/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
 
     def test_set_list(self, auth_api_client, user, exercises, word_sets):
         exercise = exercises(extra_data={'available': True})[0]
@@ -134,9 +148,12 @@ class TestExercisesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{exercise.slug}/word-sets/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert response_content['count'] == 1
 
     def test_set_create(self, auth_api_client, user, exercises, word_sets):
@@ -152,6 +169,12 @@ class TestExercisesEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
 
         assert response.status_code == 201
 
@@ -162,8 +185,10 @@ class TestExercisesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{exercise.slug}/word-sets/{word_set.slug}/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
 
     def test_set_partial_update(self, auth_api_client, user, exercises, word_sets):
         exercise = exercises(extra_data={'available': True})[0]
@@ -183,8 +208,14 @@ class TestExercisesEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
 
     def test_set_destroy(self, auth_api_client, user, exercises, word_sets):
         exercise = exercises(extra_data={'available': True})[0]
@@ -193,16 +224,21 @@ class TestExercisesEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{exercise.slug}/word-sets/{word_set.slug}/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
 
     def test_default_settings_retrieve(self, auth_api_client, user):
         TranslatorUserDefaultSettings.objects.get_or_create(user=user)
+
         response = auth_api_client(user).get(
             f'{self.endpoint}translator-default-settings/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
 
     def test_default_settings_partial_update(self, auth_api_client, user, exercises):
         exercise_default_settings = baker.prepare(
@@ -224,14 +260,22 @@ class TestExercisesEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
 
     def test_word_favorites_list_action(self, auth_api_client, user, exercises):
         exercise = exercises()[0]
         FavoriteExercise.objects.create(user=user, exercise=exercise)
 
         response = auth_api_client(user).get(f'{self.endpoint}favorites/')
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.data['count'] == 1
 
@@ -241,6 +285,8 @@ class TestExercisesEndpoints:
         response = auth_api_client(user).post(
             f'{self.endpoint}{exercise.slug}/favorite/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(response['Location'])
 
         assert FavoriteExercise.objects.filter(user=user, exercise=exercise).exists()
 
@@ -250,6 +296,8 @@ class TestExercisesEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{exercise.slug}/favorite/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert not FavoriteExercise.objects.filter(
             user=user, exercise=exercise

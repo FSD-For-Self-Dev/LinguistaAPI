@@ -59,6 +59,8 @@ class TestVocabularyEndpoints:
         baker.make(Word, author=other_user)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert pagination_field in response.data, (
@@ -77,6 +79,8 @@ class TestVocabularyEndpoints:
         возвращается ошибка 401.
         """
         response = api_client().get(self.endpoint)
+        if response.status_code == 307:
+            response = api_client().get(response['Location'])
 
         assert response.status_code == 401
 
@@ -111,6 +115,12 @@ class TestVocabularyEndpoints:
             {'ordering': query},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {'ordering': query},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['results'][0][order_field] == first_value
@@ -154,6 +164,12 @@ class TestVocabularyEndpoints:
             {'ordering': query},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {'ordering': query},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['results'][0][order_field] == first_value
@@ -170,6 +186,12 @@ class TestVocabularyEndpoints:
             {'search': word.__getattribute__(search_attr)},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {'search': word.__getattribute__(search_attr)},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['count'] == 1, (
@@ -204,6 +226,12 @@ class TestVocabularyEndpoints:
             {'search': obj.__getattribute__(search_attr[0])},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {'search': obj.__getattribute__(search_attr[0])},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['count'] == 1, (
@@ -234,6 +262,12 @@ class TestVocabularyEndpoints:
             {query_field: 1},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {query_field: 1},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['count'] == 1, (
@@ -267,6 +301,12 @@ class TestVocabularyEndpoints:
             {query_field: filter_value},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {query_field: filter_value},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['count'] == 1, (
@@ -308,6 +348,12 @@ class TestVocabularyEndpoints:
             {filter_field: obj.__getattribute__(filter_attr)},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {filter_field: obj.__getattribute__(filter_attr)},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['count'] == 1, (
@@ -343,6 +389,12 @@ class TestVocabularyEndpoints:
             {filter_field: filter_value1 + ',' + filter_value2},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {filter_field: filter_value1 + ',' + filter_value2},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['count'] == 2, (
@@ -361,6 +413,12 @@ class TestVocabularyEndpoints:
             {'first_letter': 't'},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {'first_letter': 't'},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['count'] == 1, (
@@ -386,8 +444,16 @@ class TestVocabularyEndpoints:
         baker.make(Word, author=user, _quantity=10)
 
         response = auth_api_client(user).get(
-            self.endpoint, {'have_associations': True}, format='json'
+            self.endpoint,
+            {'have_associations': True},
+            format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {'have_associations': True},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['count'] == 1, (
@@ -427,6 +493,11 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -477,6 +548,11 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
+
         response_objs_content = json.loads(response.content)[res_name]
 
         assert response.status_code == 201
@@ -529,6 +605,11 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
+
         response_words_content = json.loads(response.content)[objs_related_name]
 
         assert response.status_code == 201
@@ -561,6 +642,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
 
         assert response.status_code == 409
         assert (
@@ -616,6 +701,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
 
         assert response.status_code == 409
         assert (
@@ -631,6 +720,8 @@ class TestVocabularyEndpoints:
         возвращается ошибка 401.
         """
         response = api_client().post(self.endpoint)
+        if response.status_code == 307:
+            response = api_client().post(response['Location'])
 
         assert response.status_code == 401
 
@@ -645,6 +736,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
 
         assert response.status_code == 400
         assert (
@@ -676,6 +771,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
 
         assert response.status_code == 400
         assert (
@@ -707,6 +806,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
 
         assert response.status_code == 400
 
@@ -720,6 +823,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
 
         assert response.status_code == 400
 
@@ -801,6 +908,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             self.endpoint, data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_json, format='json'
+            )
 
         assert response.status_code == 409
 
@@ -809,8 +920,10 @@ class TestVocabularyEndpoints:
         word = word(user, make=True)
 
         response = auth_api_client(user).get(f'{self.endpoint}{word.slug}/')
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert json.loads(response.content)['slug'] == word.slug
 
     def test_word_retrieve_not_auth(self, api_client):
@@ -819,7 +932,10 @@ class TestVocabularyEndpoints:
         возвращается ошибка 401.
         """
         word = baker.make(Word)
+
         response = api_client().get(f'{self.endpoint}{word.slug}/')
+        if response.status_code == 307:
+            response = api_client().get(response['Location'])
 
         assert response.status_code == 401
 
@@ -852,8 +968,14 @@ class TestVocabularyEndpoints:
             data=update_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=update_data,
+                format='json',
+            )
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert response.data[field] == update_data[field]
 
     @pytest.mark.parametrize(
@@ -911,11 +1033,18 @@ class TestVocabularyEndpoints:
             data={objs_related_name: new_objs_source_data},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data={objs_related_name: new_objs_source_data},
+                format='json',
+            )
+
         response_objs_content = json.loads(response.content)[
             res_name or objs_related_name
         ]
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert len(response_objs_content) == 1
         assert all(
             [
@@ -960,9 +1089,16 @@ class TestVocabularyEndpoints:
             data={objs_related_name: new_objs_source_data},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data={objs_related_name: new_objs_source_data},
+                format='json',
+            )
+
         response_objs_content = json.loads(response.content)[objs_related_name]
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert len(response_objs_content) == 1
         assert all(
             [
@@ -985,8 +1121,14 @@ class TestVocabularyEndpoints:
             data=update_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=update_data,
+                format='json',
+            )
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert response.data['favorite'] == update_data['favorite']
 
     def test_word_partial_update_already_exist(self, auth_api_client, user):
@@ -1001,6 +1143,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).patch(
             f'{self.endpoint}{other_word.slug}/', data=source_json, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'], data=source_json, format='json'
+            )
 
         assert response.status_code == 409
         assert (
@@ -1013,7 +1159,10 @@ class TestVocabularyEndpoints:
         возвращается ошибка 401.
         """
         word = baker.make(Word)
+
         response = api_client().patch(f'{self.endpoint}{word.slug}/')
+        if response.status_code == 307:
+            response = api_client().patch(response['Location'])
 
         assert response.status_code == 401
 
@@ -1043,8 +1192,10 @@ class TestVocabularyEndpoints:
         other_word.__getattribute__(objs_related_name).add(objs[0])
 
         response = auth_api_client(user).delete(f'{self.endpoint}{word.slug}/')
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
-        assert response.status_code in (204, 200, 301)
+        assert response.status_code in (204, 200)
         assert not related_model.objects.filter(pk=objs[1].id, author=user).exists()
         assert related_model.objects.filter(pk=objs[0].id, author=user).exists()
 
@@ -1056,6 +1207,8 @@ class TestVocabularyEndpoints:
         word = baker.make(Word)
 
         response = api_client().delete(f'{self.endpoint}{word.slug}/')
+        if response.status_code == 307:
+            response = api_client().delete(response['Location'])
 
         assert response.status_code == 401
 
@@ -1066,8 +1219,10 @@ class TestVocabularyEndpoints:
         baker.make(Word, author=user, _quantity=3)
 
         response = auth_api_client(user).get(f'{self.endpoint}random/')
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
 
     def test_random_word_action_not_auth(self, api_client):
         """
@@ -1075,6 +1230,8 @@ class TestVocabularyEndpoints:
         пользователя возвращается ошибка 401.
         """
         response = api_client().get(f'{self.endpoint}random/')
+        if response.status_code == 307:
+            response = api_client().get(response['Location'])
 
         assert response.status_code == 401
 
@@ -1087,6 +1244,8 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             f'{self.endpoint}{word.slug}/problematic-toggle/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(response['Location'])
 
         assert response.status_code == 201
         assert response.data['is_problematic'] is True
@@ -1099,6 +1258,8 @@ class TestVocabularyEndpoints:
         word = baker.make(Word)
 
         response = api_client().post(f'{self.endpoint}{word.slug}/problematic-toggle/')
+        if response.status_code == 307:
+            response = api_client().post(response['Location'])
 
         assert response.status_code == 401
 
@@ -1140,6 +1301,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             f'{self.endpoint}multiple-create/', data=source_data, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_data, format='json'
+            )
 
         assert response.status_code == 201
         assert response.data['count'] == 2, (
@@ -1187,6 +1352,10 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).post(
             f'{self.endpoint}multiple-create/', data=source_data, format='json'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'], data=source_data, format='json'
+            )
 
         assert response.status_code == 409
 
@@ -1196,6 +1365,8 @@ class TestVocabularyEndpoints:
         возвращается ошибка 401.
         """
         response = api_client().post(f'{self.endpoint}multiple-create/', format='json')
+        if response.status_code == 307:
+            response = api_client().post(response['Location'], format='json')
 
         assert response.status_code == 401
 
@@ -1229,6 +1400,8 @@ class TestVocabularyEndpoints:
             f'{self.endpoint}{word.slug}/{res_name or objs_related_name}/',
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert response.data['count'] == 2
@@ -1247,6 +1420,12 @@ class TestVocabularyEndpoints:
             {'language': translation[0].language.name},
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(
+                response['Location'],
+                {'language': translation[0].language.name},
+                format='json',
+            )
 
         assert response.status_code == 200
         assert response.data['count'] == 1, (
@@ -1293,6 +1472,12 @@ class TestVocabularyEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
 
         assert response.status_code == 201
         assert response.data[f'{objs_related_name}_count'] == objs_quantity
@@ -1334,6 +1519,9 @@ class TestVocabularyEndpoints:
                 f'{self.endpoint}{word.slug}/{res_name or objs_related_name}/{objs[0].id}/',
             )
 
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         assert response.status_code == 200
         assert all(
             [response.data[field] == value for field, value in expected_data[0].items()]
@@ -1362,6 +1550,8 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{word.slug}/{objs_related_name}/{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert all(
@@ -1408,8 +1598,14 @@ class TestVocabularyEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert all(
             [response.data[field] == value for field, value in expected_data[0].items()]
         )
@@ -1451,8 +1647,14 @@ class TestVocabularyEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
 
-        assert response.status_code == 200 or response.status_code == 301
+        assert response.status_code == 200
         assert all(
             [
                 response.data['from_word'][field] == value
@@ -1499,6 +1701,8 @@ class TestVocabularyEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{word.slug}/{res_name or objs_related_name}/{lookup}/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
         if response.data and 'count' in response.data:
@@ -1512,6 +1716,8 @@ class TestVocabularyEndpoints:
         FavoriteWord.objects.create(user=user, word=word)
 
         response = auth_api_client(user).get(f'{self.endpoint}favorites/')
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.data['count'] == 1
 
@@ -1522,6 +1728,8 @@ class TestVocabularyEndpoints:
         word = baker.make(Word, author=user, language=language)
 
         response = auth_api_client(user).post(f'{self.endpoint}{word.slug}/favorite/')
+        if response.status_code == 307:
+            response = auth_api_client(user).post(response['Location'])
 
         assert FavoriteWord.objects.filter(user=user, word=word).exists()
 
@@ -1532,6 +1740,8 @@ class TestVocabularyEndpoints:
         word = baker.make(Word, author=user, language=language)
 
         response = auth_api_client(user).delete(f'{self.endpoint}{word.slug}/favorite/')
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert not FavoriteWord.objects.filter(user=user, word=word).exists()
 
@@ -1548,6 +1758,8 @@ class TestTypesEndpoints:
         types = word_types()
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert len(response.data) == len(types)
@@ -1565,6 +1777,8 @@ class TestTagsEndpoints:
         tags = word_tags(user, make=True)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert len(response.data) == len(tags)
@@ -1582,6 +1796,8 @@ class TestFormGroupsEndpoints:
         form_groups = word_form_groups(user, make=True)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert len(response.data) == len(form_groups)
@@ -1610,6 +1826,8 @@ class TestWordTranslationsEndpoints:
         objs = word_translations(user, make=True)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert pagination_field in response.data, (
@@ -1641,6 +1859,13 @@ class TestWordTranslationsEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -1660,6 +1885,9 @@ class TestWordTranslationsEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -1683,6 +1911,13 @@ class TestWordTranslationsEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -1700,6 +1935,8 @@ class TestWordTranslationsEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
         assert not self.related_model.objects.filter(slug=objs[0].slug).exists()
@@ -1721,6 +1958,13 @@ class TestWordTranslationsEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -1750,6 +1994,8 @@ class TestWordExamplesEndpoints:
         objs = word_usage_examples(user, make=True)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert pagination_field in response.data, (
@@ -1783,6 +2029,13 @@ class TestWordExamplesEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -1802,6 +2055,9 @@ class TestWordExamplesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -1825,6 +2081,13 @@ class TestWordExamplesEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -1842,6 +2105,8 @@ class TestWordExamplesEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
         assert not self.related_model.objects.filter(slug=objs[0].slug).exists()
@@ -1865,6 +2130,13 @@ class TestWordExamplesEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -1894,6 +2166,8 @@ class TestWordDefinitionsEndpoints:
         objs = word_definitions(user, make=True)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert pagination_field in response.data, (
@@ -1927,6 +2201,13 @@ class TestWordDefinitionsEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -1946,6 +2227,9 @@ class TestWordDefinitionsEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -1969,6 +2253,13 @@ class TestWordDefinitionsEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -1986,6 +2277,8 @@ class TestWordDefinitionsEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
         assert not self.related_model.objects.filter(slug=objs[0].slug).exists()
@@ -2009,6 +2302,13 @@ class TestWordDefinitionsEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -2029,6 +2329,9 @@ class TestWordSynonymsEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2052,6 +2355,13 @@ class TestWordSynonymsEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2071,6 +2381,8 @@ class TestWordSynonymsEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
         assert not self.related_model.objects.filter(slug=objs[0].slug).exists()
@@ -2091,6 +2403,13 @@ class TestWordSynonymsEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -2111,6 +2430,9 @@ class TestWordAntonymsEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2127,13 +2449,19 @@ class TestWordAntonymsEndpoints:
         word = baker.make(Word, author=user)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = words_simple_data(user, make=False, data=True)
-        # expected_data[0].pop('language')
 
         response = auth_api_client(user).patch(
             f'{self.endpoint}{objs[0].slug}/',
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2153,6 +2481,8 @@ class TestWordAntonymsEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
         assert not self.related_model.objects.filter(slug=objs[0].slug).exists()
@@ -2173,6 +2503,13 @@ class TestWordAntonymsEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -2193,6 +2530,9 @@ class TestWordSimilarsEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2216,6 +2556,13 @@ class TestWordSimilarsEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2235,6 +2582,8 @@ class TestWordSimilarsEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
         assert not self.related_model.objects.filter(slug=objs[0].slug).exists()
@@ -2255,6 +2604,13 @@ class TestWordSimilarsEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -2422,6 +2778,9 @@ class TestWordQuoteEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{objs[0].id}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2446,6 +2805,13 @@ class TestWordQuoteEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2463,6 +2829,8 @@ class TestWordQuoteEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{objs[0].id}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
         assert not self.related_model.objects.filter(id=objs[0].id).exists()
@@ -2478,6 +2846,13 @@ class TestWordQuoteEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -2509,6 +2884,9 @@ class TestMainPageEndpoints:
         )
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2540,6 +2918,9 @@ class TestAssociationsEndpoints:
         objs = request.getfixturevalue(fixture_name)(user, make=True, data=False)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2569,6 +2950,8 @@ class TestWordCollectionsEndpoints:
         objs = collections(user, make=True)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert pagination_field in response.data, (
@@ -2589,6 +2972,13 @@ class TestWordCollectionsEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -2607,6 +2997,9 @@ class TestWordCollectionsEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2629,6 +3022,13 @@ class TestWordCollectionsEndpoints:
             data=source_data[0],
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).patch(
+                response['Location'],
+                data=source_data[0],
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2646,6 +3046,8 @@ class TestWordCollectionsEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{objs[0].slug}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code in (204, 200)
         assert not self.related_model.objects.filter(slug=objs[0].slug).exists()
@@ -2661,6 +3063,13 @@ class TestWordCollectionsEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -2681,6 +3090,13 @@ class TestWordCollectionsEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -2721,6 +3137,9 @@ class TestWordCollectionsEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{collections_objs[0].slug}/{res_name or objs_related_name}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2736,6 +3155,8 @@ class TestWordCollectionsEndpoints:
         FavoriteCollection.objects.create(user=user, collection=collection)
 
         response = auth_api_client(user).get(f'{self.endpoint}favorites/')
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.data['count'] == 1
 
@@ -2748,6 +3169,8 @@ class TestWordCollectionsEndpoints:
         response = auth_api_client(user).post(
             f'{self.endpoint}{collection.slug}/favorite/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(response['Location'])
 
         assert FavoriteCollection.objects.filter(
             user=user, collection=collection
@@ -2762,6 +3185,8 @@ class TestWordCollectionsEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{collection.slug}/favorite/'
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert not FavoriteCollection.objects.filter(
             user=user, collection=collection
@@ -2780,6 +3205,8 @@ class TestLanguagesEndpoints:
         objs = learning_languages(user, data=False, _quantity=2)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert response.data['count'] == len(objs), (
@@ -2802,6 +3229,13 @@ class TestLanguagesEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 201
@@ -2827,6 +3261,12 @@ class TestLanguagesEndpoints:
             data=source_data,
             format='json',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).post(
+                response['Location'],
+                data=source_data,
+                format='json',
+            )
 
         assert response.status_code == 409
 
@@ -2837,6 +3277,9 @@ class TestLanguagesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{objs[0].language.name}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2856,6 +3299,8 @@ class TestLanguagesEndpoints:
         response = auth_api_client(user).delete(
             f'{self.endpoint}{language.language.name}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).delete(response['Location'])
 
         assert response.status_code == 204
         assert not UserLearningLanguage.objects.filter(slug=language.slug).exists()
@@ -2884,6 +3329,9 @@ class TestLanguagesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}{language.language.name}/{res_name or objs_related_name}/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
+
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
@@ -2898,6 +3346,8 @@ class TestLanguagesEndpoints:
         objs = languages(user, data=False, _quantity=2)
 
         response = auth_api_client(user).get(f'{self.endpoint}all/')
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert len(response.data) == len(objs)
@@ -2910,6 +3360,8 @@ class TestLanguagesEndpoints:
         languages(user, data=False, _quantity=3)
 
         response = auth_api_client(user).get(f'{self.endpoint}learning-available/')
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert response.data['count'] == len(objs) - 1, (
@@ -2928,6 +3380,8 @@ class TestLanguagesEndpoints:
         response = auth_api_client(user).get(
             f'{self.endpoint}native/',
         )
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert response.data['count'] == len(objs), (
@@ -2945,6 +3399,8 @@ class TestGlobalLanguagesEndpoints:
         objs = languages(user, data=False, _quantity=2)
 
         response = auth_api_client(user).get(self.endpoint)
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert len(response.data) == len(objs)
@@ -2956,6 +3412,8 @@ class TestGlobalLanguagesEndpoints:
         languages(user, data=False, _quantity=3)
 
         response = auth_api_client(user).get(f'{self.endpoint}interface/')
+        if response.status_code == 307:
+            response = auth_api_client(user).get(response['Location'])
 
         assert response.status_code == 200
         assert response.data['count'] == len(objs), (

@@ -43,6 +43,15 @@ from ..vocabulary.views import WordViewSet, CollectionViewSet, get_word_cards_ty
 logger = logging.getLogger(__name__)
 
 
+def get_language_prefix(url: str) -> str:
+    """Returns language prefix from url."""
+    prefix = url.split('/')[1]
+    if prefix != 'api':
+        return prefix
+    else:
+        return ''
+
+
 @extend_schema(tags=['languages'])
 @extend_schema_view(
     list=extend_schema(operation_id='learning_languages_list'),
@@ -55,6 +64,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
 
     http_method_names = ('get', 'post', 'delete', 'head')
     lookup_field = 'language__name'
+    lookup_url_kwarg = 'language__name'
     queryset = UserLearningLanguage.objects.none()
     serializer_class = LearningLanguageSerializer
     permission_classes = (IsAuthenticated,)
@@ -180,9 +190,16 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 existing_obj_representation=self.existing_language_represent,
             )
 
+    def get_object(self):
+        """Add language_prefix check."""
+        language_prefix = get_language_prefix(self.request.path)
+        if language_prefix:
+            self.lookup_field += '_' + language_prefix
+        return super().get_object()
+
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns user's learning language details."""
-        instance = kwargs.get('instance', self.get_object())
+        instance: UserLearningLanguage = kwargs.get('instance', self.get_object())
         logger.debug(f'Obtained instance: {instance}')
 
         serializer_class = kwargs.get('serializer_class', None)

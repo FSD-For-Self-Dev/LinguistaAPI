@@ -6,6 +6,7 @@ from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext as _
 
+from config.settings import LANGUAGE_CODE, LANGUAGES
 from apps.core.validators import CustomRegexValidator
 from apps.core.models import (
     CreatedModel,
@@ -72,6 +73,13 @@ class User(AbstractUser, CreatedModel, ModifiedModel):
         related_name='learning_by',
         verbose_name=_('Users learning languages'),
         blank=True,
+    )
+    interface_language = models.CharField(
+        _('Interface language'),
+        max_length=8,
+        choices=LANGUAGES,
+        blank=False,
+        default=LANGUAGE_CODE,
     )
 
     class Meta:

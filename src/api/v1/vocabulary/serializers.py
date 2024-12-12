@@ -2340,6 +2340,7 @@ class UserDetailsSerializer(
             'native_languages',
             'learning_languages_count',
             'learning_languages',
+            'interface_language',
             'words_count',
             'last_10_words',
         )

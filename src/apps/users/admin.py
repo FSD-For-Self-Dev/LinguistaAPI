@@ -40,6 +40,10 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
         (
+            'Languages',
+            {'fields': ('interface_language',)},
+        ),
+        (
             'Permissions',
             {
                 'fields': (
