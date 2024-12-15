@@ -477,7 +477,7 @@ class TestVocabularyEndpoints:
             'is_problematic': word.is_problematic,
             'note': word.note,
             'favorite': True,
-            'types': [word_type.name for word_type in word_types],
+            'types': [word_type.slug for word_type in word_types],
             'tags': [{'name': word_tag.name.lower()} for word_tag in word_tags],
         }
         expected_data = {
@@ -486,7 +486,7 @@ class TestVocabularyEndpoints:
             'is_problematic': word.is_problematic,
             'note': word.note,
             'favorite': True,
-            'types': [word_type.name for word_type in word_types],
+            'types': [word_type.slug for word_type in word_types],
             'tags': [{'name': word_tag.name.lower()} for word_tag in word_tags],
         }
 

@@ -156,7 +156,7 @@ def word_types(request):
     ):
         objs = baker.make(WordType, _quantity=_quantity)
         if data:
-            source_data = [obj.name for obj in objs]
+            source_data = [obj.slug for obj in objs]
             expected_data = source_data
             return source_data if source_only else (objs, source_data, expected_data)
         return objs

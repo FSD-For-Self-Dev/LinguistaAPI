@@ -670,7 +670,7 @@ class WordLongCardSerializer(
     """Serializer to list words with 6 last added translations."""
 
     types = TypeSlugRelatedField(
-        slug_field='name',
+        slug_field='slug',
         many=True,
         read_only=True,
     )
@@ -709,7 +709,7 @@ class WordStandartCardSerializer(
     """Serializer to list words in standart form with all translations."""
 
     types = TypeSlugRelatedField(
-        slug_field='name',
+        slug_field='slug',
         many=True,
         read_only=True,
     )
@@ -758,7 +758,7 @@ class WordShortCreateSerializer(
         required=True,
     )
     types = TypeSlugRelatedField(
-        slug_field='name',
+        slug_field='slug',
         queryset=WordType.objects.all(),
         many=True,
         required=False,
@@ -1245,7 +1245,7 @@ class WordSerializer(WordShortCreateSerializer):
         many=False,
     )
     types = TypeSlugRelatedField(
-        slug_field='name',
+        slug_field='slug',
         queryset=WordType.objects.order_by('name'),
         many=True,
         required=False,
