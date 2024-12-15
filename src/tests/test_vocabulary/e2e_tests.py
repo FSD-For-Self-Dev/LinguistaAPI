@@ -472,7 +472,7 @@ class TestVocabularyEndpoints:
         word_types = baker.make(WordType, _quantity=1)
         word_tags = baker.prepare(WordTag, _quantity=1)
         source_json = {
-            'language': word.language.name,
+            'language': word.language.isocode,
             'text': word.text,
             'is_problematic': word.is_problematic,
             'note': word.note,
@@ -481,7 +481,7 @@ class TestVocabularyEndpoints:
             'tags': [{'name': word_tag.name.lower()} for word_tag in word_tags],
         }
         expected_data = {
-            'language': word.language.name,
+            'language': word.language.isocode,
             'text': word.text,
             'is_problematic': word.is_problematic,
             'note': word.note,
@@ -540,7 +540,7 @@ class TestVocabularyEndpoints:
             related_objs_expected_data,
         ) = request.getfixturevalue(fixture_name)(user, data=True, language=language)
         source_json = {
-            'language': word.language.name,
+            'language': word.language.isocode,
             'text': word.text,
             objs_related_name: related_objs_source_data,
         }
@@ -597,7 +597,7 @@ class TestVocabularyEndpoints:
             related_words_source_data[0]['note'] = note
             related_words_expected_data[0]['note'] = note
         source_json = {
-            'language': word.language.name,
+            'language': word.language.isocode,
             'text': word.text,
             objs_related_name: related_words_source_data,
         }
@@ -634,7 +634,7 @@ class TestVocabularyEndpoints:
         language = learning_language(user)
         word = baker.make(Word, author=user, language=language)
         source_json = {
-            'language': word.language.name,
+            'language': word.language.isocode,
             'text': word.text,
             'tags': [],
         }
@@ -693,7 +693,7 @@ class TestVocabularyEndpoints:
         )
         related_objs_source[0][update_attr] = obj[0].__getattribute__(update_attr)
         source_json = {
-            'language': word.language.name,
+            'language': word.language.isocode,
             'text': word.text,
             objs_related_name: related_objs_source,
         }
@@ -758,11 +758,11 @@ class TestVocabularyEndpoints:
         UserNativeLanguage.objects.create(user=user, language=other_language3)
         translation = baker.make(WordTranslation, author=user, language=other_language)
         source_json = {
-            'language': word.language.name,
+            'language': word.language.isocode,
             'text': word.text,
             'translations': [
                 {
-                    'language': other_language.name,
+                    'language': other_language.isocode,
                     'text': translation.text,
                 }
             ],
@@ -900,7 +900,7 @@ class TestVocabularyEndpoints:
             user, data=True, language=language, _quantity=limit + 1
         )
         source_json = {
-            'language': word.language.name,
+            'language': word.language.isocode,
             'text': word.text,
             objs_related_name: related_objs_source_data,
         }
@@ -1279,11 +1279,11 @@ class TestVocabularyEndpoints:
             'words': [
                 {
                     'text': existing_word.text,
-                    'language': existing_word.language.name,
+                    'language': existing_word.language.isocode,
                 },
                 {
                     'text': new_word.text,
-                    'language': new_word.language.name,
+                    'language': new_word.language.isocode,
                 },
             ],
             'collections': [
@@ -1333,7 +1333,7 @@ class TestVocabularyEndpoints:
             'words': [
                 {
                     'text': existing_word.text,
-                    'language': existing_word.language.name,
+                    'language': existing_word.language.isocode,
                     'tags': [],
                 },
             ],
@@ -1417,13 +1417,13 @@ class TestVocabularyEndpoints:
 
         response = auth_api_client(user).get(
             f'{self.endpoint}{word.slug}/translations/',
-            {'language': translation[0].language.name},
+            {'language': translation[0].language.isocode},
             format='json',
         )
         if response.status_code == 307:
             response = auth_api_client(user).get(
                 response['Location'],
-                {'language': translation[0].language.name},
+                {'language': translation[0].language.isocode},
                 format='json',
             )
 
@@ -3275,7 +3275,7 @@ class TestLanguagesEndpoints:
         baker.make(Word, author=user, language=objs[0].language)
 
         response = auth_api_client(user).get(
-            f'{self.endpoint}{objs[0].language.name}/',
+            f'{self.endpoint}{objs[0].language.isocode}/',
         )
         if response.status_code == 307:
             response = auth_api_client(user).get(response['Location'])
@@ -3297,7 +3297,7 @@ class TestLanguagesEndpoints:
         language = learning_languages(user, data=False, _quantity=1)[0]
 
         response = auth_api_client(user).delete(
-            f'{self.endpoint}{language.language.name}/',
+            f'{self.endpoint}{language.language.isocode}/',
         )
         if response.status_code == 307:
             response = auth_api_client(user).delete(response['Location'])
@@ -3327,7 +3327,7 @@ class TestLanguagesEndpoints:
         word.__getattribute__(objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
-            f'{self.endpoint}{language.language.name}/{res_name or objs_related_name}/',
+            f'{self.endpoint}{language.language.isocode}/{res_name or objs_related_name}/',
         )
         if response.status_code == 307:
             response = auth_api_client(user).get(response['Location'])

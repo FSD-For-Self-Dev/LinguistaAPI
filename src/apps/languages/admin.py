@@ -17,6 +17,7 @@ class LanguageAdmin(TabbedTranslationAdmin):
     list_display = (
         'name',
         'name_local',
+        'country',
         'isocode',
         'sorting',
         'learning_available',

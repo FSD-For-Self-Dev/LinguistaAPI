@@ -225,7 +225,7 @@ class WordType(
         ),
     )
 
-    slugify_fields = ('name',)
+    slugify_fields = ('name_en',)
 
     class Meta:
         verbose_name = _('Word type')

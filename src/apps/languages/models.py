@@ -30,30 +30,34 @@ class Language(WordsCountMixin, models.Model):
     """
 
     LANGS_SORTING_VALS = {
-        'en': 3,
-        'ru': 2,
-        'fr': 2,
-        'de': 2,
-        'it': 2,
-        'ja': 2,
-        'ko': 2,
-        'es': 2,
-        'tr': 1,
-        'ar': 1,
-        'nl': 1,
-        'ro': 1,
+        'en-gb': 3,
+        'en-us': 3,
+        'ru-ru': 2,
+        'fr-fr': 2,
+        'de-de': 2,
+        'it-it': 2,
+        'ja-jp': 2,
+        'ko-kr': 2,
+        'zh-cn': 2,
+        'es-es': 2,
+        'tr-tr': 1,
+        'ar-ae': 1,
+        'nl-nl': 1,
+        'ro-ro': 1,
     }
     LEARN_AVAILABLE = {
-        'en': True,
-        'ru': True,
-        'fr': True,
-        'de': True,
-        'it': True,
-        'es': True,
+        'en-gb': True,
+        'en-us': True,
+        'ru-ru': True,
+        'fr-fr': True,
+        'de-de': True,
+        'it-it': True,
+        'es-es': True,
     }
     INTERFACE_AVAILABLE = {
-        'en': True,
-        'ru': True,
+        'en-gb': True,
+        'en-us': True,
+        'ru-ru': True,
     }
 
     id = models.UUIDField(
@@ -80,7 +84,13 @@ class Language(WordsCountMixin, models.Model):
         null=False,
         blank=False,
         unique=True,
-        help_text=_('2 character language code without country'),
+        help_text=_('2 or 3 character language code with 2 character country code'),
+    )
+    country = models.CharField(
+        _('Country name'),
+        max_length=256,
+        null=False,
+        blank=True,
     )
     sorting = models.PositiveIntegerField(
         _('Sorting order'),
@@ -112,7 +122,7 @@ class Language(WordsCountMixin, models.Model):
         get_latest_by = ('name',)
 
     def __str__(self) -> str:
-        return f'{self.name} ({self.name_local})'
+        return f'{self.name} ({self.country})'
 
 
 def language_images_path(instance, filename) -> str:
@@ -203,7 +213,7 @@ class UserLearningLanguage(
         default='',
     )
 
-    slugify_fields = ('user', ('language', 'name'))
+    slugify_fields = ('user', ('language', 'isocode'))
 
     class Meta:
         verbose_name = _('User learning language')
@@ -241,7 +251,7 @@ class UserNativeLanguage(SlugModel, CreatedModel):
         related_name='native_languages_detail',
     )
 
-    slugify_fields = ('user', ('language', 'name'))
+    slugify_fields = ('user', ('language', 'isocode'))
 
     class Meta:
         verbose_name = _('User native language')

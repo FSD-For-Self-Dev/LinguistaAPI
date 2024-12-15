@@ -20,7 +20,7 @@ from apps.languages.models import Language, UserLearningLanguage, UserNativeLang
 def language(request):
     def get_language(data=False, **kwargs):
         language = baker.make(Language)
-        return language.name if data else language
+        return language.isocode if data else language
 
     return get_language
 
@@ -31,7 +31,7 @@ def learning_language(request):
         language = baker.make(Language)
         UserLearningLanguage.objects.create(user=user, language=language)
         if data:
-            return language.name
+            return language.isocode
         return language
 
     return get_learning_language
@@ -43,7 +43,7 @@ def native_language(request):
         language = baker.make(Language)
         UserNativeLanguage.objects.create(user=user, language=language)
         if data:
-            return language.name
+            return language.isocode
         return language
 
     return get_native_language
@@ -55,7 +55,7 @@ def languages(request):
         languages = baker.make(
             Language, **extra_data, _quantity=_quantity, _fill_optional=False
         )
-        return [language.name for language in languages] if name else languages
+        return [language.isocode for language in languages] if name else languages
 
     return get_languages
 
@@ -94,7 +94,7 @@ def native_languages(request):
         if data:
             source_data = [
                 {
-                    'name': language.name,
+                    'name': language.isocode,
                     'flag_icon': language.flag_icon,
                 }
                 for language in languages
@@ -133,7 +133,7 @@ def words_simple_data(request):
             source = [
                 {
                     'text': obj.text,
-                    'language': obj.language.name,
+                    'language': obj.language.isocode,
                 }
                 for obj in objs
             ]
@@ -211,7 +211,7 @@ def word_form_groups(request):
             source = [
                 {
                     'name': obj.name,
-                    'language': obj.language.name,
+                    'language': obj.language.isocode,
                     'color': '#000000',
                     'translation': obj.translation,
                 }
@@ -220,7 +220,7 @@ def word_form_groups(request):
             expected = [
                 {
                     'name': obj.name.capitalize(),
-                    'language': obj.language.name,
+                    'language': obj.language.isocode,
                     'color': '#000000',
                     'translation': obj.translation,
                 }
@@ -259,14 +259,14 @@ def word_translations(request):
             source = [
                 {
                     'text': obj.text,
-                    'language': obj.language.name,
+                    'language': obj.language.isocode,
                 }
                 for obj in objs
             ]
             expected = [
                 {
                     'text': obj.text,
-                    'language': obj.language.name,
+                    'language': obj.language.isocode,
                 }
                 for obj in objs
             ]
@@ -303,7 +303,7 @@ def word_usage_examples(request):
             source = [
                 {
                     'text': obj.text,
-                    'language': obj.language.name,
+                    'language': obj.language.isocode,
                     'translation': obj.translation,
                 }
                 for obj in objs
@@ -311,7 +311,7 @@ def word_usage_examples(request):
             expected = [
                 {
                     'text': obj.text,
-                    'language': obj.language.name,
+                    'language': obj.language.isocode,
                     'translation': obj.translation,
                 }
                 for obj in objs
@@ -349,7 +349,7 @@ def word_definitions(request):
             source = [
                 {
                     'text': obj.text,
-                    'language': obj.language.name,
+                    'language': obj.language.isocode,
                     'translation': obj.translation,
                 }
                 for obj in objs
@@ -357,7 +357,7 @@ def word_definitions(request):
             expected = [
                 {
                     'text': obj.text,
-                    'language': obj.language.name,
+                    'language': obj.language.isocode,
                     'translation': obj.translation,
                 }
                 for obj in objs
@@ -461,7 +461,7 @@ def related_words_data(request):
             source = [
                 {
                     'from_word': {
-                        'language': obj.language.name,
+                        'language': obj.language.isocode,
                         'text': obj.text,
                     },
                     'note': 'test_note',
@@ -471,7 +471,7 @@ def related_words_data(request):
             expected = [
                 {
                     'from_word': {
-                        'language': obj.language.name,
+                        'language': obj.language.isocode,
                         'text': obj.text,
                     },
                     'note': 'test_note',

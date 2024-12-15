@@ -59,7 +59,6 @@ from ..core.serializers_mixins import (
 from ..core.exceptions import AmountLimitExceeded, ObjectAlreadyExist
 from ..users.serializers import UserListSerializer
 from ..languages.serializers import (
-    LanguageSerializer,
     LearningLanguageListSerailizer,
     LearningLanguageSerializer,
 )
@@ -214,7 +213,7 @@ class WordTranslationInLineSerializer(
     )
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         default=NativeLanguageDefault(),
     )
     language_icon = serializers.SerializerMethodField('get_language_icon')
@@ -271,7 +270,7 @@ class UsageExampleInLineSerializer(
     )
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
     )
     words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
@@ -315,7 +314,7 @@ class DefinitionInLineSerializer(
     )
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
     )
     words_count = KwargsMethodField('get_objs_count', objs_related_name='words')
@@ -414,7 +413,7 @@ class FormGroupInLineSerializer(
     )
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
     )
 
@@ -573,7 +572,10 @@ class WordSuperShortSerializer(serializers.ModelSerializer):
     """Serializer to list words with no details."""
 
     author = serializers.SlugRelatedField(slug_field='username', read_only=True)
-    language = serializers.SlugRelatedField(slug_field='name', read_only=True)
+    language = LanguageSlugRelatedField(
+        slug_field='isocode',
+        read_only=True,
+    )
 
     class Meta:
         model = Word
@@ -752,7 +754,7 @@ class WordShortCreateSerializer(
     id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
     )
     types = TypeSlugRelatedField(
@@ -1234,13 +1236,8 @@ class WordSerializer(WordShortCreateSerializer):
     id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
-    )
-    language_info = LanguageSerializer(
-        many=False,
-        read_only=True,
-        source='language',
     )
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
@@ -1304,7 +1301,6 @@ class WordSerializer(WordShortCreateSerializer):
             'id',
             'slug',
             'language',
-            'language_info',
             'text',
             'note',
             'author',
@@ -1342,7 +1338,6 @@ class WordSerializer(WordShortCreateSerializer):
         )
         read_only_fields = (
             'slug',
-            'language_info',
             'activity_status',
             'activity_progress',
             'translations_count',
@@ -1642,7 +1637,7 @@ class WordTranslationListSerializer(serializers.ModelSerializer):
     )
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
     )
     other_words_count = KwargsMethodField(
@@ -1694,7 +1689,7 @@ class WordTranslationSerializer(
         representation_field='username',
     )
     language = LanguageSlugRelatedField(
-        slug_field='name',
+        slug_field='isocode',
         read_only=True,
     )
 
@@ -1728,7 +1723,7 @@ class WordTranslationCreateSerializer(
 
     id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
-        slug_field='name',
+        slug_field='isocode',
         read_only=False,
         queryset=Language.objects.all(),
     )
@@ -1757,7 +1752,7 @@ class DefinitionListSerializer(serializers.ModelSerializer):
     )
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
     )
     other_words_count = KwargsMethodField(
@@ -1805,7 +1800,7 @@ class DefinitionSerializer(
         representation_field='username',
     )
     language = LanguageSlugRelatedField(
-        slug_field='name',
+        slug_field='isocode',
         read_only=True,
     )
 
@@ -1838,7 +1833,7 @@ class DefinitionCreateSerializer(
 
     id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
-        slug_field='name',
+        slug_field='isocode',
         read_only=False,
         queryset=Language.objects.all(),
     )
@@ -1891,7 +1886,7 @@ class UsageExampleListSerializer(serializers.ModelSerializer):
     )
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
     )
     other_words_count = KwargsMethodField(
@@ -1941,7 +1936,7 @@ class UsageExampleSerializer(
         representation_field='username',
     )
     language = LanguageSlugRelatedField(
-        slug_field='name',
+        slug_field='isocode',
         read_only=True,
     )
 
@@ -1976,7 +1971,7 @@ class UsageExampleCreateSerializer(
 
     id = serializers.CharField(required=False)
     language = LanguageSlugRelatedField(
-        slug_field='name',
+        slug_field='isocode',
         read_only=False,
         queryset=Language.objects.all(),
     )
@@ -2114,7 +2109,7 @@ class SynonymSerializer(
         representation_field='username',
     )
     language = LanguageSlugRelatedField(
-        slug_field='name',
+        slug_field='isocode',
         read_only=True,
     )
 
@@ -2191,7 +2186,7 @@ class FormGroupListSerializer(
     )
     language = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
     )
     words_count = KwargsMethodField('get_objs_count', objs_related_name='form_groups')
@@ -2309,7 +2304,7 @@ class UserDetailsSerializer(
 
     native_languages = LanguageSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=False,
         many=True,
     )

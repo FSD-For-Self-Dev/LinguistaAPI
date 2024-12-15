@@ -63,8 +63,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
     """User's learning, native languages CRUD."""
 
     http_method_names = ('get', 'post', 'delete', 'head')
-    lookup_field = 'language__name'
-    lookup_url_kwarg = 'language__name'
+    lookup_field = 'language__isocode'
     queryset = UserLearningLanguage.objects.none()
     serializer_class = LearningLanguageSerializer
     permission_classes = (IsAuthenticated,)
@@ -189,13 +188,6 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 request,
                 existing_obj_representation=self.existing_language_represent,
             )
-
-    def get_object(self):
-        """Add language_prefix check."""
-        language_prefix = get_language_prefix(self.request.path)
-        if language_prefix:
-            self.lookup_field += '_' + language_prefix
-        return super().get_object()
 
     def retrieve(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns user's learning language details."""
@@ -461,7 +453,7 @@ class GlobalLanguageViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
                 )
 
     def list(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
-        """Returns list of user's learning languages with counter."""
+        """Returns list of global languages."""
         response_data = super().list(request, *args, **kwargs).data
         return Response({'count': len(response_data), 'results': response_data})
 

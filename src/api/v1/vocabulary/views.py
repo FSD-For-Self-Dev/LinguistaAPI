@@ -571,15 +571,14 @@ class WordViewSet(
         )
         logger.debug(f'Word instance: {instance}')
 
-        filterby_language_name = request.query_params.get('language', '')
+        filterby_language = request.query_params.get('language', '')
         logger.debug(
-            f'Language name query param to filter translations: '
-            f'{filterby_language_name}'
+            f'Language name query param to filter translations: ' f'{filterby_language}'
         )
 
         _objs = (
-            instance.translations.filter(language__name=filterby_language_name)
-            if filterby_language_name
+            instance.translations.filter(language__isocode=filterby_language)
+            if filterby_language
             else instance.translations.all()
         )
         logger.debug(f'Obtained objects: {_objs}')

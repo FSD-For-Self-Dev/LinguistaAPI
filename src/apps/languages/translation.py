@@ -11,4 +11,4 @@ class LanguageTranslationOptions(TranslationOptions):
     Internationalization settings for fields of the Language model.
     """
 
-    fields = ('name',)
+    fields = ('name', 'country')

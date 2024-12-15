@@ -50,7 +50,7 @@ class LearningLanguageListSerailizer(
     )
     language = PresentableSlugRelatedField(
         queryset=Language.objects.all(),
-        slug_field='name',
+        slug_field='isocode',
         required=True,
         presentation_serializer=LanguageSerializer,
     )

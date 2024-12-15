@@ -1,14 +1,26 @@
 """Custom command to import languages."""
 
 import os
+import requests
+import logging
+import json
 from tqdm import tqdm
 
-from django.conf.locale import LANG_INFO
 from django.core.management.base import BaseCommand
 from django.core.files.images import ImageFile
 
+from dotenv import load_dotenv
+from modeltranslation.translator import translator
 
 from apps.languages.models import Language, LanguageCoverImage
+from utils.getters import get_yc_headers
+from config.settings import LANGUAGES
+from .data.languages import TWO_LETTERS_CODES_V3
+
+load_dotenv()
+
+logging.getLogger('requests').setLevel(logging.WARNING)
+logging.getLogger('urllib3').setLevel(logging.WARNING)
 
 
 class Command(BaseCommand):
@@ -17,8 +29,12 @@ class Command(BaseCommand):
     """
 
     help = 'Imports language codes and names from ' 'django.conf.locale.LANG_INFO'
+
     images_path = 'apps/languages/images/'
     flag_icons_path = 'apps/languages/images/flag_icons/'
+
+    translator_url = 'https://translate.api.cloud.yandex.net/translate/v2/translate'
+    languages_source_language_code = 'en'
 
     def add_arguments(self, parser):
         parser.add_argument(
@@ -27,56 +43,127 @@ class Command(BaseCommand):
             default=False,
             help='Pass if images import is needed no matter languages exist',
         )
+        parser.add_argument(
+            '--add_translations',
+            action='store_true',
+            default=False,
+            help='Pass if languages fields translations is needed no matter languages exist',
+        )
+        parser.add_argument(
+            'last_locales',
+            type=int,
+            nargs='?',
+            help='For example, if the value 1 is passed, the fields will be translated only to the last locale language',
+        )
 
     def handle(self, *args, **options):
         cnt = 0
-        for isocode in tqdm(LANG_INFO, desc='Importing languages'):
-            # we only care about the 2 letter iso codes
-            if len(isocode) == 2:
+        skip_cnt = 0
+        for isocode in tqdm(TWO_LETTERS_CODES_V3, desc='Importing languages'):
+            try:
+                if not TWO_LETTERS_CODES_V3[isocode]['name_local']:
+                    skip_cnt += 1
+                    continue
                 try:
-                    lang, created = Language.objects.get_or_create(
-                        isocode=isocode,
-                        name=LANG_INFO[isocode]['name'],
-                        name_local=LANG_INFO[isocode]['name_local'],
+                    lang = Language.objects.get(isocode=isocode.lower())
+                    created = False
+                except Language.DoesNotExist:
+                    lang = Language.objects.create(
+                        isocode=isocode.lower(),
+                        name=TWO_LETTERS_CODES_V3[isocode]['name'],
+                        name_local=TWO_LETTERS_CODES_V3[isocode]['name_local'],
+                        country=TWO_LETTERS_CODES_V3[isocode]['country'],
                     )
+                    created = True
 
-                    lang.sorting = Language.LANGS_SORTING_VALS.get(isocode, 0)
-                    lang.learning_available = Language.LEARN_AVAILABLE.get(
-                        isocode, False
-                    )
-                    lang.interface_available = Language.INTERFACE_AVAILABLE.get(
-                        isocode, False
-                    )
+                lang.sorting = Language.LANGS_SORTING_VALS.get(isocode.lower(), 0)
+                lang.learning_available = Language.LEARN_AVAILABLE.get(
+                    isocode.lower(), False
+                )
+                lang.interface_available = Language.INTERFACE_AVAILABLE.get(
+                    isocode.lower(), False
+                )
 
-                    import_images = options['import_images']
+                if created:
+                    cnt += 1
 
-                    if created or import_images:
-                        cnt += 1
-
-                        try:
-                            flag_icon_path = self.flag_icons_path + isocode + '.svg'
-                            flag_icon = ImageFile(open(flag_icon_path, 'rb'))
-                            flag_icon.name = isocode + '.svg'
-                            lang.flag_icon = flag_icon
-                        except FileNotFoundError:
-                            self.stdout.write(f'Flag icon not found: {lang}')
-
-                        if lang.learning_available:
-                            images_urls = [
-                                self.images_path + filename
-                                for filename in os.listdir(self.images_path)
-                                if filename.startswith(lang.isocode)
-                            ]
-                            for image_url in images_urls:
-                                image = ImageFile(open(image_url, 'rb'))
-                                image.name = isocode + '.' + image.name.split('.')[-1]
-                                LanguageCoverImage.objects.create(
-                                    language=lang, image=image
+                # Translating specified fields into locales from config
+                add_translations = options['add_translations']
+                last_locales = options['last_locales']
+                locales = LANGUAGES[::-1][:last_locales] if last_locales else LANGUAGES
+                if add_translations:
+                    for field in translator.get_options_for_model(Language).fields:
+                        for locale in locales:
+                            locale_isocode, _ = locale
+                            if locale_isocode == self.languages_source_language_code:
+                                continue
+                            request_data = json.dumps(
+                                {
+                                    'folderId': os.getenv('YC_FOLDER_ID', default=''),
+                                    'sourceLanguageCode': self.languages_source_language_code,
+                                    'targetLanguageCode': locale_isocode,
+                                    'texts': [TWO_LETTERS_CODES_V3[isocode][field]],
+                                }
+                            )
+                            response = requests.post(
+                                self.translator_url,
+                                headers=get_yc_headers(),
+                                data=request_data,
+                            )
+                            try:
+                                if response.status_code == 200:
+                                    response_content = response.json()
+                                    lang.__setattr__(
+                                        f'{field}_{locale_isocode}',
+                                        response_content['translations'][0]['text'],
+                                    )
+                                else:
+                                    response_content = response.json()
+                                    self.stdout.write(
+                                        f'Error occured: translator (url: {self.translator_url}) '
+                                        f'returned {response.status_code} status code: {response_content}'
+                                    )
+                            except Exception as e:
+                                self.stdout.write(
+                                    f'Error occured: translator (url: {self.translator_url}): '
+                                    f'{e}'
                                 )
 
-                    lang.save()
+                # Importing specified flag icons, images for languages
+                import_images = options['import_images']
+                if created or import_images:
+                    try:
+                        flag_icon_path = TWO_LETTERS_CODES_V3[isocode]['flag_icon_path']
+                        flag_icon = ImageFile(open(flag_icon_path, 'rb'))
+                        flag_icon.name = isocode + '.svg'
+                        lang.flag_icon = flag_icon
+                    except FileNotFoundError:
+                        self.stdout.write(
+                            f'\nFlag icon not found: {lang.name} ({lang.country})'
+                        )
+                        flag_icon_path = self.flag_icons_path + 'world' + '.svg'
+                        flag_icon = ImageFile(open(flag_icon_path, 'rb'))
+                        flag_icon.name = isocode + '.svg'
+                        lang.flag_icon = flag_icon
 
-                except Exception as e:
-                    self.stdout.write(f'Error adding language: {e}')
+                    if lang.learning_available:
+                        images_urls = [
+                            self.images_path + filename
+                            for filename in os.listdir(self.images_path)
+                            if filename.startswith(lang.isocode)
+                        ]
+                        for image_url in images_urls:
+                            image = ImageFile(open(image_url, 'rb'))
+                            image.name = isocode + '.' + image.name.split('.')[-1]
+                            LanguageCoverImage.objects.create(
+                                language=lang, image=image
+                            )
 
-        self.stdout.write('Added %d languages' % cnt)
+                lang.save()
+
+            except Exception as e:
+                self.stdout.write(
+                    f'Error adding language {lang} (isocode: {lang.isocode}): {e}'
+                )
+
+        self.stdout.write(f'Added {cnt} languages\nSkipped {skip_cnt} languages')
