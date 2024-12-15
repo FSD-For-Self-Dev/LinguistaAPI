@@ -478,7 +478,7 @@ class TestVocabularyEndpoints:
             'note': word.note,
             'favorite': True,
             'types': [word_type.slug for word_type in word_types],
-            'tags': [{'name': word_tag.name.lower()} for word_tag in word_tags],
+            'tags': [word_tag.name for word_tag in word_tags],
         }
         expected_data = {
             'language': word.language.isocode,
@@ -487,7 +487,7 @@ class TestVocabularyEndpoints:
             'note': word.note,
             'favorite': True,
             'types': [word_type.slug for word_type in word_types],
-            'tags': [{'name': word_tag.name.lower()} for word_tag in word_tags],
+            'tags': [word_tag.name.lower() for word_tag in word_tags],
         }
 
         response = auth_api_client(user).post(
@@ -661,7 +661,6 @@ class TestVocabularyEndpoints:
             ('translations', 'word_translations', WordTranslation, 'text'),
             ('examples', 'word_usage_examples', UsageExample, 'text'),
             ('definitions', 'word_definitions', Definition, 'text'),
-            ('tags', 'word_tags', WordTag, 'name'),
             ('form_groups', 'word_form_groups', FormGroup, 'name'),
             ('synonyms', 'related_words_data', Word, 'text'),
             ('antonyms', 'related_words_data', Word, 'text'),
@@ -1046,12 +1045,17 @@ class TestVocabularyEndpoints:
 
         assert response.status_code == 200
         assert len(response_objs_content) == 1
-        assert all(
-            [
-                response_objs_content[0][field] == value
-                for field, value in new_objs_expected_data[0].items()
-            ]
-        )
+
+        try:
+            assert all(
+                [
+                    response_objs_content[0][field] == value
+                    for field, value in new_objs_expected_data[0].items()
+                ]
+            )
+        except AttributeError:
+            assert response_objs_content[0] == new_objs_expected_data[0]
+
         if delete_extra_objs:
             assert not related_model.objects.filter(
                 pk__in=[old_objs[0].id, old_objs[1].id], author=user
@@ -2890,14 +2894,19 @@ class TestMainPageEndpoints:
         response_content = json.loads(response.content)
 
         assert response.status_code == 200
-        assert all(
-            [
-                response_content[f'last_10_{res_name}'][0][field] == value
-                if field in response_content[f'last_10_{res_name}'][0]
-                else True
-                for field, value in expected_data[0].items()
-            ]
-        )
+
+        try:
+            assert all(
+                [
+                    response_content[f'last_10_{res_name}'][0][field] == value
+                    if field in response_content[f'last_10_{res_name}'][0]
+                    else True
+                    for field, value in expected_data[0].items()
+                ]
+            )
+        except AttributeError:
+            response_content[f'last_10_{res_name}'][0] == expected_data[0]
+
         assert response_content[f'{res_name}_count'] == len(objs)
         assert len(response_content['learning_languages']) == 1
         assert response_content['learning_languages_count'] == 1

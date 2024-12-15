@@ -166,7 +166,9 @@ def word_types(request):
 
 @pytest.fixture
 def word_tags(request):
-    def get_word_tags_data(user, data=False, _quantity=1, make=False, **kwargs):
+    def get_word_tags_data(
+        user, data=False, _quantity=1, make=False, source_only=False, **kwargs
+    ):
         if make:
             objs = baker.make(
                 WordTag, author=user, _quantity=_quantity, _fill_optional=True
@@ -176,9 +178,9 @@ def word_tags(request):
                 WordTag, author=user, _quantity=_quantity, _fill_optional=True
             )
         if data:
-            source = [{'name': obj.name.lower()} for obj in objs]
-            expected = source
-            return (objs, source, expected)
+            source = [obj.name for obj in objs]
+            expected = [obj.name.lower() for obj in objs]
+            return expected if source_only else (objs, source, expected)
         return objs
 
     return get_word_tags_data

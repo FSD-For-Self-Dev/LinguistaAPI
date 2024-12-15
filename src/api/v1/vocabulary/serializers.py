@@ -45,6 +45,7 @@ from ..core.serializers_fields import (
     HybridImageOrPrimaryKeyField,
     LanguageSlugRelatedField,
     TypeSlugRelatedField,
+    CreatableSlugRelatedField,
 )
 from ..core.serializers_mixins import (
     ListUpdateSerializer,
@@ -763,7 +764,9 @@ class WordShortCreateSerializer(
         many=True,
         required=False,
     )
-    tags = TagSerializer(
+    tags = serializers.SlugRelatedField(
+        slug_field='name',
+        queryset=WordTag.objects.all(),
         many=True,
         required=False,
     )
@@ -1246,11 +1249,17 @@ class WordSerializer(WordShortCreateSerializer):
     )
     types = TypeSlugRelatedField(
         slug_field='slug',
-        queryset=WordType.objects.order_by('name'),
+        queryset=WordType.objects.all(),
         many=True,
         required=False,
     )
-    tags = TagSerializer(many=True, required=False)
+    tags = CreatableSlugRelatedField(
+        slug_field='name',
+        queryset=WordTag.objects.all(),
+        many=True,
+        required=False,
+        author_current_user=True,
+    )
     form_groups = FormGroupInLineSerializer(many=True, required=False)
     translations_count = KwargsMethodField(
         'get_objs_count',
@@ -1442,7 +1451,10 @@ class MultipleWordsSerializer(serializers.Serializer):
         objs = []
         for field_nested, serializer in self.get_fields().items():
             serializer.context['request'] = self.context['request']
-            serializer.initial_data = self.initial_data[field_nested]
+            try:
+                serializer.initial_data = self.initial_data[field_nested]
+            except KeyError:
+                pass
             try:
                 objs.append(serializer.create(validated_data.get(field_nested, [])))
             except ObjectAlreadyExist as exception:

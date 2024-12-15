@@ -3,6 +3,7 @@
 from typing import Any
 
 from django.utils.translation import gettext as _
+from django.core.exceptions import ObjectDoesNotExist
 
 from rest_framework import serializers
 from drf_spectacular.utils import extend_schema_field
@@ -139,3 +140,27 @@ class TypeSlugRelatedField(serializers.SlugRelatedField):
         'does_not_exist': _('Type {value} was not found. Check its spelling.'),
         'invalid': _('Invalid value.'),
     }
+
+
+class CreatableSlugRelatedField(serializers.SlugRelatedField):
+    """..."""
+
+    def __init__(self, *args, **kwargs):
+        self.author_current_user = kwargs.pop('author_current_user', None)
+        super().__init__(*args, **kwargs)
+
+    def to_internal_value(self, data):
+        queryset = self.get_queryset()
+        try:
+            return queryset.get(**{self.slug_field: data.lower()})
+        except ObjectDoesNotExist:
+            if self.author_current_user:
+                return queryset.create(
+                    **{
+                        self.slug_field: data,
+                        'author': self.context.get('request').user,
+                    }
+                )
+            return queryset.create(**{self.slug_field: data.lower()})
+        except (TypeError, ValueError):
+            self.fail('invalid')

@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 ADMIN_USERNAME = os.getenv('DJANGO_SUPERUSER_USERNAME', default='admin')
 
-REGEX_TEXT_MASK = r"^(\p{L}+)([\p{L}-!?.,:/&'`’() ]*)$"
+REGEX_TEXT_MASK = r"^(\p{L}+)([\p{L}-!?.,:/&'`’() \d]*)$"
 REGEX_TEXT_MASK_DETAIL = _(
     'Acceptable characters: Letters from any language, '
     'Hyphen, Exclamation point, Question mark, Dot, Comma, Colon, Apostrophe, Slash. '
