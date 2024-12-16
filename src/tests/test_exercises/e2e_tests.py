@@ -86,7 +86,7 @@ class TestExercisesEndpoints:
         exercise = exercises(
             extra_data={'available': True, 'name': 'translator', 'slug': 'translator'}
         )[0]
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         translation = baker.make(WordTranslation, author=user, _fill_optional=True)
         word.translations.add(translation)
 
@@ -105,10 +105,10 @@ class TestExercisesEndpoints:
         exercise = exercises(
             extra_data={'available': True, 'name': 'translator', 'slug': 'translator'}
         )[0]
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         translation = baker.make(WordTranslation, author=user, _fill_optional=True)
         word.translations.add(translation)
-        other_word = baker.make(Word, author=user)
+        other_word = baker.make(Word, author=user, _fill_optional=True)
         right_collection = baker.make(Collection, author=user)
         right_collection.words.add(word)
         semi_right_collection = baker.make(Collection, author=user)

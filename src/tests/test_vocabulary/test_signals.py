@@ -11,7 +11,7 @@ pytestmark = [pytest.mark.signals]
 class TestSlugFiller:
     @pytest.mark.django_db
     def test_pre_save(self):
-        instance = baker.prepare(Word)
+        instance = baker.prepare(Word, _fill_optional=True)
 
         pre_save.send(Word, instance=instance, created=False)
 

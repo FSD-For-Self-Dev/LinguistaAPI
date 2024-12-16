@@ -54,9 +54,9 @@ class TestVocabularyEndpoints:
         По запросу словаря возвращается список слов из словаря авторизованного
         пользователя с пагинацией.
         """
-        user_words = baker.make(Word, author=user, _quantity=3)
+        user_words = baker.make(Word, author=user, _quantity=3, _fill_optional=True)
         other_user = baker.make(User)
-        baker.make(Word, author=other_user)
+        baker.make(Word, author=other_user, _fill_optional=True)
 
         response = auth_api_client(user).get(self.endpoint)
         if response.status_code == 307:
@@ -100,7 +100,7 @@ class TestVocabularyEndpoints:
     ):
         """Сортировка слов работает по тексту, по дате добавления,
         дате последней тренировки (по возрастанию и убыванию)."""
-        baker.make(Word, author=user, _quantity=10, _fill_optional=[order_field])
+        baker.make(Word, author=user, _quantity=10, _fill_optional=True)
         query = ('-' if reverse_ordering else '') + order_field
         (first_value,) = Word.objects.aggregate(Min(order_field)).values()
         (last_value,) = Word.objects.aggregate(Max(order_field)).values()
@@ -140,7 +140,7 @@ class TestVocabularyEndpoints:
         Сортировка словаря работает по дате создания, кол-ву переводов
         (по возрастанию и убыванию).
         """
-        baker.make(Word, author=user, _quantity=10)
+        baker.make(Word, author=user, _quantity=10, _fill_optional=True)
         query = ('-' if reverse_ordering else '') + order_field
         (first_value,) = (
             Word.objects.annotate(
@@ -178,8 +178,8 @@ class TestVocabularyEndpoints:
     @pytest.mark.parametrize('search_attr', ['text'])
     def test_search_by_word_attr(self, auth_api_client, user, search_attr):
         """Поиск по словам работает по тексту слов."""
-        word = baker.make(Word, author=user)
-        baker.make(Word, author=user, _quantity=10)
+        word = baker.make(Word, author=user, _fill_optional=True)
+        baker.make(Word, author=user, _quantity=10, _fill_optional=True)
 
         response = auth_api_client(user).get(
             self.endpoint,
@@ -216,8 +216,8 @@ class TestVocabularyEndpoints:
         Поиск по словам работает по тексту переводов, тексту определений,
         переводу определений, названию тегов.
         """
-        word = baker.make(Word, author=user)
-        baker.make(Word, author=user, _quantity=10)
+        word = baker.make(Word, author=user, _fill_optional=True)
+        baker.make(Word, author=user, _quantity=10, _fill_optional=True)
         obj = baker.make(related_model, _fill_optional=[*search_attr])
         word.__getattribute__(search_field).add(obj)
 
@@ -252,9 +252,9 @@ class TestVocabularyEndpoints:
     ):
         """Фильтрация слов работает по кол-ву переводов, примеров."""
         obj = baker.make(related_model, _fill_optional=['language'])
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(filter_field).add(obj)
-        baker.make(Word, author=user, _quantity=10)
+        baker.make(Word, author=user, _quantity=10, _fill_optional=True)
         query_field = filter_field + '_count'
 
         response = auth_api_client(user).get(
@@ -292,8 +292,10 @@ class TestVocabularyEndpoints:
         Фильтрация слов работает по статусу активности, тегу проблемное,
         дате добавления, дате последней тренировки с этим словом.
         """
-        baker.make(Word, author=user, **{filter_field: filter_value})
-        baker.make(Word, author=user, _quantity=10)
+        baker.make(
+            Word, author=user, **{filter_field: filter_value}, _fill_optional=True
+        )
+        baker.make(Word, author=user, _quantity=10, _fill_optional=True)
         query_field = filter_field + '__' + lookup if lookup else filter_field
 
         response = auth_api_client(user).get(
@@ -337,11 +339,11 @@ class TestVocabularyEndpoints:
         """
         obj = baker.make(related_model)
         if use_manager:
-            word = baker.make(Word, author=user)
+            word = baker.make(Word, author=user, _fill_optional=True)
             word.__getattribute__(filter_field).add(obj)
         else:
             word = baker.make(Word, author=user, **{filter_field: obj})
-        baker.make(Word, author=user, _quantity=10)
+        baker.make(Word, author=user, _quantity=10, _fill_optional=True)
 
         response = auth_api_client(user).get(
             self.endpoint,
@@ -376,11 +378,11 @@ class TestVocabularyEndpoints:
         fixture = request.getfixturevalue(fixture_name)
         obj1 = fixture(user, make=True)
         obj2 = fixture(user, make=True)
-        word1 = baker.make(Word, author=user)
+        word1 = baker.make(Word, author=user, _fill_optional=True)
         word1.__getattribute__(filter_field).set(obj1)
-        word2 = baker.make(Word, author=user)
+        word2 = baker.make(Word, author=user, _fill_optional=True)
         word2.__getattribute__(filter_field).set(obj2)
-        baker.make(Word, author=user, _quantity=10)
+        baker.make(Word, author=user, _quantity=10, _fill_optional=True)
         filter_value1 = obj1[0].__getattribute__(filter_attr)
         filter_value2 = obj2[0].__getattribute__(filter_attr)
 
@@ -405,8 +407,8 @@ class TestVocabularyEndpoints:
 
     def test_filter_by_first_letter(self, auth_api_client, user):
         """Фильтрация слов работает по первой букве слова."""
-        baker.make(Word, author=user, text='test word')
-        baker.make(Word, author=user, text='word test')
+        baker.make(Word, author=user, text='test word', _fill_optional=True)
+        baker.make(Word, author=user, text='word test', _fill_optional=True)
 
         response = auth_api_client(user).get(
             self.endpoint,
@@ -439,9 +441,9 @@ class TestVocabularyEndpoints:
     ):
         """Фильтрация слов работает по наличию ассоциаций."""
         association = baker.make(related_model, author=user)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(related_manager).add(association)
-        baker.make(Word, author=user, _quantity=10)
+        baker.make(Word, author=user, _quantity=10, _fill_optional=True)
 
         response = auth_api_client(user).get(
             self.endpoint,
@@ -726,7 +728,7 @@ class TestVocabularyEndpoints:
 
     def test_word_validate_language(self, auth_api_client, user):
         """Язык слова должен быть из изучаемых языков пользователя."""
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         source_json = {
             'language': getattr(word.language, 'name', None),
             'text': word.text,
@@ -930,7 +932,7 @@ class TestVocabularyEndpoints:
         На запрос получения слова от неавторизованного пользователя
         возвращается ошибка 401.
         """
-        word = baker.make(Word)
+        word = baker.make(Word, _fill_optional=True)
 
         response = api_client().get(f'{self.endpoint}{word.slug}/')
         if response.status_code == 307:
@@ -959,7 +961,7 @@ class TestVocabularyEndpoints:
             new_value = request.getfixturevalue(fixture_name)(
                 user, data=True, source_only=True
             )
-        word = baker.make(Word, author=user, **{field: old_value})
+        word = baker.make(Word, author=user, **{field: old_value}, _fill_optional=True)
         update_data = {field: new_value}
 
         response = auth_api_client(user).patch(
@@ -1018,7 +1020,7 @@ class TestVocabularyEndpoints:
         данными от авторизованного пользователя.
         """
         language = learning_language(user)
-        word = baker.make(Word, author=user, language=language)
+        word = baker.make(Word, author=user, language=language, _fill_optional=True)
         old_objs = baker.make(
             related_model, author=user, _quantity=2, _fill_optional=True
         )
@@ -1081,8 +1083,10 @@ class TestVocabularyEndpoints:
         request,
     ):
         language = learning_language(user)
-        word = baker.make(Word, author=user, language=language)
-        old_objs = baker.make(related_model, author=user, _quantity=2)
+        word = baker.make(Word, author=user, language=language, _fill_optional=True)
+        old_objs = baker.make(
+            related_model, author=user, _quantity=2, _fill_optional=True
+        )
         word.__getattribute__(objs_related_name).set(old_objs)
         _, new_objs_source_data, new_objs_expected_data = request.getfixturevalue(
             fixture_name
@@ -1116,7 +1120,7 @@ class TestVocabularyEndpoints:
         Флажок `favorite` успешно обновляется при обновлении слова с валидными
         данными от авторизованного пользователя.
         """
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         FavoriteWord.objects.create(word=word, user=user)
         update_data = {'favorite': False}
 
@@ -1135,13 +1139,18 @@ class TestVocabularyEndpoints:
         assert response.status_code == 200
         assert response.data['favorite'] == update_data['favorite']
 
-    def test_word_partial_update_already_exist(self, auth_api_client, user):
+    def test_word_partial_update_already_exist(
+        self, auth_api_client, user, learning_language
+    ):
         """
         На запрос редактирования текста слова при совпадении текста слова с другим
         словом возвращается ошибка 409.
         """
-        existing_word = baker.make(Word, author=user, text='Same text')
-        other_word = baker.make(Word, author=user)
+        language = learning_language(user)
+        existing_word = baker.make(
+            Word, author=user, text='Same text', language=language
+        )
+        other_word = baker.make(Word, author=user, language=language)
         source_json = {'text': existing_word.text}
 
         response = auth_api_client(user).patch(
@@ -1162,7 +1171,7 @@ class TestVocabularyEndpoints:
         На запрос обновления слова от неавторизованного пользователя
         возвращается ошибка 401.
         """
-        word = baker.make(Word)
+        word = baker.make(Word, _fill_optional=True)
 
         response = api_client().patch(f'{self.endpoint}{word.slug}/')
         if response.status_code == 307:
@@ -1190,9 +1199,9 @@ class TestVocabularyEndpoints:
         Связанные объекты также удалются, если не используются в других словах.
         """
         objs = baker.make(related_model, author=user, _quantity=2, _fill_optional=True)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(objs_related_name).set(objs)
-        other_word = baker.make(Word, author=user)
+        other_word = baker.make(Word, author=user, _fill_optional=True)
         other_word.__getattribute__(objs_related_name).add(objs[0])
 
         response = auth_api_client(user).delete(f'{self.endpoint}{word.slug}/')
@@ -1208,7 +1217,7 @@ class TestVocabularyEndpoints:
         На запрос удаления слова от неавторизованного пользователя
         возвращается ошибка 401.
         """
-        word = baker.make(Word)
+        word = baker.make(Word, _fill_optional=True)
 
         response = api_client().delete(f'{self.endpoint}{word.slug}/')
         if response.status_code == 307:
@@ -1220,7 +1229,7 @@ class TestVocabularyEndpoints:
         """
         Авторизованный пользователь успешно получает случайное слово из своего словаря.
         """
-        baker.make(Word, author=user, _quantity=3)
+        baker.make(Word, author=user, _quantity=3, _fill_optional=True)
 
         response = auth_api_client(user).get(f'{self.endpoint}random/')
         if response.status_code == 307:
@@ -1243,7 +1252,7 @@ class TestVocabularyEndpoints:
         """
         Метка `проблемное` слова успешно меняет состояние при запросе от автора слова.
         """
-        word = baker.make(Word, author=user, is_problematic=False)
+        word = baker.make(Word, author=user, is_problematic=False, _fill_optional=True)
 
         response = auth_api_client(user).post(
             f'{self.endpoint}{word.slug}/problematic-toggle/'
@@ -1259,7 +1268,7 @@ class TestVocabularyEndpoints:
         На запрос изменения метки `проблемное` слова от неавторизованного пользователя
         возвращается ошибка 401.
         """
-        word = baker.make(Word)
+        word = baker.make(Word, _fill_optional=True)
 
         response = api_client().post(f'{self.endpoint}{word.slug}/problematic-toggle/')
         if response.status_code == 307:
@@ -1396,7 +1405,7 @@ class TestVocabularyEndpoints:
         """
         Список дополнений слова успешно возвращается при запросе от автора слова.
         """
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         objs = baker.make(related_model, author=user, _quantity=2, _fill_optional=True)
         word.__getattribute__(objs_related_name).set(objs)
 
@@ -1414,7 +1423,7 @@ class TestVocabularyEndpoints:
     def test_translations_list_filter_by_language(
         self, auth_api_client, user, word_translations
     ):
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         translation = word_translations(user, make=True)
         other_translation = word_translations(user, make=True)
         word.translations.add(*translation, *other_translation)
@@ -1506,8 +1515,8 @@ class TestVocabularyEndpoints:
         res_name,
         request,
     ):
-        word = baker.make(Word, author=user)
-        other_word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
+        other_word = baker.make(Word, author=user, _fill_optional=True)
         objs, _, expected_data = request.getfixturevalue(fixture_name)(
             user, word=word, data=True, make=True, _quantity=1
         )
@@ -1543,8 +1552,8 @@ class TestVocabularyEndpoints:
     def test_related_words_retrieve_action(
         self, auth_api_client, user, objs_related_name, fixture_name, request
     ):
-        word = baker.make(Word, author=user)
-        other_word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
+        other_word = baker.make(Word, author=user, _fill_optional=True)
         objs, _, expected_data = request.getfixturevalue(fixture_name)(
             user, data=True, make=True, _quantity=1
         )
@@ -1883,7 +1892,7 @@ class TestWordTranslationsEndpoints:
 
     def test_retrieve(self, auth_api_client, user, word_translations):
         objs, _, expected_data = word_translations(user, make=True, data=True)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
@@ -1905,7 +1914,7 @@ class TestWordTranslationsEndpoints:
 
     def test_partial_update(self, auth_api_client, user, word_translations):
         objs = word_translations(user, make=True)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = word_translations(user, make=False, data=True)
         expected_data[0].pop('language')
@@ -2053,7 +2062,7 @@ class TestWordExamplesEndpoints:
 
     def test_retrieve(self, auth_api_client, user, word_usage_examples):
         objs, _, expected_data = word_usage_examples(user, make=True, data=True)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
@@ -2075,7 +2084,7 @@ class TestWordExamplesEndpoints:
 
     def test_partial_update(self, auth_api_client, user, word_usage_examples):
         objs = word_usage_examples(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = word_usage_examples(user, make=False, data=True)
         expected_data[0].pop('language')
@@ -2225,7 +2234,7 @@ class TestWordDefinitionsEndpoints:
 
     def test_retrieve(self, auth_api_client, user, word_definitions):
         objs, _, expected_data = word_definitions(user, make=True, data=True)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
@@ -2247,7 +2256,7 @@ class TestWordDefinitionsEndpoints:
 
     def test_partial_update(self, auth_api_client, user, word_definitions):
         objs = word_definitions(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = word_definitions(user, make=False, data=True)
         expected_data[0].pop('language')
@@ -2327,7 +2336,7 @@ class TestWordSynonymsEndpoints:
 
     def test_retrieve(self, auth_api_client, user, words_simple_data):
         objs, _, expected_data = words_simple_data(user, make=True, data=True)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
@@ -2349,7 +2358,7 @@ class TestWordSynonymsEndpoints:
 
     def test_partial_update(self, auth_api_client, user, words_simple_data):
         objs = words_simple_data(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = words_simple_data(user, make=False, data=True)
         # expected_data[0].pop('language')
@@ -2379,7 +2388,7 @@ class TestWordSynonymsEndpoints:
 
     def test_delete(self, auth_api_client, user, words_simple_data):
         objs = words_simple_data(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).delete(
@@ -2396,7 +2405,7 @@ class TestWordSynonymsEndpoints:
     ):
         language = learning_language(user)
         objs = words_simple_data(user, make=True, data=False, language=language)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, _ = words_simple_data(
             user, make=False, data=True, language=language
@@ -2428,7 +2437,7 @@ class TestWordAntonymsEndpoints:
 
     def test_retrieve(self, auth_api_client, user, words_simple_data):
         objs, _, expected_data = words_simple_data(user, make=True, data=True)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
@@ -2450,7 +2459,7 @@ class TestWordAntonymsEndpoints:
 
     def test_partial_update(self, auth_api_client, user, words_simple_data):
         objs = words_simple_data(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = words_simple_data(user, make=False, data=True)
 
@@ -2479,7 +2488,7 @@ class TestWordAntonymsEndpoints:
 
     def test_delete(self, auth_api_client, user, words_simple_data):
         objs = words_simple_data(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).delete(
@@ -2496,7 +2505,7 @@ class TestWordAntonymsEndpoints:
     ):
         language = learning_language(user)
         objs = words_simple_data(user, make=True, data=False, language=language)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, _ = words_simple_data(
             user, make=False, data=True, language=language
@@ -2528,7 +2537,7 @@ class TestWordSimilarsEndpoints:
 
     def test_retrieve(self, auth_api_client, user, words_simple_data):
         objs, _, expected_data = words_simple_data(user, make=True, data=True)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
@@ -2550,7 +2559,7 @@ class TestWordSimilarsEndpoints:
 
     def test_partial_update(self, auth_api_client, user, words_simple_data):
         objs = words_simple_data(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = words_simple_data(user, make=False, data=True)
         # expected_data[0].pop('language')
@@ -2580,7 +2589,7 @@ class TestWordSimilarsEndpoints:
 
     def test_delete(self, auth_api_client, user, words_simple_data):
         objs = words_simple_data(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).delete(
@@ -2597,7 +2606,7 @@ class TestWordSimilarsEndpoints:
     ):
         language = learning_language(user)
         objs = words_simple_data(user, make=True, data=False, language=language)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, _ = words_simple_data(
             user, make=False, data=True, language=language
@@ -3000,7 +3009,7 @@ class TestWordCollectionsEndpoints:
 
     def test_retrieve(self, auth_api_client, user, collections):
         objs, _, expected_data = collections(user, make=True, data=True)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
 
         response = auth_api_client(user).get(
@@ -3022,7 +3031,7 @@ class TestWordCollectionsEndpoints:
 
     def test_partial_update(self, auth_api_client, user, collections):
         objs = collections(user, make=True, data=False)
-        word = baker.make(Word, author=user)
+        word = baker.make(Word, author=user, _fill_optional=True)
         word.__getattribute__(self.objs_related_name).set(objs)
         _, source_data, expected_data = collections(user, make=False, data=True)
 

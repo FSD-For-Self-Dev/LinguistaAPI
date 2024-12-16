@@ -185,7 +185,7 @@ class Word(
         null=True,
     )
 
-    slugify_fields = ('text', ('author', 'username'))
+    slugify_fields = ('text', ('author', 'username'), ('language', 'isocode'))
 
     class Meta:
         verbose_name = _('Word or phrase')
@@ -194,7 +194,9 @@ class Word(
         ordering = ('-created', '-modified', '-id')
         get_latest_by = ('created', 'modified')
         constraints = [
-            models.UniqueConstraint('text', 'author', name='unique_words_in_user_voc')
+            models.UniqueConstraint(
+                'text', 'author', 'language', name='unique_words_in_user_voc'
+            )
         ]
 
     def __str__(self) -> str:
