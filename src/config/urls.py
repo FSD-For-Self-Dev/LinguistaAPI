@@ -9,6 +9,7 @@ from django.urls import include, path
 urlpatterns = [
     path('unsplash/', include('library.unsplash_api.urls')),
     path('i18n/', include('django.conf.urls.i18n')),
+    path('browsable-auth/', include('rest_framework.urls', namespace='rest_framework')),
 ]
 
 urlpatterns += i18n_patterns(
