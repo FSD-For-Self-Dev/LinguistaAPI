@@ -365,7 +365,7 @@ class CollectionShortSerializer(
         'get_objs_count',
         objs_related_name='words',
     )
-    last_3_words = serializers.SerializerMethodField('get_last_3_words')
+    last_4_words = serializers.SerializerMethodField('get_last_4_words')
 
     already_exist_detail = ExceptionDetails.Vocabulary.COLLECTION_ALREADY_EXIST
 
@@ -382,7 +382,7 @@ class CollectionShortSerializer(
             'description',
             'favorite',
             'words_count',
-            'last_3_words',
+            'last_4_words',
             'created',
             'modified',
         )
@@ -395,11 +395,11 @@ class CollectionShortSerializer(
         )
 
     @extend_schema_field({'type': 'object'})
-    def get_last_3_words(self, obj: Collection) -> QuerySet[Word]:
+    def get_last_4_words(self, obj: Collection) -> QuerySet[Word]:
         """Returns list of 3 last added words in the given collection."""
         return obj.words.order_by('-wordsincollections__created').values_list(
             'text', flat=True
-        )[:3]
+        )[:4]
 
 
 class FormGroupInLineSerializer(
@@ -2542,10 +2542,10 @@ class CollectionListSerializer(CollectionShortSerializer):
     """Serializer to retrieve collections list."""
 
     @extend_schema_field(WordTextImageSerializer(many=True))
-    def get_last_3_words(self, obj: Collection) -> QuerySet[Word]:
+    def get_last_4_words(self, obj: Collection) -> QuerySet[Word]:
         """Returns list of 3 last added words in the given collection."""
         return WordTextImageSerializer(
-            obj.words.order_by('-wordsincollections__created')[:3],
+            obj.words.order_by('-wordsincollections__created')[:4],
             many=True,
             context={'request': self.context.get('request')},
         ).data
