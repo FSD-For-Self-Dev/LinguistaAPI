@@ -1,0 +1,47 @@
+msgid ""
+msgstr ""
+"Language: ru_RU\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=4; plural=(n%10==1 && n%100 != 11) ? 0 : ((n%10 >= 2 && n%10 <= 4 && (n%100 < 12 || n%100 > 14)) ? 1 : (n%10 == 0 || (n%10 >= 5 && n%10 <=9) || (n%100 >= 11 && n%100 <= 14)) ? 2 : 3);\n"
+"X-Generator: Phrase (phrase.com)\n"
+
+#: .\api\v1\core\exceptions.py:21
+msgid "Amount limit exceeded."
+msgstr "Превышено ограничение количества."
+
+#: .\config\settings.py:75
+msgid "English"
+msgstr "Английский"
+
+#: .\api\v1\core\serializers_fields.py:132
+#: .\api\v1\core\serializers_fields.py:141
+msgid "Invalid value."
+msgstr "Неверное значение."
+
+#: .\api\v1\core\serializers_fields.py:131
+#, python-brace-format
+msgid "Language {value} was not found. Check its spelling."
+msgstr "Язык {value} не найден. Проверьте правильность написания."
+
+#: .\config\settings.py:74
+msgid "Russian"
+msgstr "Русский"
+
+#: .\api\v1\auth\serializers.py:22 .\api\v1\auth\serializers.py:31
+msgid "This field may not be blank."
+msgstr "Это поле не может быть пустым."
+
+#: .\api\v1\core\exceptions.py:50
+msgid "This object already exists."
+msgstr "Данный объект уже существует."
+
+#: .\api\v1\core\serializers_fields.py:140
+#, python-brace-format
+msgid "Type {value} was not found. Check its spelling."
+msgstr "Тип {value} не найден. Проверьте правильность написания."
+
+#: .\api\v1\exercises\views.py:192
+msgid "You haven't done this exercise yet."
+msgstr "Вы еще не проходили это упражнение."

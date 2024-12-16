@@ -1,120 +1,108 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-12-16 11:12+0300\n"
-"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
-"Language-Team: LANGUAGE <LL@li.org>\n"
-"Language: ru_RU\n"
+"POT-Creation-Date: 2024-12-16 12:04+0300\n"
+"Language: en_US\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Phrase (phrase.com)\n"
 
 #: .\apps\languages\apps.py:10 .\apps\languages\models.py:119
 #: .\apps\languages\models.py:120
 msgid "Languages"
-msgstr "Языки"
+msgstr ""
 
 #: .\apps\languages\models.py:69
 msgid "Language name"
-msgstr "Название языка"
+msgstr ""
 
 #: .\apps\languages\models.py:75
 msgid "Language name (in that language)"
-msgstr "Название языка (на этом языке)"
+msgstr ""
 
 #: .\apps\languages\models.py:82
 msgid "ISO 639-1 Language code"
-msgstr "ISO 639-1 код языка"
+msgstr ""
 
 #: .\apps\languages\models.py:87
-#, fuzzy
-#| msgid "2 character language code without country"
 msgid "2 or 3 character language code with 2 character country code"
-msgstr "2 символьный код языка без страны"
+msgstr ""
 
 #: .\apps\languages\models.py:90
 msgid "Country name"
-msgstr "Название страны"
+msgstr ""
 
 #: .\apps\languages\models.py:96
 msgid "Sorting order"
-msgstr "Порядок сортировки"
+msgstr ""
 
 #: .\apps\languages\models.py:100
 msgid "Increase to show at top of the list"
-msgstr "Увеличьте, чтобы поднять в списке"
+msgstr ""
 
 #: .\apps\languages\models.py:103
 msgid "Is the language available for user to add to learning ones"
-msgstr "Язык доступен для добавления в изучаемые"
+msgstr ""
 
 #: .\apps\languages\models.py:107
 msgid "Is the language available as interface language"
-msgstr "Язык доступен для перевода интерфейса"
+msgstr ""
 
 #: .\apps\languages\models.py:111
 msgid "Language flag icon"
-msgstr "Иконка флага языка"
+msgstr ""
 
 #: .\apps\languages\models.py:118 .\apps\languages\models.py:142
 #: .\apps\languages\models.py:190 .\apps\languages\models.py:243
 msgid "Language"
-msgstr "Язык"
+msgstr ""
 
 #: .\apps\languages\models.py:147 .\apps\languages\models.py:154
 msgid "Language image"
-msgstr "Картинка языка"
+msgstr ""
 
 #: .\apps\languages\models.py:155
 msgid "Languages images"
-msgstr "Картинки языков"
+msgstr ""
 
 #: .\apps\languages\models.py:157
 msgid "Images available to be set as cover for the learning language"
-msgstr "Картинки доступные для обновления обложки изучаемого языка"
+msgstr ""
 
 #: .\apps\languages\models.py:196 .\apps\languages\models.py:249
 msgid "User"
-msgstr "Пользователь"
+msgstr ""
 
 #: .\apps\languages\models.py:202
-#, fuzzy
-#| msgid "Language image"
 msgid "Learning language cover image"
-msgstr "Картинка языка"
+msgstr ""
 
 #: .\apps\languages\models.py:209
 msgid "Level of knowledge"
-msgstr "Уровень владения"
+msgstr ""
 
 #: .\apps\languages\models.py:219
 msgid "User learning language"
-msgstr "Изучаемый язык пользователя"
+msgstr ""
 
 #: .\apps\languages\models.py:220
 msgid "User learning languages"
-msgstr "Изучаемые языки пользователя"
+msgstr ""
 
 #: .\apps\languages\models.py:221
 msgid "Users learning languages"
-msgstr "Изучаемые языки пользователей"
+msgstr ""
 
 #: .\apps\languages\models.py:257
 msgid "User native language"
-msgstr "Родной язык пользователя"
+msgstr ""
 
 #: .\apps\languages\models.py:258
 msgid "User native languages"
-msgstr "Родные языки пользователя"
+msgstr ""
 
 #: .\apps\languages\models.py:259
 msgid "Users native languages"
-msgstr "Родные языки пользователей"
+msgstr ""

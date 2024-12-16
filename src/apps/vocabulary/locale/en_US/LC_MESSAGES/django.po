@@ -1,0 +1,543 @@
+msgid ""
+msgstr ""
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Phrase (phrase.com)\n"
+
+#: .\apps\vocabulary\apps.py:10
+msgid "Vocabulary"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:66 .\apps\vocabulary\models.py:314
+#: .\apps\vocabulary\models.py:386 .\apps\vocabulary\models.py:442
+#: .\apps\vocabulary\models.py:518
+msgid "Language"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:72 .\apps\vocabulary\models.py:191
+msgid "Word or phrase"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:81
+msgid "Activity status"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:88
+msgid "Is the word problematic for you"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:92
+msgid "Note text"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:98
+msgid "WordType"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:104 .\apps\vocabulary\models.py:268
+msgid "Word tags"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:112
+msgid "Word form groups"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:119 .\apps\vocabulary\models.py:396
+msgid "Translations"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:126 .\apps\vocabulary\models.py:461
+msgid "Definitions"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:133 .\apps\vocabulary\models.py:506
+#: .\apps\vocabulary\models.py:549 .\apps\vocabulary\models.py:852
+msgid "Usage example"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:140 .\apps\vocabulary\models.py:888
+msgid "Image association"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:147 .\apps\vocabulary\models.py:921
+msgid "Quote association"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:154 .\apps\vocabulary\models.py:1044
+#: .\apps\vocabulary\models.py:1045
+msgid "Synonyms"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:155
+msgid "Words with similar meanings"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:162 .\apps\vocabulary\models.py:1068
+msgid "Antonyms"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:163
+msgid "Words with opposite meanings"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:170 .\apps\vocabulary\models.py:1091
+msgid "Forms"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:171
+msgid "Word forms"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:178 .\apps\vocabulary\models.py:1114
+msgid "Similars"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:179
+msgid "Words with similar pronunciation or spelling"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:183
+msgid "Last exercise date"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:192
+msgid "Words and phrases"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:193
+msgid "Users words and phrases"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:219
+msgid "Word type name"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:231
+msgid "Word type"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:232
+msgid "Word types"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:233
+msgid "Word or phrase types"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:256
+msgid "Tag name"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:267
+msgid "Word tag"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:269
+msgid "Word or phrase tags"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:301
+msgid "Group name"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:320
+msgid "Group color"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:331
+msgid "Group name translation"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:342 .\apps\vocabulary\models.py:745
+msgid "Forms group"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:343
+msgid "Forms groups"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:344
+msgid "Groups of possible word forms in language"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:376 .\apps\vocabulary\models.py:395
+#: .\apps\vocabulary\models.py:779
+msgid "Translation"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:378
+msgid "A translation of a word or phrase"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:397
+msgid "Translations for words and phrases"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:429 .\apps\vocabulary\models.py:460
+#: .\apps\vocabulary\models.py:815
+msgid "Definition"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:431
+msgid "A definition of a word or phrase"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:448
+msgid "A translation of the definition"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:462
+msgid "Definitions for words and phrases"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:493
+msgid "Other"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:494
+msgid "Book"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:495
+msgid "Film"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:496
+msgid "Song"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:497
+msgid "Quote"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:508
+msgid "An usage example of a word or phrase"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:524
+msgid "A translation of the example"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:533
+msgid "Example source type"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:540
+msgid "Example source hotlink"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:550
+msgid "Usage examples"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:551
+msgid "Usage examples for words and phrases"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:585
+msgid "Image"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:591
+msgid "Image hotlink"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:600
+msgid "Image-association"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:601
+msgid "Image-associations"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:602
+msgid "Image-associations for words and phrases"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:607
+#, python-brace-format
+msgid "Image association by {self.author}"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:631
+msgid "Quote text"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:639
+msgid "Quote author"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:650
+msgid "Quote-association"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:651
+msgid "Quote-associations"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:652
+msgid "Quote-associations for words and phrases"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:659
+#, python-brace-format
+msgid "Quote association `{self.text}` ({self.quote_author}) by {self.author}"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:661
+#, python-brace-format
+msgid "Quote association `{self.text}` by {self.author}"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:680
+msgid "Collection title"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:691
+msgid "Description"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:699
+msgid "Word in collection"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:706 .\apps\vocabulary\models.py:954
+#: .\apps\vocabulary\models.py:1172
+msgid "Collection"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:707
+msgid "Collections"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:708
+msgid "Collections of words and phrases"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:726 .\apps\vocabulary\models.py:1136
+msgid "Word"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:754
+msgid "Word form group (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:755
+msgid "Words form groups (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:756
+msgid "Intermediary model for words and form groups"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:766
+#, python-brace-format
+msgid "Word `{self.word}` is in `{self.forms_group}` form"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:787
+msgid "Word translation (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:788
+msgid "Word translations (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:789
+msgid "Words and its translations intermediary model"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:800
+#, python-brace-format
+msgid "`{self.word}` is translated as `{self.translation}` "
+msgstr ""
+
+#: .\apps\vocabulary\models.py:823
+msgid "Word definition (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:824
+msgid "Word definitions (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:825
+msgid "Words and definitions intermediary model"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:836
+#, python-brace-format
+msgid "`{self.word}` ({self.word.language.name}) means "
+msgstr ""
+
+#: .\apps\vocabulary\models.py:860
+msgid "Word usage example (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:861
+msgid "Word usage examples (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:862
+msgid "Words and usage examples intermediary model"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:873
+#, python-brace-format
+msgid "Usage example of `{self.word}`: {self.example} "
+msgstr ""
+
+#: .\apps\vocabulary\models.py:896
+msgid "Word image-association (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:897
+msgid "Words image-associations (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:898
+msgid "Words and image-associations intermediary model"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:907
+msgid ""
+"Image `{self.image}` was added to word `{self.word}` associations at {self."
+"created:%Y-%m-%d}"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:929
+msgid "Word quote-association (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:930
+msgid "Words quote-associations (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:931
+msgid "Words and quote-associations intermediary model"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:940
+msgid ""
+"Quote `{self.quote}` was added to word `{self.word}` associations at {self."
+"created:%Y-%m-%d}"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:962
+msgid "Word in collection (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:963
+msgid "Words in collections (intermediary model)"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:964
+msgid "Words and collections intermediary model"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:975
+msgid ""
+"Word `{self.word}` was added to collection `{self.collection}` at {self."
+"created:%Y-%m-%d}"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1016
+msgid "Note"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1017
+#, python-format
+msgid "Note for %(class)ss"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1046
+msgid "Words synonyms"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1067
+msgid "Antonym"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1069
+msgid "Words antonyms"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1090
+msgid "Form"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1092
+msgid "Words forms"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1113
+msgid "Similar"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1115
+msgid "Similar words"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1144
+msgid "Favorite word"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1145
+msgid "Favorite words"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1146
+msgid "Users favorite words"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1157
+#, python-brace-format
+msgid "The word `{self.word}` was added to favorites by "
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1180
+msgid "Favorite collection"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1181
+msgid "Favorite collections"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1182
+msgid "Users favorite collections"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1193
+#, python-brace-format
+msgid "The collection `{self.collection}` was added to favorites by "
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1205
+msgid "Standart"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1206
+msgid "Short"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1207
+msgid "Long"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1211
+msgid "Word cards type"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1219
+msgid "User default word cards type setting"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1220
+msgid "User default word cards type settings"
+msgstr ""
+
+#: .\apps\vocabulary\models.py:1221
+msgid "Default word cards type set by user"
+msgstr ""

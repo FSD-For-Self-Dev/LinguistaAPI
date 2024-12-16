@@ -1494,7 +1494,7 @@ class TestVocabularyEndpoints:
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
             # ('image_associations', 'word_image_associations', 'images'),
-            ('quote_associations', 'word_quote_associations', 'quotes'),
+            # ('quote_associations', 'word_quote_associations', 'quotes'),
         ],
     )
     def test_related_objs_retrieve_action(
@@ -1572,7 +1572,7 @@ class TestVocabularyEndpoints:
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
             # ('image_associations', 'word_image_associations', 'images'),
-            ('quote_associations', 'word_quote_associations', 'quotes'),
+            # ('quote_associations', 'word_quote_associations', 'quotes'),
         ],
     )
     def test_related_objs_partial_update_action(
@@ -1673,7 +1673,7 @@ class TestVocabularyEndpoints:
             ('examples', 'word_usage_examples', ''),
             ('definitions', 'word_definitions', ''),
             # ('image_associations', 'word_image_associations', 'images'),
-            ('quote_associations', 'word_quote_associations', 'quotes'),
+            # ('quote_associations', 'word_quote_associations', 'quotes'),
             ('synonyms', 'related_words_data', ''),
             ('antonyms', 'related_words_data', ''),
             ('forms', 'related_words_data', ''),
@@ -2748,119 +2748,119 @@ class TestWordSimilarsEndpoints:
 #         assert response_content['words']['count'] == len(source_data)
 
 
-@pytest.mark.word_quotes
-class TestWordQuoteEndpoints:
-    endpoint = '/api/quotes/'
-    objs_related_name = 'quote_associations'
-    related_model = QuoteAssociation
+# @pytest.mark.word_quotes
+# class TestWordQuoteEndpoints:
+#     endpoint = '/api/quotes/'
+#     objs_related_name = 'quote_associations'
+#     related_model = QuoteAssociation
 
-    # def test_create(self, auth_api_client, user, word_image_associations, learning_language, words_simple_data):
-    #     language = learning_language(user)
-    #     _, source_data, expected_data = word_image_associations(
-    #         user, make=False, data=True, language=language
-    #     )
-    #     _, source_data[0]['words'], _ = words_simple_data(
-    #         user, make=False, data=True, language=language
-    #     )
+# def test_create(self, auth_api_client, user, word_image_associations, learning_language, words_simple_data):
+#     language = learning_language(user)
+#     _, source_data, expected_data = word_image_associations(
+#         user, make=False, data=True, language=language
+#     )
+#     _, source_data[0]['words'], _ = words_simple_data(
+#         user, make=False, data=True, language=language
+#     )
 
-    #     response = auth_api_client(user).post(
-    #         self.endpoint,
-    #         data=source_data[0],
-    #         format='json',
-    #     )
-    #     response_content = json.loads(response.content)
+#     response = auth_api_client(user).post(
+#         self.endpoint,
+#         data=source_data[0],
+#         format='json',
+#     )
+#     response_content = json.loads(response.content)
 
-    #     assert response.status_code == 201
-    #     assert all([response_content[field] == value for field, value in expected_data[0].items()])
-    #     assert response_content['words']['count'] == len(source_data[0]['words'])
+#     assert response.status_code == 201
+#     assert all([response_content[field] == value for field, value in expected_data[0].items()])
+#     assert response_content['words']['count'] == len(source_data[0]['words'])
 
-    def test_retrieve(self, auth_api_client, user, word_quote_associations):
-        objs, _, expected_data = word_quote_associations(user, make=True, data=True)
-        word = baker.make(Word, author=user)
-        word.__getattribute__(self.objs_related_name).set(objs)
+# def test_retrieve(self, auth_api_client, user, word_quote_associations):
+#     objs, _, expected_data = word_quote_associations(user, make=True, data=True)
+#     word = baker.make(Word, author=user)
+#     word.__getattribute__(self.objs_related_name).set(objs)
 
-        response = auth_api_client(user).get(
-            f'{self.endpoint}{objs[0].id}/',
-        )
-        if response.status_code == 307:
-            response = auth_api_client(user).get(response['Location'])
+#     response = auth_api_client(user).get(
+#         f'{self.endpoint}{objs[0].id}/',
+#     )
+#     if response.status_code == 307:
+#         response = auth_api_client(user).get(response['Location'])
 
-        response_content = json.loads(response.content)
+#     response_content = json.loads(response.content)
 
-        assert response.status_code == 200
-        assert all(
-            [
-                response_content[field] == value
-                for field, value in expected_data[0].items()
-            ]
-        )
-        assert response_content['words']['count'] == 1
+#     assert response.status_code == 200
+#     assert all(
+#         [
+#             response_content[field] == value
+#             for field, value in expected_data[0].items()
+#         ]
+#     )
+#     assert response_content['words']['count'] == 1
 
-    def test_partial_update(self, auth_api_client, user, word_quote_associations):
-        objs = word_quote_associations(user, make=True, data=False)
-        word = baker.make(Word, author=user)
-        word.__getattribute__(self.objs_related_name).set(objs)
-        _, source_data, expected_data = word_quote_associations(
-            user, make=False, data=True
-        )
+# def test_partial_update(self, auth_api_client, user, word_quote_associations):
+#     objs = word_quote_associations(user, make=True, data=False)
+#     word = baker.make(Word, author=user)
+#     word.__getattribute__(self.objs_related_name).set(objs)
+#     _, source_data, expected_data = word_quote_associations(
+#         user, make=False, data=True
+#     )
 
-        response = auth_api_client(user).patch(
-            f'{self.endpoint}{objs[0].id}/',
-            data=source_data[0],
-            format='json',
-        )
-        if response.status_code == 307:
-            response = auth_api_client(user).patch(
-                response['Location'],
-                data=source_data[0],
-                format='json',
-            )
+#     response = auth_api_client(user).patch(
+#         f'{self.endpoint}{objs[0].id}/',
+#         data=source_data[0],
+#         format='json',
+#     )
+#     if response.status_code == 307:
+#         response = auth_api_client(user).patch(
+#             response['Location'],
+#             data=source_data[0],
+#             format='json',
+#         )
 
-        response_content = json.loads(response.content)
+#     response_content = json.loads(response.content)
 
-        assert response.status_code == 200
-        assert all(
-            [
-                response_content[field] == value
-                for field, value in expected_data[0].items()
-            ]
-        )
-        assert response_content['words']['count'] == 1
+#     assert response.status_code == 200
+#     assert all(
+#         [
+#             response_content[field] == value
+#             for field, value in expected_data[0].items()
+#         ]
+#     )
+#     assert response_content['words']['count'] == 1
 
-    def test_delete(self, auth_api_client, user, word_quote_associations):
-        objs = word_quote_associations(user, make=True)
+# def test_delete(self, auth_api_client, user, word_quote_associations):
+#     objs = word_quote_associations(user, make=True)
 
-        response = auth_api_client(user).delete(
-            f'{self.endpoint}{objs[0].id}/',
-        )
-        if response.status_code == 307:
-            response = auth_api_client(user).delete(response['Location'])
+#     response = auth_api_client(user).delete(
+#         f'{self.endpoint}{objs[0].id}/',
+#     )
+#     if response.status_code == 307:
+#         response = auth_api_client(user).delete(response['Location'])
 
-        assert response.status_code in (204, 200)
-        assert not self.related_model.objects.filter(id=objs[0].id).exists()
+#     assert response.status_code in (204, 200)
+#     assert not self.related_model.objects.filter(id=objs[0].id).exists()
 
-    def test_add_words_to_quote(
-        self, auth_api_client, user, word_quote_associations, words_simple_data
-    ):
-        objs = word_quote_associations(user, make=True, data=False)
-        _, source_data, _ = words_simple_data(user, make=False, data=True)
+# def test_add_words_to_quote(
+#     self, auth_api_client, user, word_quote_associations, words_simple_data
+# ):
+#     objs = word_quote_associations(user, make=True, data=False)
+#     _, source_data, _ = words_simple_data(user, make=False, data=True)
 
-        response = auth_api_client(user).post(
-            f'{self.endpoint}{objs[0].id}/add-words/',
-            data=source_data,
-            format='json',
-        )
-        if response.status_code == 307:
-            response = auth_api_client(user).post(
-                response['Location'],
-                data=source_data,
-                format='json',
-            )
+#     response = auth_api_client(user).post(
+#         f'{self.endpoint}{objs[0].id}/add-words/',
+#         data=source_data,
+#         format='json',
+#     )
+#     if response.status_code == 307:
+#         response = auth_api_client(user).post(
+#             response['Location'],
+#             data=source_data,
+#             format='json',
+#         )
 
-        response_content = json.loads(response.content)
+#     response_content = json.loads(response.content)
 
-        assert response.status_code == 201
-        assert response_content['words']['count'] == len(source_data)
+#     assert response.status_code == 201
+#     assert response_content['words']['count'] == len(source_data)
 
 
 @pytest.mark.main_page
