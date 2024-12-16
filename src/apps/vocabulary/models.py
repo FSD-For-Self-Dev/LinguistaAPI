@@ -8,7 +8,7 @@ from django.db import models
 from django.db.models.functions import Lower
 from django.db.models.signals import pre_save, post_delete
 from django.dispatch import receiver
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext as _
 
 from apps.core.models import (
     GetObjectBySlugModelMixin,

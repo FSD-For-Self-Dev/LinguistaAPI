@@ -14,7 +14,7 @@ from apps.languages.models import (
 )
 from apps.core.constants import ExceptionDetails
 
-from ..core.serializers_fields import CapitalizedCharField, KwargsMethodField
+from ..core.serializers_fields import CapitalizedCharField
 from ..core.serializers_mixins import (
     CountObjsSerializerMixin,
     AlreadyExistSerializerHandler,
@@ -44,10 +44,6 @@ class LearningLanguageListSerailizer(
 ):
     """Serializer to list users's learning languages."""
 
-    words_count = KwargsMethodField(
-        'get_objs_count',
-        objs_related_name='words',
-    )
     language = PresentableSlugRelatedField(
         queryset=Language.objects.all(),
         slug_field='isocode',

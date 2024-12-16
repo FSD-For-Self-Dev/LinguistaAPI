@@ -2278,7 +2278,9 @@ class CollectionSerializer(NestedSerializerMixin, CollectionShortSerializer):
         words amount for each language.
         """
         return (
-            obj.words.values('language__name').annotate(words_count=Count('language'))
+            obj.words.values(
+                'language__name', 'language__country', 'language__isocode'
+            ).annotate(words_count=Count('language'))
         ).order_by('-words_count')
 
     @extend_schema_field({'type': 'integer'})
