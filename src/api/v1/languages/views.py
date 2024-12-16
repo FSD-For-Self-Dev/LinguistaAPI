@@ -83,12 +83,15 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
                 return (
                     Language.objects.filter(Q(learning_by=user) | Q(native_for=user))
                     .annotate(
-                        is_native=Case(
-                            When(
-                                native_for=user,
-                                then=Value(True),
+                        is_native=Count(
+                            Case(
+                                When(
+                                    native_for=user,
+                                    then=1,
+                                ),
+                                default=0,
                             ),
-                            default=Value(False),
+                            distinct=True,
                         ),
                         words_count=Count('words'),
                     )
