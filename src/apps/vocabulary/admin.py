@@ -154,7 +154,14 @@ class DefinitionAdmin(admin.ModelAdmin):
 
 @admin.register(ImageAssociation)
 class ImageAssociationAdmin(admin.ModelAdmin):
-    pass
+    list_display = (
+        'id',
+        'image',
+        'image_url',
+        'image_size',
+    )
+    search_fields = ('word__text',)
+    ordering = ('-created',)
 
 
 @admin.register(QuoteAssociation)

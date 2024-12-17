@@ -614,6 +614,12 @@ class ImageAssociation(
             self.image = compress(self.image)
         return super(ImageAssociation, self).save(*args, **kwargs)
 
+    def image_size(self) -> int:
+        """Returns image size."""
+        if self.image:
+            return f'{round(self.image.size / 1024, 3)} KB'
+        return None
+
 
 class QuoteAssociation(
     GetObjectModelMixin,

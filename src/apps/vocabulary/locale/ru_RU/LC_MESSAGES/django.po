@@ -256,10 +256,8 @@ msgid "Image"
 msgstr "Картинка"
 
 #: .\apps\vocabulary\models.py:591
-#, fuzzy
-#| msgid "Image association"
 msgid "Image hotlink"
-msgstr "Ассоциация-картинка"
+msgstr "Ссылка на картинку"
 
 #: .\apps\vocabulary\models.py:600
 msgid "Image-association"
