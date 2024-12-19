@@ -12,9 +12,13 @@ from apps.languages.models import (
     UserLearningLanguage,
     UserNativeLanguage,
 )
-from apps.core.constants import ExceptionDetails
+from apps.core.constants import ExceptionDetails, ExceptionCodes
 
-from ..core.serializers_fields import CapitalizedCharField
+from ..core.serializers_fields import (
+    CapitalizedCharField,
+    CurrentObjectDefault,
+    CustomHybridImageField,
+)
 from ..core.serializers_mixins import (
     CountObjsSerializerMixin,
     AlreadyExistSerializerHandler,
@@ -198,11 +202,15 @@ class NativeLanguageSerailizer(serializers.ModelSerializer):
         )
 
 
-class LanguageCoverImageSerailizer(HybridImageSerializerMixin):
+class CoverListSerializer(HybridImageSerializerMixin):
     """Serializer to list available images for given language."""
 
     language = serializers.SlugRelatedField(
         slug_field='name',
+        read_only=True,
+    )
+    author = serializers.SlugRelatedField(
+        slug_field='username',
         read_only=True,
     )
 
@@ -214,23 +222,41 @@ class LanguageCoverImageSerailizer(HybridImageSerializerMixin):
             'image',
             'image_height',
             'image_width',
+            'author',
         )
         read_only_fields = fields
 
 
-class CoverSetSerailizer(serializers.ModelSerializer):
+class CoverSetSerializer(AlreadyExistSerializerHandler, serializers.ModelSerializer):
     """
     Serializer to use for setting new cover image for user's learning language.
     """
 
-    image_id = serializers.PrimaryKeyRelatedField(
-        queryset=LanguageCoverImage.objects.all(),
-        many=False,
-        read_only=False,
-        source='images',
-        required=True,
+    id = serializers.CharField(required=False)
+    image = CustomHybridImageField(required=False)
+    language = serializers.HiddenField(
+        default=CurrentObjectDefault(
+            object_lookup_model=Language,
+            object_lookup_field='isocode',
+        )
     )
+    author = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
-        model = Language
-        fields = ('image_id',)
+        model = LanguageCoverImage
+        fields = (
+            'id',
+            'image',
+            'language',
+            'author',
+        )
+
+    def validate(self, attrs):
+        image = attrs.get('image', None)
+        image_id = attrs.get('id', None)
+        if image is None and image_id is None:
+            raise serializers.ValidationError(
+                detail=ExceptionDetails.Images.IMAGE_FILE_OR_ID_IS_REQUIRED,
+                code=ExceptionCodes.Images.IMAGE_FILE_OR_ID_IS_REQUIRED,
+            )
+        return super().validate(attrs)

@@ -21,19 +21,21 @@ from apps.core.constants import (
 )
 from apps.vocabulary.filters import WordCounters
 from utils.checkers import check_amount_limit
+from utils.getters import get_admin_user
 
 from .serializers import (
     LanguageSerializer,
     LearningLanguageSerializer,
     NativeLanguageSerailizer,
-    LanguageCoverImageSerailizer,
-    CoverSetSerailizer,
+    CoverListSerializer,
+    CoverSetSerializer,
 )
 from ..core.mixins import ActionsWithRelatedObjectsMixin
 from ..core.exceptions import (
     AmountLimitExceeded,
     ObjectAlreadyExist,
 )
+from ..core.pagination import LimitPagination
 from ..vocabulary.serializers import (
     LearningLanguageWithLastWordsSerailizer,
     CollectionShortSerializer,
@@ -80,22 +82,20 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         user = self.request.user
         match self.action:
             case 'all':
-                return (
-                    Language.objects.filter(Q(learning_by=user) | Q(native_for=user))
-                    .annotate(
-                        is_native=Count(
-                            Case(
-                                When(
-                                    native_for=user,
-                                    then=1,
-                                ),
-                                default=0,
+                return Language.objects.filter(
+                    Q(learning_by=user) | Q(native_for=user)
+                ).annotate(
+                    is_native=Count(
+                        Case(
+                            When(
+                                native_for=user,
+                                then=1,
                             ),
-                            distinct=True,
+                            default=0,
                         ),
-                        words_count=Count('words'),
-                    )
-                    .order_by('-is_native', '-words_count', 'name')
+                        distinct=True,
+                    ),
+                    words_count=Count('words'),
                 )
             case 'native':
                 return user.native_languages_detail.all().prefetch_related(
@@ -104,16 +104,13 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
             case 'learning_available':
                 if user.is_anonymous:
                     # Ingore learning languages for anonymous user
-                    return (
-                        Language.objects.filter(learning_available=True)
-                        .annotate(words_count=Count('words'))
-                        .order_by('-words_count', 'name')
+                    return Language.objects.filter(learning_available=True).annotate(
+                        words_count=Count('words')
                     )
                 return (
                     Language.objects.filter(learning_available=True)
                     .exclude(learning_by=self.request.user)
                     .annotate(words_count=Count('words'))
-                    .order_by('-words_count', 'name')
                 )
             case _:
                 return user.learning_languages_detail.prefetch_related(
@@ -294,7 +291,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         detail=False,
         permission_classes=(IsAuthenticated,),
         serializer_class=LanguageSerializer,
-        ordering=None,
+        ordering=('-is_native', '-words_count', 'name'),
     )
     def all(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns all user's learning and native languages."""
@@ -321,7 +318,7 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         url_path='learning-available',
         serializer_class=LanguageSerializer,
         permission_classes=(AllowAny,),
-        ordering=('-sorting', 'name'),
+        ordering=('-words_count', '-sorting', 'name'),
     )
     def learning_available(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Returns available for learning languages."""
@@ -332,8 +329,9 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         methods=('get',),
         detail=True,
         url_path='cover-choices',
-        serializer_class=LanguageCoverImageSerailizer,
+        serializer_class=CoverListSerializer,
         permission_classes=(IsAuthenticated,),
+        pagination_class=LimitPagination,
     )
     def cover_choices(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """
@@ -342,17 +340,27 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         learning_language: UserLearningLanguage = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')
 
-        serializer = self.get_serializer(
-            (
-                learning_language.language.images.annotate(
-                    is_current_cover=Case(
-                        When(id=learning_language.cover.id, then=Value(True)),
-                        default=Value(False),
-                    )
-                ).order_by('-is_current_cover')
-            ),
-            many=True,
+        images_queryset = learning_language.language.images.filter(
+            Q(author=get_admin_user()) | Q(author=request.user)
         )
+        try:
+            images_queryset = images_queryset.annotate(
+                is_current_cover=Case(
+                    When(id=learning_language.cover.id, then=Value(True)),
+                    default=Value(False),
+                )
+            ).order_by('-is_current_cover', '-created')
+        except AttributeError:
+            pass
+
+        page = self.paginate_queryset(images_queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            logger.debug(f'Serializer used for images: {type(serializer)}')
+
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(images_queryset, many=True)
         logger.debug(f'Serializer used for images: {type(serializer)}')
 
         return Response(serializer.data)
@@ -362,25 +370,30 @@ class LanguageViewSet(ActionsWithRelatedObjectsMixin, viewsets.ModelViewSet):
         methods=('post',),
         detail=True,
         url_path='set-cover',
-        serializer_class=CoverSetSerailizer,
+        serializer_class=CoverSetSerializer,
         permission_classes=(IsAuthenticated,),
     )
     def set_language_cover(self, request: HttpRequest, *args, **kwargs) -> HttpResponse:
         """Updates user learning language cover image."""
+        self.kwargs['isocode'] = self.kwargs.get('language__isocode', '')
         serializer = self.get_serializer(data=request.data)
         logger.debug(f'Serializer used for instance: {type(serializer)}')
 
         logger.debug('Validating data')
         serializer.is_valid(raise_exception=True)
 
-        new_cover = serializer.validated_data.get('images', None)
-        logger.debug(f'Obtained language image: {new_cover}')
+        try:
+            cover_instance = serializer.save()
+        except ObjectAlreadyExist as exception:
+            cover_instance = exception.existing_object
+
+        logger.debug(f'Obtained language image: {cover_instance}')
 
         learning_language: UserLearningLanguage = self.get_object()
         logger.debug(f'Obtained learning language: {learning_language}')
 
         logger.debug('Updating learning language cover')
-        learning_language.cover = new_cover
+        learning_language.cover = cover_instance
         learning_language.save()
 
         return self.retrieve(

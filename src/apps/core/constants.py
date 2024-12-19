@@ -56,6 +56,7 @@ class ExceptionCodes:
 
     class Images:
         IMAGE_FILE_OR_URL_IS_REQUIRED = 'empty_image'
+        IMAGE_FILE_OR_ID_IS_REQUIRED = 'empty_image'
 
     class Languages:
         LANGUAGE_INVALID = 'invalid_language'
@@ -84,6 +85,7 @@ class ExceptionDetails:
         INVALID_IMAGE_FILE = _('Invalid image file passed.')
         INVALID_IMAGE_SIZE = _(f'Image file too large ( > {MAX_IMAGE_SIZE_MB} MB ).')
         IMAGE_FILE_OR_URL_IS_REQUIRED = _('No image file or url passed.')
+        IMAGE_FILE_OR_ID_IS_REQUIRED = _('No image file or instance id passed.')
 
     class Languages:
         """Languages app exception details."""

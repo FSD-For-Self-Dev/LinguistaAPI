@@ -3150,7 +3150,7 @@ TWO_LETTERS_CODES_V3 = {
         'flag_icon_path': 'apps/languages/images/flag_icons/india.svg',
     },
     'mn-MN': {
-        'name': 'Mongolian (Cyrillic)',
+        'name': 'Mongolian',
         'name_local': 'Монгол',
         'country': 'Mongolia',
         'country_cca3': 'MNG',

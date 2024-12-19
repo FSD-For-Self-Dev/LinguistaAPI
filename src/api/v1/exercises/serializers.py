@@ -6,7 +6,6 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db.models.query import QuerySet
 
 from rest_framework import serializers
-from rest_framework.fields import Field
 from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.relations import PresentablePrimaryKeyRelatedField
 from rest_framework.utils.serializer_helpers import ReturnDict
@@ -33,6 +32,7 @@ from ..core.serializers_mixins import (
 from ..core.serializers_fields import (
     KwargsMethodField,
     ReadableHiddenField,
+    CurrentObjectDefault,
 )
 from ..core.exceptions import AmountLimitExceeded
 from ..vocabulary.serializers import (
@@ -40,25 +40,6 @@ from ..vocabulary.serializers import (
     WordSuperShortSerializer,
     CollectionShortSerializer,
 )
-
-
-class CurrentExerciseDefault:
-    """
-    The current exercise as the default value for the field.
-    Lookup field must be `slug`.
-    """
-
-    requires_context = True
-
-    def __call__(self, serializer_field: Field) -> QuerySet[Exercise] | Exercise:
-        request_word_slug = serializer_field.context['view'].kwargs.get('slug')
-        try:
-            return Exercise.objects.get(slug=request_word_slug)
-        except KeyError:
-            return Exercise.objects.none()
-
-    def __repr__(self) -> str:
-        return '%s()' % self.__class__.__name__
 
 
 class ExerciseListSerializer(FavoriteSerializerMixin, serializers.ModelSerializer):
@@ -116,7 +97,8 @@ class SetSerializer(
         representation_field='username',
     )
     exercise = ReadableHiddenField(
-        default=CurrentExerciseDefault(), representation_field='name'
+        default=CurrentObjectDefault(object_lookup_model=Exercise),
+        representation_field='name',
     )
 
     already_exist_detail = ExceptionDetails.Exercises.WORD_SET_ALREADY_EXIST

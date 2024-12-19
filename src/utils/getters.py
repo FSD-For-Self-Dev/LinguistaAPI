@@ -5,6 +5,7 @@ from typing import Any, Type
 
 from django.db.models import Model
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth import get_user_model
 
 from dotenv import load_dotenv
 from rest_framework.exceptions import NotFound
@@ -12,6 +13,8 @@ from rest_framework.exceptions import NotFound
 from apps.core.constants import ADMIN_USERNAME
 
 load_dotenv()
+
+User = get_user_model()
 
 
 def get_object_by_pk(
@@ -31,9 +34,9 @@ def get_object_by_pk(
         )
 
 
-def get_admin_user(user_model: Model) -> Type[Model] | None:
+def get_admin_user() -> Type[Model] | None:
     """Returns admin user or None if not found."""
-    return user_model.objects.filter(username=ADMIN_USERNAME).first()
+    return User.objects.filter(username=ADMIN_USERNAME).first()
 
 
 def get_yc_headers() -> dict[str, str]:

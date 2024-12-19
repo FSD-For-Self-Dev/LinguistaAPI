@@ -110,10 +110,10 @@ class GetObjectModelMixin:
         cls.check_class_attrs()
         get_by_fields = {}
         for field in cls.get_object_by_fields:
-            assert (
-                field in data
-            ), f'Can not get object from data. Make sure {field} are passed in data.'
-            get_by_fields[field] = data[field]
+            try:
+                get_by_fields[field] = data[field]
+            except KeyError:
+                return None
         try:
             return cls.objects.get(**get_by_fields)
         except ObjectDoesNotExist:

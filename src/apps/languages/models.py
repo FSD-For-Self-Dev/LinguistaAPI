@@ -13,7 +13,9 @@ from apps.core.models import (
     ModifiedModel,
     SlugModel,
     GetObjectBySlugModelMixin,
+    GetObjectModelMixin,
     WordsCountMixin,
+    AuthorModel,
 )
 from config.settings import AUTH_USER_MODEL
 from utils.fillers import slug_filler
@@ -44,6 +46,23 @@ class Language(WordsCountMixin, models.Model):
         'ar-ae': 1,
         'nl-nl': 1,
         'ro-ro': 1,
+        'hy-am': 1,
+        'be-by': 1,
+        'bg-bg': 1,
+        'el-gr': 1,
+        'ka-ge': 1,
+        'kk-kz': 1,
+        'id-id': 1,
+        'da-dk': 1,
+        'ga-ie': 1,
+        'zh-tw': 1,
+        'pl-pl': 1,
+        'pt-pt': 1,
+        'th-th': 1,
+        'hi-in': 1,
+        'sw-ke': 1,
+        'sv-se': 1,
+        'bn-bd': 1,
     }
     LEARN_AVAILABLE = {
         'en-gb': True,
@@ -126,10 +145,15 @@ class Language(WordsCountMixin, models.Model):
 
 
 def language_images_path(instance, filename) -> str:
-    return f'languages/images/{instance.language.name}/{filename}'
+    return f'languages/images/{instance.language.isocode}/{filename}'
 
 
-class LanguageCoverImage(CreatedModel, ModifiedModel):
+class LanguageCoverImage(
+    GetObjectModelMixin,
+    CreatedModel,
+    ModifiedModel,
+    AuthorModel,
+):
     """Images available to be set as cover for the learning language."""
 
     id = models.UUIDField(
@@ -149,6 +173,8 @@ class LanguageCoverImage(CreatedModel, ModifiedModel):
         blank=False,
         null=False,
     )
+
+    get_object_by_fields = ('id',)
 
     class Meta:
         verbose_name = _('Language image')

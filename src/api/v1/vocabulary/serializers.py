@@ -42,10 +42,11 @@ from apps.vocabulary.models import (
 from ..core.serializers_fields import (
     ReadableHiddenField,
     KwargsMethodField,
-    HybridImageOrPrimaryKeyField,
+    CustomHybridImageField,
     LanguageSlugRelatedField,
     TypeSlugRelatedField,
     CreatableSlugRelatedField,
+    CurrentObjectDefault,
 )
 from ..core.serializers_mixins import (
     ListUpdateSerializer,
@@ -65,25 +66,6 @@ from ..languages.serializers import (
 )
 
 User = get_user_model()
-
-
-class CurrentWordDefault:
-    """
-    The current word as the default value for the field.
-    Lookup field must be `slug`.
-    """
-
-    requires_context = True
-
-    def __call__(self, serializer_field: Field) -> QuerySet[Word] | Word:
-        request_word_slug = serializer_field.context['view'].kwargs.get('slug')
-        try:
-            return Word.objects.get(slug=request_word_slug)
-        except KeyError or ObjectDoesNotExist:
-            return Word.objects.none()
-
-    def __repr__(self) -> str:
-        return '%s()' % self.__class__.__name__
 
 
 class NativeLanguageDefault:
@@ -451,11 +433,7 @@ class ImageInLineSerializer(HybridImageSerializerMixin, CountObjsSerializerMixin
     """Serializer to list, create word image-associations inside word serializer."""
 
     id = serializers.CharField(required=False)
-    image = HybridImageOrPrimaryKeyField(
-        required=False,
-        allow_empty_file=True,
-        related_model=ImageAssociation,
-    )
+    image = CustomHybridImageField(required=False)
     author = ReadableHiddenField(
         default=serializers.CurrentUserDefault(),
         representation_field='username',
@@ -493,7 +471,8 @@ class ImageInLineSerializer(HybridImageSerializerMixin, CountObjsSerializerMixin
     def validate(self, attrs):
         image = attrs.get('image', None)
         image_url = attrs.get('image_url', None)
-        if image is None and image_url is None:
+        image_id = attrs.get('id', None)
+        if image is None and image_url is None and image_id is None:
             raise serializers.ValidationError(
                 detail=ExceptionDetails.Images.IMAGE_FILE_OR_URL_IS_REQUIRED,
                 code=ExceptionCodes.Images.IMAGE_FILE_OR_URL_IS_REQUIRED,
@@ -1570,7 +1549,9 @@ class SynonymForWordListSerializer(
 ):
     """Serializer to list, create synonyms for given word."""
 
-    to_word = serializers.HiddenField(default=CurrentWordDefault())
+    to_word = serializers.HiddenField(
+        default=CurrentObjectDefault(object_lookup_model=Word)
+    )
 
     def create(
         self, validated_data: OrderedDict, parent_first: bool = False, *args, **kwargs
@@ -1589,7 +1570,9 @@ class AntonymForWordListSerializer(
 ):
     """Serializer to list, create antonyms for given word."""
 
-    to_word = serializers.HiddenField(default=CurrentWordDefault())
+    to_word = serializers.HiddenField(
+        default=CurrentObjectDefault(object_lookup_model=Word)
+    )
 
     def create(
         self, validated_data: OrderedDict, parent_first: bool = False, *args, **kwargs
@@ -1608,7 +1591,9 @@ class FormForWordListSerializer(
 ):
     """Serializer to list, create forms for given word."""
 
-    to_word = serializers.HiddenField(default=CurrentWordDefault())
+    to_word = serializers.HiddenField(
+        default=CurrentObjectDefault(object_lookup_model=Word)
+    )
 
     def create(
         self, validated_data: OrderedDict, parent_first: bool = False, *args, **kwargs
@@ -1627,7 +1612,9 @@ class SimilarForWordListSerializer(
 ):
     """Serializer to list, create similars for given word."""
 
-    to_word = serializers.HiddenField(default=CurrentWordDefault())
+    to_word = serializers.HiddenField(
+        default=CurrentObjectDefault(object_lookup_model=Word)
+    )
 
     def create(
         self, validated_data: OrderedDict, parent_first: bool = False, *args, **kwargs

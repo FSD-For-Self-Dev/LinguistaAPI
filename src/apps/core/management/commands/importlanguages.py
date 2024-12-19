@@ -12,8 +12,8 @@ from django.core.files.images import ImageFile
 from dotenv import load_dotenv
 from modeltranslation.translator import translator
 
-from apps.languages.models import Language, LanguageCoverImage
-from utils.getters import get_yc_headers
+from apps.languages.models import Language, LanguageCoverImage, UserLearningLanguage
+from utils.getters import get_yc_headers, get_admin_user
 from config.settings import LANGUAGES
 from .data.languages import TWO_LETTERS_CODES_V3
 
@@ -50,6 +50,18 @@ class Command(BaseCommand):
             help='Pass if languages fields translations is needed no matter languages exist',
         )
         parser.add_argument(
+            '--all_available',
+            action='store_true',
+            default=False,
+            help='Pass to make all languages available for learning',
+        )
+        parser.add_argument(
+            '--only_popular',
+            action='store_true',
+            default=False,
+            help='Pass to make only languages with sorting value more than 0 available for learning',
+        )
+        parser.add_argument(
             'last_locales',
             type=int,
             nargs='?',
@@ -77,8 +89,16 @@ class Command(BaseCommand):
                     created = True
 
                 lang.sorting = Language.LANGS_SORTING_VALS.get(isocode.lower(), 0)
-                lang.learning_available = Language.LEARN_AVAILABLE.get(
-                    isocode.lower(), False
+                all_available = options['all_available']
+                only_popular = options['only_popular']
+                lang.learning_available = (
+                    lang.sorting > 0
+                    if only_popular
+                    else (
+                        True
+                        if all_available
+                        else Language.LEARN_AVAILABLE.get(isocode.lower(), False)
+                    )
                 )
                 lang.interface_available = Language.INTERFACE_AVAILABLE.get(
                     isocode.lower(), False
@@ -132,6 +152,7 @@ class Command(BaseCommand):
                 # Importing specified flag icons, images for languages
                 import_images = options['import_images']
                 if created or import_images:
+                    # Importing flag icons
                     try:
                         flag_icon_path = TWO_LETTERS_CODES_V3[isocode]['flag_icon_path']
                         flag_icon = ImageFile(open(flag_icon_path, 'rb'))
@@ -146,18 +167,30 @@ class Command(BaseCommand):
                         flag_icon.name = isocode + '.svg'
                         lang.flag_icon = flag_icon
 
+                    # Importing covers images for learning available languages
                     if lang.learning_available:
+                        admin_user = get_admin_user()
+                        LanguageCoverImage.objects.filter(
+                            language=lang, author=admin_user
+                        ).delete()
                         images_urls = [
                             self.images_path + filename
                             for filename in os.listdir(self.images_path)
                             if filename.startswith(lang.isocode)
                         ]
+                        images_cnt = 0
                         for image_url in images_urls:
                             image = ImageFile(open(image_url, 'rb'))
                             image.name = isocode + '.' + image.name.split('.')[-1]
-                            LanguageCoverImage.objects.create(
-                                language=lang, image=image
+                            lang_cover = LanguageCoverImage.objects.create(
+                                language=lang, image=image, author=admin_user
                             )
+                            # Setting default cover image
+                            if images_cnt == 0:
+                                UserLearningLanguage.objects.filter(
+                                    language=lang
+                                ).update(cover=lang_cover)
+                                images_cnt += 1
 
                 lang.save()
 
@@ -166,4 +199,6 @@ class Command(BaseCommand):
                     f'Error adding language {lang} (isocode: {lang.isocode}): {e}'
                 )
 
-        self.stdout.write(f'Added {cnt} languages\nSkipped {skip_cnt} languages')
+        self.stdout.write(
+            f'Added {cnt} languages\nSkipped {skip_cnt} languages (empty `name_local` value)'
+        )

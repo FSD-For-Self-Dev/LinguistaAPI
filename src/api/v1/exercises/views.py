@@ -301,7 +301,7 @@ class ExerciseViewSet(
             logger.debug(f'Obtained user settings: {translator_settings}')
         except TranslatorUserDefaultSettings.DoesNotExist as exception:
             logger.debug(f'RelatedObjectDoesNotExist exception occured: {exception}')
-            admin_user = get_admin_user(User)
+            admin_user = get_admin_user()
             translator_settings = admin_user.translator_settings
             logger.debug(
                 f'Obtained admin user (default) settings: {translator_settings}'

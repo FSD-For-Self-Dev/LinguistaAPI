@@ -21,25 +21,29 @@ class Command(BaseCommand):
     """
 
     def handle(self, *args, **options):
-        username = 'admin'
-        email = 'admin@example.com'
         try:
+            username = os.getenv(
+                'DJANGO_SUPERUSER_USERNAME', default=get_random_string(10)
+            )
             if (
                 not User.objects.filter(username=username).exists()
                 and not User.objects.filter(is_superuser=True).exists()
             ):
                 self.stdout.write('Admin user not found, creating one')
 
-                new_password = os.getenv(
+                email = os.getenv(
+                    'DJANGO_SUPERUSER_EMAIL', default=get_random_string(10)
+                )
+                password = os.getenv(
                     'DJANGO_SUPERUSER_PASSWORD', default=get_random_string(10)
                 )
 
-                superuser = User.objects.create_superuser(username, email, new_password)
+                superuser = User.objects.create_superuser(username, email, password)
 
                 self.stdout.write('===================================')
                 self.stdout.write(
                     f"A superuser '{username}' was created with email "
-                    f"'{email}' and password '{new_password}'"
+                    f"'{email}' and password '{password}'"
                 )
                 self.stdout.write('===================================')
 

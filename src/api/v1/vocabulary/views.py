@@ -1774,7 +1774,7 @@ class FormGroupsViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
     def get_queryset(self) -> QuerySet[FormGroup]:
         """Returns all user's and admin user form groups."""
         user = self.request.user
-        admin_user = get_admin_user(User)
+        admin_user = get_admin_user()
         if admin_user and user.is_authenticated:
             return FormGroup.objects.filter(
                 Q(author=user) | Q(author=admin_user)

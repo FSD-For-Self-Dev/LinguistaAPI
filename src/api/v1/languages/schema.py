@@ -24,7 +24,8 @@ from api.v1.languages.serializers import (
     LanguageSerializer,
     LearningLanguageSerializer,
     NativeLanguageSerailizer,
-    LanguageCoverImageSerailizer,
+    CoverListSerializer,
+    CoverSetSerializer,
 )
 
 from ..schema.responses import (
@@ -462,7 +463,7 @@ data = {
             ),
             'request': None,
             'responses': {
-                status.HTTP_200_OK: LanguageCoverImageSerailizer(many=True),
+                status.HTTP_200_OK: CoverListSerializer(many=True),
                 status.HTTP_401_UNAUTHORIZED: unauthorized_response,
             },
         },
@@ -473,6 +474,7 @@ data = {
                 'id. '
                 'Требуется авторизация.'
             ),
+            'request': CoverSetSerializer(many=False),
             'responses': {
                 status.HTTP_201_CREATED: OpenApiResponse(
                     response=LearningLanguageSerializer,

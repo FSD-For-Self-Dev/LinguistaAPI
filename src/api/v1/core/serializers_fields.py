@@ -4,13 +4,43 @@ from typing import Any
 
 from django.utils.translation import gettext as _
 from django.core.exceptions import ObjectDoesNotExist
+from django.db.models.query import QuerySet
+from django.db.models import Model
 
 from rest_framework import serializers
+from rest_framework.fields import Field
 from drf_spectacular.utils import extend_schema_field
 from drf_extra_fields.fields import HybridImageField
 
 from apps.core.constants import ExceptionDetails
-from utils.checkers import is_valid_uuid
+
+
+class CurrentObjectDefault:
+    """
+    The current retrieved object as the default value for the field.
+    Lookup field default is `slug`.
+    """
+
+    requires_context = True
+
+    def __init__(self, object_lookup_model: Model, object_lookup_field: str = 'slug'):
+        self.object_lookup_model = object_lookup_model
+        self.object_lookup_field = object_lookup_field
+
+    def __call__(self, serializer_field: Field) -> QuerySet:
+        try:
+            return self.object_lookup_model.objects.get(
+                **{
+                    self.object_lookup_field: serializer_field.context[
+                        'view'
+                    ].kwargs.get(self.object_lookup_field)
+                }
+            )
+        except KeyError:
+            return self.object_lookup_model.objects.none()
+
+    def __repr__(self) -> str:
+        return '%s()' % self.__class__.__name__
 
 
 @extend_schema_field({'type': 'string'})
@@ -102,26 +132,6 @@ class CustomHybridImageField(HybridImageField):
     @property
     def INVALID_FILE_MESSAGE(self):
         raise serializers.ValidationError(ExceptionDetails.Images.INVALID_IMAGE_FILE)
-
-
-class HybridImageOrPrimaryKeyField(CustomHybridImageField):
-    """
-    Custom field for handling image-uploads through
-    raw post data, with a fallback to multipart form data
-    or get existing image-instance through UUID primary key.
-    """
-
-    def __init__(self, *args, **kwargs):
-        self.related_model = kwargs.pop('related_model', None)
-        super().__init__(*args, **kwargs)
-
-    def to_internal_value(self, data):
-        """
-        Try UUID key first, and then try the HybridImageField.
-        """
-        if is_valid_uuid(data) and self.related_model:
-            return self.related_model.objects.get(pk=data)
-        return super().to_internal_value(data)
 
 
 class LanguageSlugRelatedField(serializers.SlugRelatedField):
